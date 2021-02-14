@@ -18,7 +18,7 @@
 # For further information about Panda you can visit
 # http://cdelord.fr/panda
 
-make $*
+$GRC make $*
 while true
 do
     printf "\\e[44m### %-$(($(tput cols) - 4))s\\e[0m\\r" "waiting for changes..."
@@ -26,6 +26,6 @@ do
     then
         printf "\\e[44m### %-$(($(tput cols) - 4))s\\e[0m\\n" "make"
         sleep 1
-        make $*
+        $GRC make $*
     fi
 done
