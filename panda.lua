@@ -323,11 +323,27 @@ end
 
 -- {{{ File inclusion
 
+local function apply_pattern(pattern, format, content)
+    if pattern then
+        local i, j = content:find(pattern)
+        if i then
+            content = content:sub(i, j)
+            if format then
+                content = content:gsub(pattern, format)
+            end
+        end
+    end
+    return content
+end
+
 local function include_div(block)
     local filename = get_attr(block, "include")
     if filename then
         local shift = tonumber(get_attr(block, "shift"))
+        local pattern = get_attr(block, "pattern")
+        local format = get_attr(block, "format")
         local filename, content = track_file(filename)
+        content = apply_pattern(pattern, format, content)
         local doc = pandoc.read(content)
         local div = pandoc.Div(doc.blocks)
         if shift then
@@ -350,6 +366,8 @@ local function include_codeblock(block)
     if filename then
         local from = tonumber(get_attr(block, "from") or get_attr(block, "fromline"))
         local to = tonumber(get_attr(block, "to") or get_attr(block, "toline"))
+        local pattern = get_attr(block, "pattern")
+        local format = get_attr(block, "format")
         local filename, content = track_file(filename)
         if from or to then
             from = from or 1
@@ -362,9 +380,12 @@ local function include_codeblock(block)
             end
             content = table.concat(lines, "\n")
         end
+        content = apply_pattern(pattern, format, content)
         local newblock = block:clone()
         newblock.text = content
-        newblock.attr = clean_attr({}, {"include", "from", "fromline", "to", "toline", "shift"}, newblock.attr)
+        newblock.attr = clean_attr(
+            {}, {"include", "from", "fromline", "to", "toline", "pattern", "format", "shift"},
+            newblock.attr)
         return newblock
     end
 end

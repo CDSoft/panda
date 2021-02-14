@@ -91,6 +91,11 @@ Cheat sheet
 | div block         |               | `shift=n`             | adds `n` to header levels in an imported      |
 |                   |               |                       | div block                                     |
 +-------------------+---------------+-----------------------+-----------------------------------------------+
+| div block,        |               | `pattern="Lua string  | applies a Lua string pattern to the content   |
+| code block        |               | pattern"`             | of the file. The emitted text is `format`.    |
+|                   |               | `format="output       | `format` may contain captures from `pattern`. |
+|                   |               | format"`              |                                               |
++-------------------+---------------+-----------------------+-----------------------------------------------+
 | code block        | `meta`        |                       | definitions for the string expansion          |
 |                   |               |                       | (Lua script), defined in the code block       |
 +-------------------+---------------+-----------------------+-----------------------------------------------+
@@ -206,8 +211,9 @@ The content of the file is parsed according to its format (deduced from its name
 and replaces the div block content.
 
 ~~~markdown
-:::{include=file.md}
+:::{include=file.md shift=n}
 This text is optional and will be replaced by the content of file.md.
+Section title levels are shifted by n (0 if not specified).
 :::
 ~~~
 
@@ -222,12 +228,16 @@ The `include` attribute contains the name of the file to include.
 The content of the file replaces the code block content.
 
 ~~~markdown
-```{.c include=foo.c fromline=3 toline=10}
+```{.c include=foo.c fromline=3 toline=10 pattern="Lua string pattern" format="%1"}
 This text is optional and will be replaced by the content of foo.c.
 ```
 ~~~
 
 The optional `fromline` and `toline` defines the first and last lines to be included.
+
+The optional pattern describes the part of the text that will be rendered.
+The format uses the captures defined by the pattern to format the content of the block
+(`"%1"` if not defined).
 
 Scripts
 =======
@@ -370,27 +380,27 @@ E.g.:
 
 Filters can be combined. E.g.: a diagram can be stored in an external file, included and rendered by `panda`.
 
-+---------------------------------------+---------------------------------------+
-| Source                                | Result                                |
-+=======================================+=======================================+
-| ~~~ markdown                          |                                       |
-| The file `hello.dot` contains:        | The file `hello.dot` contains:        |
-|                                       |                                       |
-| ```{.dot include="{{doc}}/hello.dot"  | ```{.dot include="{{doc}}/hello.dot"  |
-|          fromline=21 toline=24 }      |          fromline=21 toline=24 }      |
-| ```                                   | ```                                   |
-| ~~~                                   |                                       |
-+---------------------------------------+---------------------------------------+
-| ~~~ markdown                          |                                       |
-| and is rendered as:                   | and is rendered as:                   |
-|                                       |                                       |
-| ```{ render="{{dot}}"                 | ```{ render="{{dot}}"                 |
-|      img="img/hello"                  |      img="img/hello"                  |
-|      out="{{build}}/img"              |      out="{{build}}/img"              |
-|      include="{{doc}}/hello.dot" }    |      include="{{doc}}/hello.dot" }    |
-| ```                                   | ```                                   |
-| ~~~                                   |                                       |
-+---------------------------------------+---------------------------------------+
++-------------------------------------------+-------------------------------------------+
+| Source                                    | Result                                    |
++===========================================+===========================================+
+| ~~~ markdown                              |                                           |
+| The file `hello.dot` contains:            | The file `hello.dot` contains:            |
+|                                           |                                           |
+| ```{.dot include="{{doc}}/hello.dot"      | ```{.dot include="{{doc}}/hello.dot"      |
+|          pattern="digraph%s*%b{}" }       |          pattern="digraph%s*%b{}" }       |
+| ```                                       | ```                                       |
+| ~~~                                       |                                           |
++-------------------------------------------+-------------------------------------------+
+| ~~~ markdown                              |                                           |
+| and is rendered as:                       | and is rendered as:                       |
+|                                           |                                           |
+| ```{ render="{{dot}}"                     | ```{ render="{{dot}}"                     |
+|      img="img/hello"                      |      img="img/hello"                      |
+|      out="{{build}}/img"                  |      out="{{build}}/img"                  |
+|      include="{{doc}}/hello.dot" }        |      include="{{doc}}/hello.dot" }        |
+| ```                                       | ```                                       |
+| ~~~                                       |                                           |
++-------------------------------------------+-------------------------------------------+
 
 Makefile dependencies
 =====================

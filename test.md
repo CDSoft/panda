@@ -56,6 +56,9 @@ baz is yo
 ```{.c include=test_include.c from=5}
 ```
 
+```{include=test_include.c pattern="(main).-(%b{})" format="%1 = %2"}
+```
+
 :::{include=test_include.md shift=1}
 :::
 

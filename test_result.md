@@ -49,7 +49,13 @@ int main(void)
 {
     return 0;
 }
+
+/* foo */
 ```
+
+    main = {
+        return 0;
+    }
 
 Title of the included file
 --------------------------
