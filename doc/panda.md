@@ -17,6 +17,7 @@
 [GitHub]: https://github.com/CDSoft/panda
 [cdelord.fr]: http://cdelord.fr
 [gnuplot]: http://www.gnuplot.info/
+[UPP]: http://cdelord.fr/upp "Universal PreProcessor"
 
 About panda
 ===========
@@ -32,6 +33,8 @@ It provides several interesting features:
 - diagrams ([Graphviz], [PlantUML], [ditaa], [Asymptote], [blockdiag], [mermaid]...)
 
 Panda is heavily inspired by [abp](http:/cdelord.fr/abp) reimplemented as a [Pandoc Lua filter].
+
+If you need a more generic text preprocessor, [UPP] may be a better choice.
 
 Open source
 ===========
