@@ -11,6 +11,7 @@ Expansion
 -- bar = The title is: Test document for panda
 -- baz = {{baz}}
 -- email = [my email](me@example.com)
+-- email2 = me2@example.com
 ```
 
 -   title = Test document for *panda*
@@ -18,6 +19,7 @@ Expansion
 -   bar = The title is: Test document for panda
 -   baz = {{baz}}
 -   email = [my email](me@example.com)
+-   email2 = [eMail](mailto:me2@example.com)
 
 ::: { foo = bar } :::
 

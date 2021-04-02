@@ -102,9 +102,6 @@ Cheat sheet
 | code block        | `meta`        |                       | definitions for the string expansion          |
 |                   |               |                       | (Lua script), defined in the code block       |
 +-------------------+---------------+-----------------------+-----------------------------------------------+
-| code block        |               | `meta=file`           | definitions for the string expansion          |
-|                   |               |                       | (Lua script), defined in `file`               |
-+-------------------+---------------+-----------------------+-----------------------------------------------+
 | any block         |               | `ifdef=name`          | block emitted only if `name` is defined       |
 +-------------------+---------------+-----------------------+-----------------------------------------------+
 | any block         |               | `ifdef=name value=val`| block emitted only if `name` is defined and   |
@@ -152,7 +149,7 @@ String expansion
 
 `panda` stores variables in an environment used to expand strings.
 Variables can be defined by a Lua script with the `meta` class.
-The `meta` attribute can also be used to point to an external file.
+The `include` attribute can also be used to point to an external file.
 Variables can only contain inline elements, not blocks.
 
 The initial environment contains:
@@ -173,7 +170,7 @@ foo is {{foo}}.
 ~~~
 
 ~~~markdown
-```{meta=foo.lua}
+```{.meta include=foo.lua}
 This text is ignored, definitions are in foo.lua.
 ```
 

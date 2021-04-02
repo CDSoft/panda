@@ -162,6 +162,13 @@ end
 
 -- }}}
 
+-- {{{ Forward declarations
+
+local track_file -- forward declaration of the dependency tracking function
+local include_codeblock
+
+-- }}}
+
 -- {{{ Variable expansion
 
 local var_pattern = "{{([%w_%.]-)}}"
@@ -181,6 +188,7 @@ end
 
 local function read_vars_in_block(block)
     if has_class(block, "meta") then
+        block = include_codeblock(block) or block
         assert(load(block.text, block.text, "t", env))()
         return pandoc.Null
     end
@@ -284,7 +292,7 @@ local function add_dep(filename)
     end
 end
 
-local function track_file(filename)
+track_file = function(filename)
     local filename = expand_vars(filename)
     add_dep(filename)
     local content = assert(io.open(filename)):read("a")
@@ -361,7 +369,7 @@ local function include_div(block)
     end
 end
 
-local function include_codeblock(block)
+include_codeblock = function(block)
     local filename = get_attr(block, "include")
     if filename then
         local from = tonumber(get_attr(block, "from") or get_attr(block, "fromline"))

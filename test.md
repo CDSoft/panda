@@ -8,12 +8,16 @@ bar = "The title is: "..utils.stringify(title)
 email = "[my email](me@example.com)"
 ```
 
+```{.meta include=test.lua}
+```
+
 ```lua
 -- normal code block
 -- foo = {{foo}}
 -- bar = {{bar}}
 -- baz = {{baz}}
 -- email = {{email}}
+-- email2 = {{email2}}
 ```
 
 - title = {{title}}
@@ -21,6 +25,7 @@ email = "[my email](me@example.com)"
 - bar = {{bar}}
 - baz = {{baz}}
 - email = {{email}}
+- email2 = [eMail](mailto:{{email2}})
 
 ::: { foo = {{foo}} }
 :::
