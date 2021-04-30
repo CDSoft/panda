@@ -160,6 +160,12 @@ local function dirname(name)
     return name:gsub("[^/]*$", ""):gsub("^$", ".")
 end
 
+local function mkdir(path)
+    if not file_exists(path) then
+        os.execute("mkdir "..path)
+    end
+end
+
 -- }}}
 
 -- {{{ Forward declarations
@@ -488,15 +494,26 @@ local function render_diagram(cmd, contents)
     end
 end
 
+local function default_image_cache()
+    return env["PANDA_CACHE"] or ".panda"
+end
+
 local function diagram(block)
     local render = get_attr(block, "render")
     if render then
         local contents = block.text
         local ext = get_ext(render)
-        local img = assert(get_attr(block, "img"), "img attribute missing in a diagram block")
+        local img = get_attr(block, "img")
         local output_path = get_attr(block, "out")
         local target = get_attr(block, "target")
         local hash_digest = pandoc.sha1(contents)
+        if not img then
+            local image_cache = default_image_cache()
+            mkdir(image_cache)
+            img = image_cache.."/"..pandoc.sha1(render..contents)
+        elseif img:match "%%h" then
+            img = img:gsub("%%h", pandoc.sha1(render..contents))
+        end
         local out = expand_path(out and (out.."/"..get_filename(img)) or img)
         local meta = out..ext..".meta"
         local meta_content = "source: "..hash_digest.."\n"..
@@ -505,7 +522,7 @@ local function diagram(block)
                              "out: "..out.."\n"
 
         local old_meta = file_content(meta) or ""
-        if not file_exists(img) or meta_content ~= old_meta then
+        if not file_exists(out..ext) or meta_content ~= old_meta then
             system.with_temporary_directory("panda_diagram", function (tmpdir)
                 local name = tmpdir.."/diagram"
                 local f = io.open(name, "w")

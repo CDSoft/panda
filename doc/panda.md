@@ -1,6 +1,6 @@
 % Panda - Pandoc add-ons (Lua filters for Pandoc)
 % Christophe Delord - <http://cdelord.fr/panda>
-% 30 January 2021
+% 30th April 2021
 
 [panda]: http://cdelord.fr/panda "Pandoc add-ons (Lua filters for Pandoc)"
 [GraphViz]: http://graphviz.org/
@@ -128,6 +128,8 @@ Cheat sheet
 |                   |               |                       | name)                                         |
 +-------------------+---------------+-----------------------+-----------------------------------------------+
 | code block        |               | `img="image path"`    | URL of the image produced by `render`         |
+|                   |               |                       | (optional, the default value is a generated   |
+|                   |               |                       | name in the `./.panda` directory).            |
 +-------------------+---------------+-----------------------+-----------------------------------------------+
 | code block        |               | `out="image path"`    | path of the image produced by `render`        |
 |                   |               |                       | (optional, the default value is `img`)        |
@@ -275,6 +277,11 @@ The optional `out` field overloads `img` to change the output directory when ren
 In the `render` command, `%i` is replaced by the name of the input document
 (generated from the content of the code block) and
 `%o` by the name of the output image file (generated from the `img` field).
+
+The `img` field is optional. The default value is a name generated in the directory given by the
+environment variable `PANDA_CACHE` (`.panda` if `PANDA_CACHE` is not defined).
+
+If `img` contains `%h`, it is replaced by a hash computed from the diagram source.
 
 The file format (extension) must be in the `render` field,
 after the `%o` tag (e.g.: `%o.png`), not in the `img` field.
