@@ -409,6 +409,21 @@ Filters can be combined. E.g.: a diagram can be stored in an external file, incl
 | ~~~                                       |                                           |
 +-------------------------------------------+-------------------------------------------+
 
+The `img` and `out` fields are optional. This is especially useful in self-contained documents.
+The image name is generated from a hash value of the diagram.
+
+E.g.:
+
++-------------------------------------------+-------------------------------------------+
+| Source                                    | Result                                    |
++===========================================+===========================================+
+| ~~~ markdown                              |                                           |
+| ```{ render="{{dot}}"                     | ```{ render="{{dot}}"                     |
+|      include="{{doc}}/hello.dot" }        |      include="{{doc}}/hello.dot" }        |
+| ```                                       | ```                                       |
+| ~~~                                       |                                           |
++-------------------------------------------+-------------------------------------------+
+
 Makefile dependencies
 =====================
 

@@ -41,7 +41,7 @@ test: $(BUILD)/test.md test/test_result.md
 
 $(BUILD)/test.md: panda panda.lua test/test.md test/test_include.md test/test_include.c $(BUILD)/plantuml.jar $(BUILD)/ditaa.jar
 	@mkdir -p $(BUILD) $(BUILD)/img
-	build=$(BUILD) PANDA_TARGET=$@ PLANTUML=$(BUILD)/plantuml.jar ./panda --standalone test/test.md -o $(BUILD)/test.md
+	build=$(BUILD) PANDA_CACHE=$(BUILD)/cache PANDA_TARGET=$@ PLANTUML=$(BUILD)/plantuml.jar ./panda --standalone test/test.md -o $(BUILD)/test.md
 
 .PHONY: diff
 
@@ -56,7 +56,7 @@ CSS = $(BUILD)/cdelord.css
 
 $(BUILD)/panda.html: doc/panda.md doc/hello.dot $(CSS) panda panda.lua
 	@mkdir -p $(BUILD) $(BUILD)/img
-	doc=doc build=$(BUILD) PANDA_TARGET=$@ PLANTUML=$(BUILD)/plantuml.jar DITAA=$(BUILD)/ditaa.jar ./panda --to=html5 --standalone --self-contained --css=$(CSS) $< -o $@
+	doc=doc build=$(BUILD) PANDA_CACHE=$(BUILD)/cache PANDA_TARGET=$@ PLANTUML=$(BUILD)/plantuml.jar DITAA=$(BUILD)/ditaa.jar ./panda --to=html5 --standalone --self-contained --css=$(CSS) $< -o $@
 
 $(CSS):
 	@mkdir -p $(dir $@)

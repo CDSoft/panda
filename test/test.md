@@ -82,3 +82,9 @@ print("Pandoc is great!")
 Alice -> Bob: hello
 @enduml
 ```
+
+```{render="{{plantuml}}" title="Alice & Bob"}
+@startuml
+Alice -> Bob: hello
+@enduml
+```

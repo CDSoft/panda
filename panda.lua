@@ -510,13 +510,13 @@ local function diagram(block)
         local img = get_attr(block, "img")
         local output_path = get_attr(block, "out")
         local target = get_attr(block, "target")
-        local hash_digest = pandoc.sha1(contents)
+        local hash_digest = pandoc.sha1(render..contents)
         if not img then
             local image_cache = default_image_cache()
             mkdir(image_cache)
-            img = image_cache.."/"..pandoc.sha1(render..contents)
-        elseif img:match "%%h" then
-            img = img:gsub("%%h", pandoc.sha1(render..contents))
+            img = image_cache.."/"..hash_digest
+        else
+            img = img:gsub("%%h", hash_digest)
         end
         local out = expand_path(output_path and (output_path.."/"..basename(img)) or img)
         local meta = out..ext..".meta"
