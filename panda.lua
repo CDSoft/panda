@@ -156,8 +156,12 @@ local function file_content(name)
     end
 end
 
+local function basename(name)
+    return (name:gsub(".*/", ""))
+end
+
 local function dirname(name)
-    return name:gsub("[^/]*$", ""):gsub("^$", ".")
+    return (name:gsub("[^/]*$", ""):gsub("^$", "."))
 end
 
 local function mkdir(path)
@@ -514,7 +518,7 @@ local function diagram(block)
         elseif img:match "%%h" then
             img = img:gsub("%%h", pandoc.sha1(render..contents))
         end
-        local out = expand_path(out and (out.."/"..get_filename(img)) or img)
+        local out = expand_path(output_path and (output_path.."/"..basename(img)) or img)
         local meta = out..ext..".meta"
         local meta_content = "source: "..hash_digest.."\n"..
                              "render: "..render.."\n"..
