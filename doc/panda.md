@@ -291,19 +291,19 @@ _plantuml = "{{plantuml}}"
 _build = "{{build}}"
 ```
 
-+---------------------------------------+---------------------------------------+
-| Source                                | Result                                |
-+=======================================+=======================================+
-| ~~~ markdown                          |                                       |
-| ``` { render="{{_plantuml}}"          | ``` { render="{{plantuml}}"           |
-|       img="img/panda_plantuml_test"   |       img="img/panda_plantuml_test"   |
-|       out="{{_build}}/img" }          |       out="{{build}}/img" }           |
-| @startuml                             | @startuml                             |
-| Alice -> Bob: hello                   | Alice -> Bob: test                    |
-| @enduml                               | @enduml                               |
-| ```                                   | ```                                   |
-| ~~~                                   |                                       |
-+---------------------------------------+---------------------------------------+
++---------------------------------------+-------------------------------------------------+
+| Source                                | Result                                          |
++=======================================+=================================================+
+| ~~~ markdown                          |                                                 |
+| ``` { render="{{_plantuml}}"          | ``` { render="{{plantuml}}"                     |
+|       img="img/panda_plantuml_demo"   |       img="{{build}}/img/panda_plantuml_demo"   |
+|       out="{{_build}}/img" }          |       out="{{build}}/img" }                     |
+| @startuml                             | @startuml                                       |
+| Alice -> Bob: hello                   | Alice -> Bob: test                              |
+| @enduml                               | @enduml                                         |
+| ```                                   | ```                                             |
+| ~~~                                   |                                                 |
++---------------------------------------+-------------------------------------------------+
 
 Some render commands are predefined:
 
@@ -357,33 +357,33 @@ Notes:
 
 E.g.:
 
-+-------------------------------------------+-------------------------------------------+
-| Source                                    | Result                                    |
-+===========================================+===========================================+
-| ~~~ markdown                              |                                           |
-| ```{.dot render="{{dot}}"                 | ```{.dot render="{{dot}}"                 |
-|          img="img/panda_diagram_example"  |          img="img/panda_diagram_example"  |
-|          out="{{build}}/img" }            |          out="{{build}}/img" }            |
-| digraph {                                 | digraph {                                 |
-|     rankdir=LR;                           |     rankdir=LR;                           |
-|     input -> pandoc -> output             |     input -> pandoc -> output             |
-|     pandoc -> panda -> {pandoc, diagrams} |     pandoc -> panda -> {pandoc, diagrams} |
-|     { rank=same; pandoc, panda }          |     { rank=same; pandoc, panda }          |
-|     { rank=same; diagrams, output }       |     { rank=same; diagrams, output }       |
-| }                                         | }                                         |
-| ```                                       | ```                                       |
-| ~~~                                       |                                           |
-+-------------------------------------------+-------------------------------------------+
-| ~~~ markdown                              |                                           |
-| ```{ render="{{gnuplot}}"                 | ```{ render="{{gnuplot}}"                 |
-|      img="img/panda_gnuplot_example"      |      img="img/panda_gnuplot_example"      |
-|      out="{{build}}/img" }                |      out="{{build}}/img" height=192 }     |
-| set xrange [-pi:pi]                       | set xrange [-2*pi:2*pi]                   |
-| set yrange [-1.5:1.5]                     | set yrange [-1.5:1.5]                     |
-| plot sin(x) lw 4, cos(x) lw 4             | plot sin(x) lw 4, cos(x) lw 4             |
-| ```                                       | ```                                       |
-| ~~~                                       |                                           |
-+-------------------------------------------+-------------------------------------------+
++-------------------------------------------+-----------------------------------------------------+
+| Source                                    | Result                                              |
++===========================================+=====================================================+
+| ~~~ markdown                              |                                                     |
+| ```{.dot render="{{dot}}"                 | ```{.dot render="{{dot}}"                           |
+|          img="img/panda_diagram_example"  |          img="{{build}}/img/panda_diagram_example"  |
+|          out="{{build}}/img" }            |          out="{{build}}/img" }                      |
+| digraph {                                 | digraph {                                           |
+|     rankdir=LR;                           |     rankdir=LR;                                     |
+|     input -> pandoc -> output             |     input -> pandoc -> output                       |
+|     pandoc -> panda -> {pandoc, diagrams} |     pandoc -> panda -> {pandoc, diagrams}           |
+|     { rank=same; pandoc, panda }          |     { rank=same; pandoc, panda }                    |
+|     { rank=same; diagrams, output }       |     { rank=same; diagrams, output }                 |
+| }                                         | }                                                   |
+| ```                                       | ```                                                 |
+| ~~~                                       |                                                     |
++-------------------------------------------+-----------------------------------------------------+
+| ~~~ markdown                              |                                                     |
+| ```{ render="{{gnuplot}}"                 | ```{ render="{{gnuplot}}"                           |
+|      img="img/panda_gnuplot_example"      |      img="{{build}}/img/panda_gnuplot_example"      |
+|      out="{{build}}/img" }                |      out="{{build}}/img" height=192 }               |
+| set xrange [-pi:pi]                       | set xrange [-2*pi:2*pi]                             |
+| set yrange [-1.5:1.5]                     | set yrange [-1.5:1.5]                               |
+| plot sin(x) lw 4, cos(x) lw 4             | plot sin(x) lw 4, cos(x) lw 4                       |
+| ```                                       | ```                                                 |
+| ~~~                                       |                                                     |
++-------------------------------------------+-----------------------------------------------------+
 
 Filters can be combined. E.g.: a diagram can be stored in an external file, included and rendered by `panda`.
 
@@ -402,7 +402,7 @@ Filters can be combined. E.g.: a diagram can be stored in an external file, incl
 | and is rendered as:                       | and is rendered as:                       |
 |                                           |                                           |
 | ```{ render="{{dot}}"                     | ```{ render="{{dot}}"                     |
-|      img="img/hello"                      |      img="img/hello"                      |
+|      img="img/hello"                      |      img="{{build}}/img/hello"            |
 |      out="{{build}}/img"                  |      out="{{build}}/img"                  |
 |      include="{{doc}}/hello.dot" }        |      include="{{doc}}/hello.dot" }        |
 | ```                                       | ```                                       |

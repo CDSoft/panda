@@ -76,4 +76,4 @@ Pandoc is great!
 Diagrams
 ========
 
-![](img/panda_plantuml_test.svg "Alice & Bob")
+![](.build/img/panda_plantuml_test.svg "Alice & Bob")

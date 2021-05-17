@@ -8,7 +8,7 @@ bar = "The title is: "..utils.stringify(title)
 email = "[my email](me@example.com)"
 ```
 
-```{.meta include=test.lua}
+```{.meta include=test/test.lua}
 ```
 
 ```lua
@@ -58,13 +58,13 @@ baz is yo
 
 # File inclusion
 
-```{.c include=test_include.c from=5}
+```{.c include=test/test_include.c from=5}
 ```
 
-```{include=test_include.c pattern="(main).-(%b{})" format="%1 = %2"}
+```{include=test/test_include.c pattern="(main).-(%b{})" format="%1 = %2"}
 ```
 
-:::{include=test_include.md shift=1}
+:::{include=test/test_include.md shift=1}
 :::
 
 # Scripts
@@ -77,7 +77,7 @@ print("Pandoc is great!")
 
 # Diagrams
 
-```{render="{{plantuml}}" img="img/panda_plantuml_test" out="{{doc}}/img" title="Alice & Bob"}
+```{render="{{plantuml}}" img="{{build}}/img/panda_plantuml_test" out="{{build}}/img" title="Alice & Bob"}
 @startuml
 Alice -> Bob: hello
 @enduml

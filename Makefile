@@ -24,45 +24,48 @@ all: test doc
 .PHONY: install
 
 install:
-	install panda.lua ${INSTALL_PATH}/
-	install panda ${INSTALL_PATH}/
+	install panda.lua $(INSTALL_PATH)/
+	install panda $(INSTALL_PATH)/
 
 .PHONY: install-all
 
-install-all: install plantuml.jar ditaa.jar
-	install plantuml.jar ${INSTALL_PATH}/
-	install ditaa.jar ${INSTALL_PATH}/
+install-all: install $(BUILD)/plantuml.jar $(BUILD)/ditaa.jar
+	install $(BUILD)/plantuml.jar $(INSTALL_PATH)/
+	install $(BUILD)/ditaa.jar $(INSTALL_PATH)/
 
 .PHONY: test
 
-test: ${BUILD}/test.md test_result.md
-	diff ${BUILD}/test.md test_result.md
+test: $(BUILD)/test.md test/test_result.md
+	diff $(BUILD)/test.md test/test_result.md
 	# Well done
 
-${BUILD}/test.md: panda panda.lua test.md test_include.md test_include.c plantuml.jar ditaa.jar
-	@mkdir -p ${BUILD}
-	PANDA_TARGET=$@ ./panda --standalone test.md -o ${BUILD}/test.md
+$(BUILD)/test.md: panda panda.lua test/test.md test/test_include.md test/test_include.c $(BUILD)/plantuml.jar $(BUILD)/ditaa.jar
+	@mkdir -p $(BUILD) $(BUILD)/img
+	build=$(BUILD) PANDA_TARGET=$@ PLANTUML=$(BUILD)/plantuml.jar ./panda --standalone test/test.md -o $(BUILD)/test.md
 
 .PHONY: diff
 
-diff: ${BUILD}/test.md test_result.md
+diff: $(BUILD)/test.md test/test_result.md
 	meld $^
 
 .PHONY: doc
 
-doc: ${BUILD}/panda.html
+doc: $(BUILD)/panda.html
 
-CSS = cdelord.css
+CSS = $(BUILD)/cdelord.css
 
-${BUILD}/panda.html: doc/panda.md doc/hello.dot $(CSS) panda panda.lua
-	@mkdir -p ${BUILD} img
-	doc=doc build=$(BUILD) PANDA_TARGET=$@ ./panda --to=html5 --standalone --self-contained --css=$(CSS) $< -o $@
+$(BUILD)/panda.html: doc/panda.md doc/hello.dot $(CSS) panda panda.lua
+	@mkdir -p $(BUILD) $(BUILD)/img
+	doc=doc build=$(BUILD) PANDA_TARGET=$@ PLANTUML=$(BUILD)/plantuml.jar DITAA=$(BUILD)/ditaa.jar ./panda --to=html5 --standalone --self-contained --css=$(CSS) $< -o $@
 
-cdelord.css:
-	wget http://cdelord.fr/cdelord.css -O cdelord.css
+$(CSS):
+	@mkdir -p $(dir $@)
+	wget http://cdelord.fr/cdelord.css -O $@
 
-plantuml.jar:
+$(BUILD)/plantuml.jar:
+	@mkdir -p $(BUILD)
 	wget http://sourceforge.net/projects/plantuml/files/plantuml.jar/download -O $@
 
-ditaa.jar:
+$(BUILD)/ditaa.jar:
+	@mkdir -p $(BUILD)
 	wget https://github.com/stathissideris/ditaa/releases/download/v0.11.0/ditaa-0.11.0-standalone.jar -O $@
