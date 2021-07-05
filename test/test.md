@@ -79,6 +79,8 @@ print("Pandoc is great!")
 
 1 + 1 = `echo $((1+1))`{cmd=sh}
 
+1 + 1 = `echo $((1+1))`{icmd=sh}
+
 # Diagrams
 
 ```{render="{{plantuml}}" img="{{build}}/img/panda_plantuml_test" out="{{build}}/img" title="Alice & Bob"}

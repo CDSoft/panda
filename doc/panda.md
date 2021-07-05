@@ -79,61 +79,63 @@ A complete example is given as a Makefile in the doc directory.
 Cheat sheet
 ===========
 
-+-------------------+---------------+-----------------------+-----------------------------------------------+
-| Syntactic item    | Class         | Attributes            | Description                                   |
-+===================+===============+=======================+===============================================+
-| any string        |               |                       | `{{var}}` is replaced by the value of `var`   |
-|                   |               |                       | if it is defined (variables can be            |
-|                   |               |                       | environment variables or Lua variables)       |
-+-------------------+---------------+-----------------------+-----------------------------------------------+
-| div block         | `comment`     |                       | commented block                               |
-+-------------------+---------------+-----------------------+-----------------------------------------------+
-| div block         |               | `include=file`        | replaces the div block with the content of    |
-|                   |               |                       | `file` (rendered according to its format)     |
-+-------------------+---------------+-----------------------+-----------------------------------------------+
-| div block         |               | `shift=n`             | adds `n` to header levels in an imported      |
-|                   |               |                       | div block                                     |
-+-------------------+---------------+-----------------------+-----------------------------------------------+
-| div block,        |               | `pattern="Lua string  | applies a Lua string pattern to the content   |
-| code block        |               | pattern"`             | of the file. The emitted text is `format`.    |
-|                   |               | `format="output       | `format` may contain captures from `pattern`. |
-|                   |               | format"`              |                                               |
-+-------------------+---------------+-----------------------+-----------------------------------------------+
-| code block        | `meta`        |                       | definitions for the string expansion          |
-|                   |               |                       | (Lua script), defined in the code block       |
-+-------------------+---------------+-----------------------+-----------------------------------------------+
-| any block         |               | `ifdef=name`          | block emitted only if `name` is defined       |
-+-------------------+---------------+-----------------------+-----------------------------------------------+
-| any block         |               | `ifdef=name value=val`| block emitted only if `name` is defined and   |
-|                   |               |                       | its value is `value`                          |
-+-------------------+---------------+-----------------------+-----------------------------------------------+
-| any block         |               | `ifndef=name`         | block emitted only if `name` is not defined   |
-+-------------------+---------------+-----------------------+-----------------------------------------------+
-| code block,       |               | `include=file`        | replaces the code block content with the      |
-| inline code       |               |                       | content of `file`                             |
-+-------------------+---------------+-----------------------+-----------------------------------------------+
-| code block,       |               | `fromline=n`          | includes a file from line number `n`          |
-| inline code       |               |                       |                                               |
-+-------------------+---------------+-----------------------+-----------------------------------------------+
-| code block,       |               | `toline=n`            | includes a file up to line number `n`         |
-| inline code       |               |                       |                                               |
-+-------------------+---------------+-----------------------+-----------------------------------------------+
-| code block,       |               | `cmd="shell command"` | replaces the code block by the result of the  |
-| inline code       |               |                       | shell command                                 |
-+-------------------+---------------+-----------------------+-----------------------------------------------+
-| code block        |               | `render="command"`    | replaces the code block by a link to the      |
-|                   |               |                       | image produced by the command (`%i` is the    |
-|                   |               |                       | input file name, its content is the content   |
-|                   |               |                       | of the code block, `%o` is the output file    |
-|                   |               |                       | name)                                         |
-+-------------------+---------------+-----------------------+-----------------------------------------------+
-| code block        |               | `img="image path"`    | URL of the image produced by `render`         |
-|                   |               |                       | (optional, the default value is a generated   |
-|                   |               |                       | name in the `./.panda` directory).            |
-+-------------------+---------------+-----------------------+-----------------------------------------------+
-| code block        |               | `out="image path"`    | path of the image produced by `render`        |
-|                   |               |                       | (optional, the default value is `img`)        |
-+-------------------+---------------+-----------------------+-----------------------------------------------+
++-------------------+---------------+---------------------------+-----------------------------------------------+
+| Syntactic item    | Class         | Attributes                | Description                                   |
++===================+===============+===========================+===============================================+
+| any string        |               |                           | `{{var}}` is replaced by the value of `var`   |
+|                   |               |                           | if it is defined (variables can be            |
+|                   |               |                           | environment variables or Lua variables)       |
++-------------------+---------------+---------------------------+-----------------------------------------------+
+| div block         | `comment`     |                           | commented block                               |
++-------------------+---------------+---------------------------+-----------------------------------------------+
+| div block         |               | `include=file`            | replaces the div block with the content of    |
+|                   |               |                           | `file` (rendered according to its format)     |
++-------------------+---------------+---------------------------+-----------------------------------------------+
+| div block         |               | `shift=n`                 | adds `n` to header levels in an imported      |
+|                   |               |                           | div block                                     |
++-------------------+---------------+---------------------------+-----------------------------------------------+
+| div block,        |               | `pattern="Lua string      | applies a Lua string pattern to the content   |
+| code block        |               | pattern"`                 | of the file. The emitted text is `format`.    |
+|                   |               | `format="output           | `format` may contain captures from `pattern`. |
+|                   |               | format"`                  |                                               |
++-------------------+---------------+---------------------------+-----------------------------------------------+
+| code block        | `meta`        |                           | definitions for the string expansion          |
+|                   |               |                           | (Lua script), defined in the code block       |
++-------------------+---------------+---------------------------+-----------------------------------------------+
+| any block         |               | `ifdef=name`              | block emitted only if `name` is defined       |
++-------------------+---------------+---------------------------+-----------------------------------------------+
+| any block         |               | `ifdef=name value=val`    | block emitted only if `name` is defined and   |
+|                   |               |                           | its value is `value`                          |
++-------------------+---------------+---------------------------+-----------------------------------------------+
+| any block         |               | `ifndef=name`             | block emitted only if `name` is not defined   |
++-------------------+---------------+---------------------------+-----------------------------------------------+
+| code block,       |               | `include=file`            | replaces the code block content with the      |
+| inline code       |               |                           | content of `file`                             |
++-------------------+---------------+---------------------------+-----------------------------------------------+
+| code block,       |               | `fromline=n`              | includes a file from line number `n`          |
+| inline code       |               |                           |                                               |
++-------------------+---------------+---------------------------+-----------------------------------------------+
+| code block,       |               | `toline=n`                | includes a file up to line number `n`         |
+| inline code       |               |                           |                                               |
++-------------------+---------------+---------------------------+-----------------------------------------------+
+| code block,       |               | `cmd="shell command"`     | replaces the code block by the result of the  |
+| inline code       |               | `icmd="shell command"`    | shell command. With`icmd` the code block      |
+|                   |               |                           | content is parsed by Pandoc and included in a |
+|                   |               |                           | Div block.                                    |
++-------------------+---------------+---------------------------+-----------------------------------------------+
+| code block        |               | `render="command"`        | replaces the code block by a link to the      |
+|                   |               |                           | image produced by the command (`%i` is the    |
+|                   |               |                           | input file name, its content is the content   |
+|                   |               |                           | of the code block, `%o` is the output file    |
+|                   |               |                           | name)                                         |
++-------------------+---------------+---------------------------+-----------------------------------------------+
+| code block        |               | `img="image path"`        | URL of the image produced by `render`         |
+|                   |               |                           | (optional, the default value is a generated   |
+|                   |               |                           | name in the `./.panda` directory).            |
++-------------------+---------------+---------------------------+-----------------------------------------------+
+| code block        |               | `out="image path"`        | path of the image produced by `render`        |
+|                   |               |                           | (optional, the default value is `img`)        |
++-------------------+---------------+---------------------------+-----------------------------------------------+
 
 Commented blocks
 ================
@@ -251,6 +253,9 @@ If the command contains the `%s` char, it is replaced by the temporary file name
 If the command does not contain any `%s`, the file name is appended to the command.
 The result replaces the content of the code block.
 
+`icmd` can be used instead of `cmd` to let Pandoc parse the result of the command
+and include it in the document as a Span or Div node.
+
 +-------------------------------------------------------+-------------------------------------------------------+
 | Source                                                | Result                                                |
 +=======================================================+=======================================================+
@@ -261,7 +266,7 @@ The result replaces the content of the code block.
 | ~~~                                                   |                                                       |
 +-------------------------------------------------------+-------------------------------------------------------+
 | ~~~ markdown                                          |                                                       |
-| Python says `print("Hello from Python!")`{cmd=python} | Python says `print("Hello from Python!")`{cmd=python} |
+| Lua says `print "Hello from Lua!"`{icmd=lua}          | Lua says `print "Hello from Lua!"`{icmd=lua}          |
 | ~~~                                                   |                                                       |
 +-------------------------------------------------------+-------------------------------------------------------+
 

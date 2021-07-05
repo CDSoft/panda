@@ -356,6 +356,23 @@ local function apply_pattern(pattern, format, content)
     return content
 end
 
+local function parse_and_shift(text, shift)
+    local doc = pandoc.read(text)
+    local div = pandoc.Div(doc.blocks)
+    if shift then
+        div = pandoc.walk_block(div, {
+            Header = function(h)
+                h = h:clone()
+                h.level = h.level + shift
+                return h
+            end })
+    end
+    for _, filter in ipairs(filters) do
+        div = pandoc.walk_block(div, filter)
+    end
+    return div.content
+end
+
 local function include_div(block)
     local filename = get_attr(block, "include")
     if filename then
@@ -364,20 +381,7 @@ local function include_div(block)
         local format = get_attr(block, "format")
         local filename, content = track_file(filename)
         content = apply_pattern(pattern, format, content)
-        local doc = pandoc.read(content)
-        local div = pandoc.Div(doc.blocks)
-        if shift then
-            div = pandoc.walk_block(div, {
-                Header = function(h)
-                    h = h:clone()
-                    h.level = h.level + shift
-                    return h
-                end })
-        end
-        for _, filter in ipairs(filters) do
-            div = pandoc.walk_block(div, filter)
-        end
-        return div.content
+        return parse_and_shift(content, shift)
     end
 end
 
@@ -437,13 +441,21 @@ local function run_script(cmd, content)
     end)
 end
 
-local function script(block)
-    local cmd = get_attr(block, "cmd")
-    if cmd then
-        local code = block:clone()
-        code.text = run_script(cmd, code.text)
-        code.attr = clean_attr({}, {"cmd"}, code.attr)
-        return code
+local function script(conf)
+    return function(block)
+        local cmd = get_attr(block, "cmd")
+        local icmd = get_attr(block, "icmd")
+        local shift = tonumber(get_attr(block, "shift"))
+        if cmd or icmd then
+            local code = block:clone()
+            code.text = run_script(cmd or icmd, code.text)
+            code.attr = clean_attr({}, {"cmd", "icmd", "shift"}, code.attr)
+            if icmd then
+                code = parse_and_shift(code.text)
+                code = conf.inline and utils.blocks_to_inlines(code) or code
+            end
+            return code
+        end
     end
 end
 
@@ -591,8 +603,8 @@ filters = {
     },
 
     -- Scripts
-    { CodeBlock = script,
-      Code = script,
+    { CodeBlock = script{inline=false},
+      Code = script{inline=true},
     },
 
     -- Diagrams
