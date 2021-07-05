@@ -2,6 +2,10 @@
 
 # Expansion
 
+Input file: {{input_file}}
+
+Output file: {{output_file}}
+
 ```meta
 foo = "bar"
 bar = "The title is: "..utils.stringify(title)

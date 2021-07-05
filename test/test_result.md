@@ -5,6 +5,10 @@ title: 'Test document for *panda*'
 Expansion
 =========
 
+Input file: test/test.md
+
+Output file: .build/test.md
+
 ``` {.lua}
 -- normal code block
 -- foo = bar

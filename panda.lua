@@ -31,6 +31,8 @@ local env = {
     -- Pandoc modules
     pandoc = pandoc,
     utils = utils,
+    input_file = PANDOC_STATE.input_files[1],
+    output_file = PANDOC_STATE.output_file,
 
     -- Basic functions
     assert = assert,
