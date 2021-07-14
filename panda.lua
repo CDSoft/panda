@@ -194,7 +194,11 @@ end
 
 local function read_vars_in_meta(meta)
     for k, v in pairs(meta) do
-        env[k] = {table.unpack(v)}
+        if type(v) == 'boolean' then
+          env[k] = v
+        else
+          env[k] = {table.unpack(v)}
+        end
     end
 end
 
