@@ -21,6 +21,15 @@ BUILD = .build
 
 all: test doc
 
+.PHONY: clean
+.PHONY: distclean
+
+clean:
+	find $(BUILD) -maxdepth 1 ! -name $(BUILD) ! -name "*.jar" ! -name "*.css" -exec rm -rf {} \;
+
+distclean:
+	rm -rf $(BUILD)
+
 .PHONY: install
 
 install:
