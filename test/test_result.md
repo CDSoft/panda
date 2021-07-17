@@ -1,4 +1,7 @@
 ---
+boolean_metadata_true: true
+number_metadata: 42
+string_metadata: true
 title: 'Test document for *panda*'
 ---
 
@@ -19,6 +22,10 @@ Output file: .build/test.md
 ```
 
 -   title = Test document for *panda*
+-   string\_metadata = true
+-   boolean\_metadata\_true = true
+-   boolean\_metadata\_false = false
+-   number\_metadata = 42
 -   foo = bar
 -   bar = The title is: Test document for panda
 -   baz = {{baz}}

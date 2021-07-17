@@ -194,7 +194,11 @@ end
 
 local function read_vars_in_meta(meta)
     for k, v in pairs(meta) do
-        env[k] = {table.unpack(v)}
+        if type(v) == "table" and v.t == 'MetaInlines' then
+            env[k] = {table.unpack(v)}
+        else
+            env[k] = pandoc.MetaString(utils.stringify(v))
+        end
     end
 end
 

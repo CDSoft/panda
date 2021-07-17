@@ -1,4 +1,10 @@
-% Test document for *panda*
+---
+title: Test document for *panda*
+string_metadata: "true"
+boolean_metadata_true: true
+boolean_metadata_false: false
+number_metadata: 42
+---
 
 # Expansion
 
@@ -25,6 +31,10 @@ email = "[my email](me@example.com)"
 ```
 
 - title = {{title}}
+- string\_metadata = {{string_metadata}}
+- boolean\_metadata\_true = {{boolean_metadata_true}}
+- boolean\_metadata\_false = {{boolean_metadata_false}}
+- number\_metadata = {{number_metadata}}
 - foo = {{foo}}
 - bar = {{bar}}
 - baz = {{baz}}
