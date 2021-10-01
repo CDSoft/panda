@@ -476,8 +476,8 @@ local function set_diagram_env()
     local default_ext = "svg"
     if FORMAT == "html" then default_ext = "svg" end
     if FORMAT == "html5" then default_ext = "svg" end
-    if FORMAT == "latex" then default_ext = "png" end
-    if FORMAT == "beamer" then default_ext = "png" end
+    if FORMAT == "latex" then default_ext = "pdf" end
+    if FORMAT == "beamer" then default_ext = "pdf" end
 
     local function engines(exes, exts, cmd, post)
         post = post or function(_, c) return c end

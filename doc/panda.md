@@ -356,7 +356,7 @@ Notes:
 
 - renderers without an explicit image format are built differently according to the output document format.
 
-    - For PDF (LaTeX) documents, the default format is PNG
+    - For PDF (LaTeX) documents, the default format is PDF
     - For other documents, the default format is SVG
     - The file extension is added to the `img` field
 
