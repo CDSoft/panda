@@ -541,7 +541,8 @@ local function diagram(block)
         local meta_content = "source: "..hash_digest.."\n"..
                              "render: "..render.."\n"..
                              "img: "..img.."\n"..
-                             "out: "..out.."\n"
+                             "out: "..out.."\n"..
+                             "\n"..contents
 
         local old_meta = file_content(meta) or ""
         if not file_exists(out..ext) or meta_content ~= old_meta then
