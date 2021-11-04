@@ -212,10 +212,10 @@ end
 
 local function expand_vars(s)
     s = s:gsub(var_pattern, function (var)
-        return var and env[var] and utils.stringify(env[var])
+        return var and env[var]~=nil and utils.stringify(env[var])
     end)
     s = s:gsub(var_pattern_esc, function (var)
-        return var and env[var] and utils.stringify(env[var])
+        return var and env[var]~=nil and utils.stringify(env[var])
     end)
     return s
 end
@@ -243,6 +243,8 @@ local function expand_str(el)
             if value then
                 if type(value) == "string" then
                     value = utils.blocks_to_inlines(pandoc.read(value).blocks)
+                    items:extend(value)
+                elseif type(value) == "table" then
                     items:extend(value)
                 else
                     items:insert(value)

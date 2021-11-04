@@ -30,12 +30,12 @@ email = "[my email](me@example.com)"
 -- email2 = {{email2}}
 ```
 
-- title = {{title}}
-- string\_metadata = {{string_metadata}}
+- title = "{{title}}"
+- string\_metadata = {{string_metadata}} ({{string_metadata}}) {{string_metadata}}, {{string_metadata}}.
 - boolean\_metadata\_true = {{boolean_metadata_true}}
 - boolean\_metadata\_false = {{boolean_metadata_false}}
 - number\_metadata = {{number_metadata}}
-- foo = {{foo}}
+- foo = {{foo}} ({{foo}}) {{foo}}, {{foo}}.
 - bar = {{bar}}
 - baz = {{baz}}
 - email = {{email}}

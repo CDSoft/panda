@@ -21,12 +21,12 @@ Output file: .build/test.md
 -- email2 = me2@example.com
 ```
 
--   title = Test document for *panda*
--   string\_metadata = true
+-   title = "Test document for *panda*"
+-   string\_metadata = true (true) true, true.
 -   boolean\_metadata\_true = true
 -   boolean\_metadata\_false = false
 -   number\_metadata = 42
--   foo = bar
+-   foo = bar (bar) bar, bar.
 -   bar = The title is: Test document for panda
 -   baz = {{baz}}
 -   email = [my email](me@example.com)
