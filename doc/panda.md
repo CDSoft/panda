@@ -260,6 +260,10 @@ The render command is the `render` field.
 The output image can be a hash computed from the diagram source code or the value of the `img` field.
 The optional `out` field overloads `img` to change the output directory when rendering the diagram.
 
+The description of the image is in the `caption` and `alt` fields.
+`caption` is the caption of the diagram. `alt` is the alternative description of the diagram.
+The optional `target` field is a URL pointed by the image.
+
 In the `render` command, `%i` is replaced by the name of the input document
 (generated from the content of the code block) and
 `%o` by the name of the output image file (generated from the `img` field).
@@ -283,7 +287,9 @@ _build = "{{build}}"
 | ~~~ markdown                          |                                                 |
 | ``` { render="{{_plantuml}}"          | ``` { render="{{plantuml}}"                     |
 |       img="img/panda_plantuml_demo"   |       img="{{build}}/img/panda_plantuml_demo"   |
-|       out="{{_build}}/img" }          |       out="{{build}}/img" }                     |
+|       out="{{_build}}/img"            |       out="{{build}}/img"                       |
+|       caption="Caption"               |       caption="Caption"                         |
+|       alt="Alternative description" } |       alt="Alternative description" }           |
 | @startuml                             | @startuml                                       |
 | Alice -> Bob: hello                   | Alice -> Bob: test                              |
 | @enduml                               | @enduml                                         |

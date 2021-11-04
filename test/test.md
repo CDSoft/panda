@@ -117,13 +117,13 @@ print("Pandoc is great!")
 
 # Diagrams
 
-```{render="{{plantuml}}" img="{{build}}/img/panda_plantuml_test" out="{{build}}/img" title="Alice & Bob"}
+```{render="{{plantuml}}" img="{{build}}/img/panda_plantuml_test" out="{{build}}/img" caption="Alice & Bob"}
 @startuml
 Alice -> Bob: hello
 @enduml
 ```
 
-```{render="{{plantuml}}" title="Alice & Bob"}
+```{render="{{plantuml}}" caption="Alice & Bob" alt="Alternative description" target="http://example.com"}
 @startuml
 Alice -> Bob: hello
 @enduml

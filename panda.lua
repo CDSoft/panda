@@ -567,11 +567,14 @@ local function diagram(block)
             end)
         end
 
-        local title = get_attr(block, "title") or ""
-        local attrs = clean_attr({}, {"render", "img", "out", "target", "title"}, block.attr)
-        local image = pandoc.Image({}, img..ext, title, attrs)
+        local caption = get_attr(block, "caption")
+        local title = get_attr(block, "title") -- deprecated, use caption
+        caption = caption or title or ""
+        local alt = get_attr(block, "alt") or caption
+        local attrs = clean_attr({}, {"render", "img", "out", "target", "caption", "title", "alt"}, block.attr)
+        local image = pandoc.Image(alt, img..ext, caption, attrs)
         if target then
-            return pandoc.Para{pandoc.Link(image, target, title)}
+            return pandoc.Para{pandoc.Link(image, target, caption)}
         else
             return pandoc.Para{image}
         end
