@@ -1,7 +1,7 @@
 ---
 boolean_metadata_true: true
 number_metadata: 42
-string_metadata: true
+string_metadata: a string
 title: 'Test document for *panda*'
 ---
 
@@ -22,7 +22,7 @@ Output file: .build/test.md
 ```
 
 -   title = "Test document for *panda*"
--   string\_metadata = true (true) true, true.
+-   string\_metadata = a string (a string) a string, a string.
 -   boolean\_metadata\_true = true
 -   boolean\_metadata\_false = false
 -   number\_metadata = 42
@@ -51,6 +51,24 @@ Condition
 <div>
 
 foo is bar
+
+</div>
+
+<div>
+
+`number_medatata` is 42
+
+</div>
+
+<div>
+
+`boolean_metadata_false` is false
+
+</div>
+
+<div>
+
+`string_metadata` is `"a string"`
 
 </div>
 

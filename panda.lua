@@ -326,7 +326,13 @@ local function conditional(block)
         local attributes_to_clean = {}
         local cond = true
         for k, v in pairs(block.attr.attributes) do
-            cond = cond and (env[k] == v)
+            local val = env[k]
+            if type(val) == "table" then
+                val = utils.stringify(val)
+            else
+                val = tostring(val)
+            end
+            cond = cond and (val == v)
             table.insert(attributes_to_clean, k)
         end
         if cond then
