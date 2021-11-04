@@ -1,6 +1,6 @@
 % Panda - Pandoc add-ons (Lua filters for Pandoc)
 % Christophe Delord - <http://cdelord.fr/panda>
-% 30th April 2021
+% 4th november 2021
 
 [panda]: http://cdelord.fr/panda "Pandoc add-ons (Lua filters for Pandoc)"
 [GraphViz]: http://graphviz.org/
@@ -102,12 +102,7 @@ Cheat sheet
 | code block        | `meta`        |                           | definitions for the string expansion          |
 |                   |               |                           | (Lua script), defined in the code block       |
 +-------------------+---------------+---------------------------+-----------------------------------------------+
-| any block         |               | `ifdef=name`              | block emitted only if `name` is defined       |
-+-------------------+---------------+---------------------------+-----------------------------------------------+
-| any block         |               | `ifdef=name value=val`    | block emitted only if `name` is defined and   |
-|                   |               |                           | its value is `value`                          |
-+-------------------+---------------+---------------------------+-----------------------------------------------+
-| any block         |               | `ifndef=name`             | block emitted only if `name` is not defined   |
+| any block         | `if`          | `name=val`                | block emitted only if `name`'s value is `val` |
 +-------------------+---------------+---------------------------+-----------------------------------------------+
 | code block,       |               | `include=file`            | replaces the code block content with the      |
 | inline code       |               |                           | content of `file`                             |
@@ -187,22 +182,8 @@ Conditional blocks
 Blocks can be conditionally kept or omitted. The condition is described with attributes.
 
 ```markdown
-:::{ifdef="name" value="value"}
-This block is emitted only if the variable "name" is defined
-and its value is "value"
-:::
-```
-
-```markdown
-:::{ifdef="name"}
-This block is emitted only if the variable "name" is defined
-(whatever its value)
-:::
-```
-
-```markdown
-:::{ifndef="name"}
-This block is emitted only if the variable "name" is **not** defined
+:::{.if name="value"}
+This block is emitted only if the value of the variable "name" is "value"
 :::
 ```
 
