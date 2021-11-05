@@ -609,7 +609,9 @@ filters = {
     },
 
     -- Conditional blocks
-    { Block = conditional },
+    { Block = conditional,
+      Inline = conditional,
+    },
 
     -- Commented blocks
     { Block = comment },

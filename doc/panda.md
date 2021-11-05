@@ -86,13 +86,13 @@ Cheat sheet
 |                   |               |                           | if it is defined (variables can be            |
 |                   |               |                           | environment variables or Lua variables)       |
 +-------------------+---------------+---------------------------+-----------------------------------------------+
-| div block         | `comment`     |                           | commented block                               |
+| any block         | `comment`     |                           | commented block                               |
 +-------------------+---------------+---------------------------+-----------------------------------------------+
-| div block         |               | `include=file`            | replaces the div block with the content of    |
+| any block         |               | `include=file`            | replaces the div block with the content of    |
 |                   |               |                           | `file` (rendered according to its format)     |
 +-------------------+---------------+---------------------------+-----------------------------------------------+
-| div block         |               | `shift=n`                 | adds `n` to header levels in an imported      |
-|                   |               |                           | div block                                     |
+| div block,        |               | `shift=n`                 | adds `n` to header levels in an imported      |
+| code block        |               |                           | div block                                     |
 +-------------------+---------------+---------------------------+-----------------------------------------------+
 | div block,        |               | `pattern="Lua string      | applies a Lua string pattern to the content   |
 | code block        |               | pattern"`                 | of the file. The emitted text is `format`.    |
@@ -102,7 +102,8 @@ Cheat sheet
 | code block        | `meta`        |                           | definitions for the string expansion          |
 |                   |               |                           | (Lua script), defined in the code block       |
 +-------------------+---------------+---------------------------+-----------------------------------------------+
-| any block         | `if`          | `name=val`                | block emitted only if `name`'s value is `val` |
+| any block,        | `if`          | `name=val`                | block emitted only if `name`'s value is `val` |
+| any inline        |               |                           |                                               |
 +-------------------+---------------+---------------------------+-----------------------------------------------+
 | code block,       |               | `include=file`            | replaces the code block content with the      |
 | inline code       |               |                           | content of `file`                             |

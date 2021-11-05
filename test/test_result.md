@@ -72,6 +72,9 @@ foo is bar
 
 </div>
 
+Also works for inline spans. foo is bar and `string_metadata` is
+`"a string"`
+
 File inclusion
 ==============
 

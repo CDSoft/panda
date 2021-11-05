@@ -94,6 +94,13 @@ baz is yo
 `string_metadata` is `"a string"`
 :::
 
+Also works for inline spans.
+[foo is bar]{.if foo=bar}
+[foo is baz]{.if foo=baz}
+and
+[`string_metadata` is `"string"`]{.if string_metadata="string"}
+[`string_metadata` is `"a string"`]{.if string_metadata="a string"}
+
 # File inclusion
 
 ```{.c include=test/test_include.c from=5}
