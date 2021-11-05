@@ -439,6 +439,7 @@ end
 local function run_script(cmd, content)
     return system.with_temporary_directory("panda_script", function (tmpdir)
         local name = tmpdir.."/script"
+        name = name..cmd:gsub("^%s*(%w+).*", ".%1") -- try to guess the file extension (e.g. for cmd.exe on Windows)
         local f = assert(io.open(name, "w"))
         f:write(content)
         f:close()
