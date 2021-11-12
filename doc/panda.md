@@ -1,6 +1,6 @@
 % Panda - Pandoc add-ons (Lua filters for Pandoc)
 % Christophe Delord - <http://cdelord.fr/panda>
-% 4th november 2021
+% 12th november 2021
 
 [panda]: http://cdelord.fr/panda "Pandoc add-ons (Lua filters for Pandoc)"
 [GraphViz]: http://graphviz.org/
@@ -424,6 +424,9 @@ It is sometimes useful to build a dependency list on the fly.
 `panda` can generate a dependency list for make, in the same vein than the gcc `-M` option.
 The environment variable `PANDA_TARGET` must be defined with the target name.
 `panda` will generate a file named `${PANDA_TARGET}.d`{.sh} containing the dependencies of `${PANDA_TARGET}`{.sh}.
+
+The dependency filename can be redefined with the environment variable
+`PANDA_DEP_FILE` (e.g. to save the dependency file in a different directory).
 
 E.g.:
 

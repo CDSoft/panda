@@ -1,18 +1,18 @@
 ---
+boolean_metadata_false: false
 boolean_metadata_true: true
 number_metadata: 42
 string_metadata: a string
-title: 'Test document for *panda*'
+title: Test document for *panda*
 ---
 
-Expansion
-=========
+# Expansion
 
 Input file: test/test.md
 
 Output file: .build/test.md
 
-``` {.lua}
+``` lua
 -- normal code block
 -- foo = bar
 -- bar = The title is: Test document for panda
@@ -22,10 +22,10 @@ Output file: .build/test.md
 ```
 
 -   title = "Test document for *panda*"
--   string\_metadata = a string (a string) a string, a string.
--   boolean\_metadata\_true = true
--   boolean\_metadata\_false = false
--   number\_metadata = 42
+-   string_metadata = a string (a string) a string, a string.
+-   boolean_metadata_true = true
+-   boolean_metadata_false = false
+-   number_metadata = 42
 -   foo = bar (bar) bar, bar.
 -   bar = The title is: Test document for panda
 -   baz = {{baz}}
@@ -36,17 +36,13 @@ Output file: .build/test.md
 
 [bar](bar/index.html)
 
-Header { foo = bar } {#header-foo-foo}
---------------------
+## Header { foo = bar } {#header-foo-foo}
 
-Conditional blocks
-==================
+# Conditional blocks
 
-Comments
---------
+## Comments
 
-Condition
----------
+## Condition
 
 <div>
 
@@ -75,10 +71,9 @@ foo is bar
 Also works for inline spans. foo is bar and `string_metadata` is
 `"a string"`
 
-File inclusion
-==============
+# File inclusion
 
-``` {.c}
+``` c
 int main(void)
 {
     return 0;
@@ -91,15 +86,13 @@ int main(void)
         return 0;
     }
 
-Title of the included file
---------------------------
+## Title of the included file
 
 Content of the included file (foo = bar)
 
-Scripts
-=======
+# Scripts
 
-``` {.class}
+``` class
 Pandoc is great!
 ```
 
@@ -107,8 +100,7 @@ Pandoc is great!
 
 1 + 1 = 2
 
-Diagrams
-========
+# Diagrams
 
 ![Alice & Bob](.build/img/panda_plantuml_test.svg "Alice & Bob")
 

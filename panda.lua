@@ -21,8 +21,8 @@
 --]]
 
 local pandoc = require "pandoc"
-local utils = require "pandoc.utils"
-local system = require "pandoc.system"
+local utils = pandoc.utils
+local system = pandoc.system
 
 local filters = {}
 
@@ -304,8 +304,10 @@ local function add_dep(filename)
         deps:insert(filename)
     end
     if env["PANDA_TARGET"] then
-        local f = assert(io.open(env["PANDA_TARGET"]..".d", "w"), "Can not create "..env["PANDA_TARGET"])
-        f:write(env["PANDA_TARGET"]..": "..table.concat(deps, " ").."\n")
+        local target = env["PANDA_TARGET"]
+        local depfile = env["PANDA_DEP_FILE"] or target..".d"
+        local f = assert(io.open(depfile, "w"), "Can not create "..depfile)
+        f:write(target..": "..table.concat(deps, " ").."\n")
         f:close()
     end
 end
