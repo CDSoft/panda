@@ -24,6 +24,17 @@ local pandoc = require "pandoc"
 local utils = pandoc.utils
 local system = pandoc.system
 
+local api_1_22 = PANDOC_API_VERSION >= {1, 22}
+
+local nullBlock, nullInline
+if api_1_22 then
+    nullBlock = pandoc.Null()
+    nullInline = pandoc.Inline
+else
+    nullBlock = pandoc.Null
+    nullInline = pandoc.Inline
+end
+
 local filters = {}
 
 -- User Lua environment {{{
@@ -206,7 +217,7 @@ local function read_vars_in_block(block)
     if has_class(block, "meta") then
         block = include_codeblock(block) or block
         assert(load(block.text, block.text, "t", env))()
-        return pandoc.Null
+        return nullBlock
     end
 end
 
@@ -323,33 +334,35 @@ end
 
 -- Conditional blocks, commented blocks {{{
 
-local function conditional(block)
-    if has_class(block, "if") then
-        local attributes_to_clean = {}
-        local cond = true
-        for k, v in pairs(block.attr.attributes) do
-            local val = env[k]
-            if type(val) == "table" then
-                val = utils.stringify(val)
-            else
-                val = tostring(val)
+local function conditional(empty)
+    return function(block)
+        if has_class(block, "if") then
+            local attributes_to_clean = {}
+            local cond = true
+            for k, v in pairs(block.attr.attributes) do
+                local val = env[k]
+                if type(val) == "table" then
+                    val = utils.stringify(val)
+                else
+                    val = tostring(val)
+                end
+                cond = cond and (val == v)
+                table.insert(attributes_to_clean, k)
             end
-            cond = cond and (val == v)
-            table.insert(attributes_to_clean, k)
-        end
-        if cond then
-            local block = block:clone()
-            block.attr = clean_attr({"if"}, attributes_to_clean, block.attr)
-            return block
-        else
-            return pandoc.Null
+            if cond then
+                local block = block:clone()
+                block.attr = clean_attr({"if"}, attributes_to_clean, block.attr)
+                return block
+            else
+                return empty -- return pandoc.Null
+            end
         end
     end
 end
 
 local function comment(block)
     if has_class(block, "comment") then
-        return pandoc.Null
+        return nullBlock
     end
 end
 
@@ -430,7 +443,7 @@ end
 
 -- }}}
 
---- {{{ Scripts
+-- {{{ Scripts
 
 local function make_script_cmd(cmd, arg)
     local cmd, n = string.gsub(cmd, "%%s", arg)
@@ -611,8 +624,8 @@ filters = {
     },
 
     -- Conditional blocks
-    { Block = conditional,
-      Inline = conditional,
+    { Block = conditional(nullBlock),
+      Inline = conditional(nullInline),
     },
 
     -- Commented blocks
