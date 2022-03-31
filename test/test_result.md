@@ -21,7 +21,7 @@ Output file: .build/test.md
 -- email2 = me2@example.com
 ```
 
--   title = "Test document for *panda*"
+-   title = "Test document for panda"
 -   string_metadata = a string (a string) a string, a string.
 -   boolean_metadata_true = true
 -   boolean_metadata_false = false
@@ -104,4 +104,5 @@ Pandoc is great!
 
 ![Alice & Bob](.build/img/panda_plantuml_test.svg "Alice & Bob")
 
-[![Alternative description](.build/cache/0ec62f1568ac33e20ec8d430ae77a9cbe6c9cd46.svg "Alice & Bob")](http://example.com "Alice & Bob")
+[![Alternative
+description](.build/cache/0ec62f1568ac33e20ec8d430ae77a9cbe6c9cd46.svg "Alice & Bob")](http://example.com "Alice & Bob")
