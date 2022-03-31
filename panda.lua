@@ -482,7 +482,7 @@ local function set_diagram_env()
     engines("dot neato twopi circo fdp sfdp patchwork osage", "svg png pdf", "%exe -T%ext -o %o %i")
     engines("plantuml", "svg png pdf", "java -jar {{PLANTUML}} -pipe -charset UTF-8 -t%ext < %i > %o")
     engines("asy", "svg png pdf", "%exe -f %ext -o %o %i")
-    engines("mmdc", "svg png pdf", "%exe -i %i -o %i")
+    engines("mmdc", "svg png pdf", "%exe -i %i -o %o")
     engines("actdiag blockdiag  nwdiag  packetdiag  rackdiag  seqdiag", "svg png pdf", "%exe -a -T%ext -o %o %i")
     engines("ditaa", "svg png", "java -jar {{DITAA}} %svg -o -e UTF-8 %i %o", function(ext, cmd)
         return cmd:gsub("%%svg", ext=="svg" and "--svg" or "")
@@ -503,7 +503,7 @@ local function render_diagram(cmd, contents)
     local output = p:read("a")
     local ok, _, err = p:close()
     if not ok then
-        error("diagram error")
+        error("diagram error: "..output)
     end
 end
 
