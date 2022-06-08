@@ -321,7 +321,7 @@ local function conditional(empty)
                 block.attr = clean_attr({"if"}, attributes_to_clean, block.attr)
                 return block
             else
-                return empty -- return pandoc.Null
+                return empty, false -- return pandoc.Null
             end
         end
     end
@@ -329,7 +329,7 @@ end
 
 local function comment(block)
     if has_class(block, "comment") then
-        return nullBlock
+        return nullBlock, false
     end
 end
 
@@ -375,7 +375,7 @@ local function include_div(block)
         local format = get_attr(block, "format")
         local filename, content = track_file(filename)
         content = apply_pattern(pattern, format, content)
-        return parse_and_shift(content, shift)
+        return parse_and_shift(content, shift), false
     end
 end
 
@@ -404,7 +404,7 @@ include_codeblock = function(block)
         newblock.attr = clean_attr(
             {}, {"include", "from", "fromline", "to", "toline", "pattern", "format", "shift"},
             newblock.attr)
-        return newblock
+        return newblock, false
     end
 end
 
@@ -449,7 +449,7 @@ local function script(conf)
                 code = parse_and_shift(code.text)
                 code = conf.inline and utils.blocks_to_inlines(code) or code
             end
-            return code
+            return code, false
         end
     end
 end
@@ -557,9 +557,9 @@ local function diagram(block)
         local attrs = clean_attr({}, {"render", "img", "out", "target", "caption", "title", "alt"}, block.attr)
         local image = pandoc.Image(alt, img..ext, caption, attrs)
         if target then
-            return pandoc.Para{pandoc.Link(image, target, caption)}
+            return pandoc.Para{pandoc.Link(image, target, caption)}, false
         else
-            return pandoc.Para{image}
+            return pandoc.Para{image}, false
         end
     end
 end
@@ -570,6 +570,8 @@ get_env_var()
 set_diagram_env()
 
 filters = {
+    traverse = 'topdown',
+
     -- Macro expansion
     { Meta = read_vars_in_meta },
     { CodeBlock = read_vars_in_block },
