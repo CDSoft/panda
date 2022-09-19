@@ -114,7 +114,21 @@ and
 
 # Scripts
 
+## No script name
+
+```{.class cmd="python"}
+print("Pandoc is great!")
+```
+
+## Script name with implicit extension
+
 ```{.class cmd="python %s"}
+print("Pandoc is great!")
+```
+
+## Script name with explicit extension
+
+```{.class cmd="python %s.py"}
 print("Pandoc is great!")
 ```
 

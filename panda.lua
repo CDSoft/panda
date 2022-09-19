@@ -412,20 +412,43 @@ end
 
 -- {{{ Scripts
 
-local function make_script_cmd(cmd, arg)
-    local cmd, n = string.gsub(cmd, "%%s", arg)
-    if n == 0 then cmd = cmd .. " " .. arg end
+local function make_script_cmd(cmd, arg, ext)
+    arg = arg..ext
+    local n1, n2
+    cmd, n1 = cmd:gsub("%%s"..(ext and "%"..ext or ""), arg)
+    cmd, n2 = cmd:gsub("%%s", arg)
+    if n1+n2 == 0 then cmd = cmd .. " " .. arg end
     return cmd
+end
+
+local scripttypes = {
+    {cmd="^python",         ext=".py"},
+    {cmd="^lua",            ext=".lua"},
+    {cmd="^bash",           ext=".sh"},
+    {cmd="^zsh",            ext=".sh"},
+    {cmd="^sh",             ext=".sh"},
+    {cmd="^cmd",            ext=".cmd"},
+    {cmd="^command",        ext=".bat"},
+    {cmd="^dotnet%s+fs",    ext=".fs"}
+}
+
+local function script_ext(cmd)
+    local ext = cmd:match("%%s(%.%w+)") -- extension given by the command line
+    if ext then return ext end
+    for _, scripttype in ipairs(scripttypes) do
+        if cmd:match(scripttype.cmd) then return scripttype.ext end
+    end
+    return ""
 end
 
 local function run_script(cmd, content)
     return system.with_temporary_directory("panda_script", function (tmpdir)
         local name = tmpdir.."/script"
-        name = name..cmd:gsub("^%s*(%w+).*", ".%1") -- try to guess the file extension (e.g. for cmd.exe on Windows)
-        local f = assert(io.open(name, "w"))
+        local ext = script_ext(cmd)
+        local f = assert(io.open(name..ext, "w"))
         f:write(content)
         f:close()
-        local p = assert(io.popen(make_script_cmd(cmd, name)))
+        local p = assert(io.popen(make_script_cmd(cmd, name, ext)))
         local output = assert(p:read("a"))
         local ok, _, err = p:close()
         if ok then

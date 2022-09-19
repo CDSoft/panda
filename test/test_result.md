@@ -92,6 +92,20 @@ Content of the included file (foo = bar)
 
 # Scripts
 
+## No script name
+
+``` class
+Pandoc is great!
+```
+
+## Script name with implicit extension
+
+``` class
+Pandoc is great!
+```
+
+## Script name with explicit extension
+
 ``` class
 Pandoc is great!
 ```

@@ -238,6 +238,9 @@ The result replaces the content of the code block.
 `icmd` can be used instead of `cmd` to let Pandoc parse the result of the command
 and include it in the document as a Span or Div node.
 
+An explicit file extension can be given after `%s` for languages that require
+specific file extensions (e.g. `%s.fs` for F#).
+
 +-------------------------------------------------------+-------------------------------------------------------+
 | Source                                                | Result                                                |
 +=======================================================+=======================================================+
@@ -251,6 +254,8 @@ and include it in the document as a Span or Div node.
 | Lua says `print "Hello from Lua!"`{icmd=lua}          | Lua says `print "Hello from Lua!"`{icmd=lua}          |
 | ~~~                                                   |                                                       |
 +-------------------------------------------------------+-------------------------------------------------------+
+
+Note: `{.python cmd=python}` is equivalent to `{.python cmd="python %s"}` and `{.python cmd="python %s.py"}`.
 
 Diagrams
 ========
