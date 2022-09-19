@@ -65,7 +65,7 @@ CSS = $(BUILD)/cdelord.css
 
 $(BUILD)/panda.html: doc/panda.md doc/hello.dot $(CSS) panda panda.lua
 	@mkdir -p $(BUILD) $(BUILD)/img
-	doc=doc build=$(BUILD) PANDA_CACHE=$(BUILD)/cache PANDA_TARGET=$@ PLANTUML=$(BUILD)/plantuml.jar DITAA=$(BUILD)/ditaa.jar ./panda --to=html5 --standalone --self-contained --css=$(CSS) $< -o $@
+	doc=doc build=$(BUILD) PANDA_CACHE=$(BUILD)/cache PANDA_TARGET=$@ PLANTUML=$(BUILD)/plantuml.jar DITAA=$(BUILD)/ditaa.jar ./panda --to=html5 --standalone --embed-resources --css=$(CSS) $< -o $@
 
 $(CSS):
 	@mkdir -p $(dir $@)
