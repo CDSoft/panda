@@ -284,7 +284,7 @@ after the `%o` tag (e.g.: `%o.png`), not in the `img` field.
 
 ```meta
 _plantuml = "{{plantuml}}"
-_build = "{{build}}"
+_build = "output_path"
 ```
 
 +---------------------------------------+-------------------------------------------------+
@@ -355,13 +355,18 @@ Notes:
 
 E.g.:
 
+```meta
+_dot = "{{dot}}"
+_gnuplot = "{{gnuplot}}"
+```
+
 +-------------------------------------------+-----------------------------------------------------+
 | Source                                    | Result                                              |
 +===========================================+=====================================================+
 | ~~~ markdown                              |                                                     |
-| ```{.dot render="{{dot}}"                 | ```{.dot render="{{dot}}"                           |
+| ```{.dot render="{{_dot}}"                | ```{.dot render="{{dot}}"                           |
 |          img="img/panda_diagram_example"  |          img="{{build}}/img/panda_diagram_example"  |
-|          out="{{build}}/img" }            |          out="{{build}}/img" }                      |
+|          out="{{_build}}/img" }           |          out="{{build}}/img" }                      |
 | digraph {                                 | digraph {                                           |
 |     rankdir=LR;                           |     rankdir=LR;                                     |
 |     input -> pandoc -> output             |     input -> pandoc -> output                       |
@@ -373,9 +378,9 @@ E.g.:
 | ~~~                                       |                                                     |
 +-------------------------------------------+-----------------------------------------------------+
 | ~~~ markdown                              |                                                     |
-| ```{ render="{{gnuplot}}"                 | ```{ render="{{gnuplot}}"                           |
+| ```{ render="{{_gnuplot}}"                | ```{ render="{{gnuplot}}"                           |
 |      img="img/panda_gnuplot_example"      |      img="{{build}}/img/panda_gnuplot_example"      |
-|      out="{{build}}/img" }                |      out="{{build}}/img" height=192 }               |
+|      out="{{_build}}/img" }               |      out="{{build}}/img" height=192 }               |
 | set xrange [-pi:pi]                       | set xrange [-2*pi:2*pi]                             |
 | set yrange [-1.5:1.5]                     | set yrange [-1.5:1.5]                               |
 | plot sin(x) lw 4, cos(x) lw 4             | plot sin(x) lw 4, cos(x) lw 4                       |
@@ -385,13 +390,17 @@ E.g.:
 
 Filters can be combined. E.g.: a diagram can be stored in an external file, included and rendered by `panda`.
 
+```meta
+_doc = "path"
+```
+
 +-------------------------------------------+-------------------------------------------+
 | Source                                    | Result                                    |
 +===========================================+===========================================+
 | ~~~ markdown                              |                                           |
 | The file `hello.dot` contains:            | The file `hello.dot` contains:            |
 |                                           |                                           |
-| ```{.dot include="{{doc}}/hello.dot"      | ```{.dot include="{{doc}}/hello.dot"      |
+| ```{.dot include="{{_doc}}/hello.dot"     | ```{.dot include="{{doc}}/hello.dot"      |
 |          pattern="digraph%s*%b{}" }       |          pattern="digraph%s*%b{}" }       |
 | ```                                       | ```                                       |
 | ~~~                                       |                                           |
@@ -399,10 +408,10 @@ Filters can be combined. E.g.: a diagram can be stored in an external file, incl
 | ~~~ markdown                              |                                           |
 | and is rendered as:                       | and is rendered as:                       |
 |                                           |                                           |
-| ```{ render="{{dot}}"                     | ```{ render="{{dot}}"                     |
+| ```{ render="{{_dot}}"                    | ```{ render="{{dot}}"                     |
 |      img="img/hello"                      |      img="{{build}}/img/hello"            |
-|      out="{{build}}/img"                  |      out="{{build}}/img"                  |
-|      include="{{doc}}/hello.dot" }        |      include="{{doc}}/hello.dot" }        |
+|      out="{{_build}}/img"                 |      out="{{build}}/img"                  |
+|      include="{{_doc}}/hello.dot" }       |      include="{{doc}}/hello.dot" }        |
 | ```                                       | ```                                       |
 | ~~~                                       |                                           |
 +-------------------------------------------+-------------------------------------------+
@@ -416,8 +425,8 @@ E.g.:
 | Source                                    | Result                                    |
 +===========================================+===========================================+
 | ~~~ markdown                              |                                           |
-| ```{ render="{{dot}}"                     | ```{ render="{{dot}}"                     |
-|      include="{{doc}}/hello.dot" }        |      include="{{doc}}/hello.dot" }        |
+| ```{ render="{{_dot}}"                    | ```{ render="{{dot}}"                     |
+|      include="{{_doc}}/hello.dot" }       |      include="{{doc}}/hello.dot" }        |
 | ```                                       | ```                                       |
 | ~~~                                       |                                           |
 +-------------------------------------------+-------------------------------------------+
