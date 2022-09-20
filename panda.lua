@@ -429,7 +429,7 @@ local scripttypes = {
     {cmd="^sh",             ext=".sh"},
     {cmd="^cmd",            ext=".cmd"},
     {cmd="^command",        ext=".bat"},
-    {cmd="^dotnet%s+fs",    ext=".fs"}
+    {cmd="^dotnet%s+fsi",   ext=".fsx"},
 }
 
 local function script_ext(cmd)
