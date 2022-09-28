@@ -91,6 +91,11 @@ Cheat sheet
 | any block         |               | `include=file`            | replaces the div block with the content of    |
 |                   |               |                           | `file` (rendered according to its format)     |
 +-------------------+---------------+---------------------------+-----------------------------------------------+
+| div block         |               | `doc=file`                | replaces the div block with text blocks from  |
+|                   |               | `from=start_pattern`      | `file` (rendered according to its format).    |
+|                   |               | `to=end_pattern`          | Blocks are separated by the patterns `from`   |
+|                   |               |                           | and `to` (`@@@` is the default separator).    |
++-------------------+---------------+---------------------------+-----------------------------------------------+
 | div block,        |               | `shift=n`                 | adds `n` to header levels in an imported      |
 | code block        |               |                           | div block                                     |
 +-------------------+---------------+---------------------------+-----------------------------------------------+
@@ -109,10 +114,10 @@ Cheat sheet
 | inline code       |               |                           | content of `file`                             |
 +-------------------+---------------+---------------------------+-----------------------------------------------+
 | code block,       |               | `fromline=n`              | includes a file from line number `n`          |
-| inline code       |               |                           |                                               |
+| inline code       |               | `from=n`                  |                                               |
 +-------------------+---------------+---------------------------+-----------------------------------------------+
 | code block,       |               | `toline=n`                | includes a file up to line number `n`         |
-| inline code       |               |                           |                                               |
+| inline code       |               | `to=n`                    |                                               |
 +-------------------+---------------+---------------------------+-----------------------------------------------+
 | code block,       |               | `cmd="shell command"`     | replaces the code block by the result of the  |
 | inline code       |               | `icmd="shell command"`    | shell command. With`icmd` the code block      |
@@ -224,6 +229,22 @@ The optional `fromline` and `toline` defines the first and last lines to be incl
 The optional pattern describes the part of the text that will be rendered.
 The format uses the captures defined by the pattern to format the content of the block
 (`"%1"` if not defined).
+
+Documentation extraction
+========================
+
+Documentation fragments can be extracted from other source code files.
+The `doc` attribute contains the name of the file where documentation is extracted.
+All the documentation blocks are extracted, concatenated and parsed.
+The result replaces the div block content.
+
+~~~markdown
+:::{doc=file.h shift=n from="@@@" to="@@@"}
+This text is optional and will be replaced by the content of file.h
+which is delimited by @@@.
+Section title levels are shifted by n (0 if not specified).
+:::
+~~~
 
 Scripts
 =======

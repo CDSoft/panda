@@ -103,13 +103,18 @@ and
 
 # File inclusion
 
-```{.c include=test/test_include.c from=5}
+```{.c include=test/test_include.c from=15}
 ```
 
 ```{include=test/test_include.c pattern="(main).-(%b{})" format="%1 = %2"}
 ```
 
 :::{include=test/test_include.md shift=1}
+:::
+
+# Documentation extraction
+
+:::{doc=test/test_include.c from="@@@main"}
 :::
 
 # Scripts

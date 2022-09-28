@@ -90,6 +90,16 @@ int main(void)
 
 Content of the included file (foo = bar)
 
+# Documentation extraction
+
+This is the main module documentation.
+
+The main function is:
+
+``` c
+int main(void);
+```
+
 # Scripts
 
 ## No script name

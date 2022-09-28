@@ -410,6 +410,25 @@ end
 
 -- }}}
 
+-- {{{ Documentation extraction
+
+local function extract_doc(block)
+    local filename = get_attr(block, "doc")
+    if filename then
+        local shift = tonumber(get_attr(block, "shift"))
+        local from = get_attr(block, "from") or "@@@"
+        local to = get_attr(block, "to") or "@@@"
+        local f = assert(io.open(filename))
+        local content = assert(f:read"a")
+        f:close()
+        local output = {}
+        content:gsub(from.."(.-)"..to, function(doc) output[#output+1] = doc end)
+        return parse_and_shift(table.concat(output, "\n"), shift), false
+    end
+end
+
+-- }}}
+
 -- {{{ Scripts
 
 local function make_script_cmd(cmd, arg, ext)
@@ -626,6 +645,10 @@ filters = {
     -- File inclusion
     { CodeBlock = include_codeblock,
       Div = include_div,
+    },
+
+    -- Documentation extraction
+    { Div = extract_doc,
     },
 
     -- Scripts
