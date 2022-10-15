@@ -434,7 +434,7 @@ end
 local function make_script_cmd(cmd, arg, ext)
     arg = arg..ext
     local n1, n2
-    cmd, n1 = cmd:gsub("%%s"..(ext and "%"..ext or ""), arg)
+    cmd, n1 = cmd:gsub("%%s"..(ext~="" and "%"..ext or ""), arg)
     cmd, n2 = cmd:gsub("%%s", arg)
     if n1+n2 == 0 then cmd = cmd .. " " .. arg end
     return cmd
