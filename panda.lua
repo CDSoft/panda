@@ -291,10 +291,10 @@ local function add_dep(filename)
 end
 
 track_file = function(filename)
-    local filename = expand_vars(filename)
+    filename = expand_vars(filename)
     add_dep(filename)
     local content = assert(io.open(filename)):read("a")
-    return filename, content
+    return content
 end
 
 -- }}}
@@ -373,7 +373,7 @@ local function include_div(block)
         local shift = tonumber(get_attr(block, "shift"))
         local pattern = get_attr(block, "pattern")
         local format = get_attr(block, "format")
-        local filename, content = track_file(filename)
+        local content = track_file(filename)
         content = apply_pattern(pattern, format, content)
         return parse_and_shift(content, shift), false
     end
@@ -386,7 +386,7 @@ include_codeblock = function(block)
         local to = tonumber(get_attr(block, "to") or get_attr(block, "toline"))
         local pattern = get_attr(block, "pattern")
         local format = get_attr(block, "format")
-        local filename, content = track_file(filename)
+        local content = track_file(filename)
         if from or to then
             from = from or 1
             to = to or math.huge
@@ -418,9 +418,7 @@ local function extract_doc(block)
         local shift = tonumber(get_attr(block, "shift"))
         local from = get_attr(block, "from") or "@@@"
         local to = get_attr(block, "to") or "@@@"
-        local f = assert(io.open(filename))
-        local content = assert(f:read"a")
-        f:close()
+        local content = track_file(filename)
         local output = {}
         content:gsub(from.."(.-)"..to, function(doc) output[#output+1] = doc end)
         return parse_and_shift(table.concat(output, "\n"), shift), false
