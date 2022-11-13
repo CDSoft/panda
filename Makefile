@@ -16,10 +16,14 @@
 # For further information about Panda you can visit
 # http://cdelord.fr/panda
 
-INSTALL_PATH = $(HOME)/.local/bin
+INSTALL_PATH := $(firstword $(wildcard $(PREFIX) $(HOME)/.local/bin))
 BUILD = .build
 
 all: test doc
+
+#############################################################################
+# Clean
+#############################################################################
 
 .PHONY: clean
 .PHONY: distclean
@@ -30,6 +34,10 @@ clean:
 distclean:
 	rm -rf $(BUILD)
 
+#############################################################################
+# Installation
+#############################################################################
+
 .PHONY: install
 
 install:
@@ -38,9 +46,14 @@ install:
 
 .PHONY: install-all
 
-install-all: install $(BUILD)/plantuml.jar $(BUILD)/ditaa.jar
-	install $(BUILD)/plantuml.jar $(INSTALL_PATH)/
-	install $(BUILD)/ditaa.jar $(INSTALL_PATH)/
+install-all: install
+
+$(INSTALL_PATH)/%.jar: $(BUILD)/%.jar
+	install $< $(dir $@)
+
+#############################################################################
+# Tests
+#############################################################################
 
 .PHONY: test
 
@@ -57,6 +70,10 @@ $(BUILD)/test.md: panda panda.lua test/test.md test/test_include.md test/test_in
 diff: $(BUILD)/test.md test/test_result.md
 	meld $^
 
+#############################################################################
+# Documentation
+#############################################################################
+
 .PHONY: doc
 
 doc: $(BUILD)/panda.html
@@ -71,10 +88,28 @@ $(CSS):
 	@mkdir -p $(dir $@)
 	wget http://cdelord.fr/cdelord.css -O $@
 
+#############################################################################
+# PlantUML
+#############################################################################
+
+install-all: $(INSTALL_PATH)/plantuml.jar
+
+PLANTUML_VERSION = 1.2022.12
+PLANTUML_URL = https://github.com/plantuml/plantuml/releases/download/v$(PLANTUML_VERSION)/plantuml-$(PLANTUML_VERSION).jar
+
 $(BUILD)/plantuml.jar:
 	@mkdir -p $(BUILD)
-	wget http://sourceforge.net/projects/plantuml/files/plantuml.jar/download -O $@
+	wget $(PLANTUML_URL) -O $@
+
+#############################################################################
+# Ditaa
+#############################################################################
+
+install-all: $(INSTALL_PATH)/ditaa.jar
+
+DITAA_VERSION = 0.11.0
+DITAA_URL = https://github.com/stathissideris/ditaa/releases/download/v$(DITAA_VERSION)/ditaa-$(DITAA_VERSION)-standalone.jar
 
 $(BUILD)/ditaa.jar:
 	@mkdir -p $(BUILD)
-	wget https://github.com/stathissideris/ditaa/releases/download/v0.11.0/ditaa-0.11.0-standalone.jar -O $@
+	wget $(DITAA_URL) -O $@
