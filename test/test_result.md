@@ -19,6 +19,7 @@ Output file: .build/test.md
 -- baz = {{baz}}
 -- email = [my email](me@example.com)
 -- email2 = me2@example.com
+-- sumsq100 = 338350
 ```
 
 -   title = "Test document for panda"

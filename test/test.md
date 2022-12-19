@@ -16,6 +16,8 @@ Output file: {{output_file}}
 foo = "bar"
 bar = "The title is: "..utils.stringify(title)
 email = "[my email](me@example.com)"
+sumsq = function(n) return F.range(n):map(function(x) return x*x end):sum() end
+sumsq100 = sumsq(100)
 ```
 
 ```{.meta include=test/test.lua}
@@ -28,6 +30,7 @@ email = "[my email](me@example.com)"
 -- baz = {{baz}}
 -- email = {{email}}
 -- email2 = {{email2}}
+-- sumsq100 = {{sumsq100}}
 ```
 
 - title = "{{title}}"

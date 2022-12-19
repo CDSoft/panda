@@ -1,6 +1,6 @@
 % Panda - Pandoc add-ons (Lua filters for Pandoc)
 % Christophe Delord - <http://cdelord.fr/panda>
-% 12th november 2021
+% 19th december 2022
 
 [panda]: http://cdelord.fr/panda "Pandoc add-ons (Lua filters for Pandoc)"
 [GraphViz]: http://graphviz.org/
@@ -18,6 +18,8 @@
 [cdelord.fr]: http://cdelord.fr
 [gnuplot]: http://www.gnuplot.info/
 [UPP]: http://cdelord.fr/upp "Universal PreProcessor"
+[LuaX]: http://cdelord.fr/luax "Lua eXtended interpretor"
+[LuaX documentation]: http://cdelord.fr/luax/luax.lua.html
 
 About panda
 ===========
@@ -181,6 +183,10 @@ This text is ignored, definitions are in foo.lua.
 
 foo is defined in `foo.lua` and is {{foo}}.
 ~~~
+
+`meta` code blocks contain Lua code executed by the Pandoc Lua interpretor.
+Panda also contains the [LuaX] modules reimplemented in Lua.
+More details are available in the [Luax documentation].
 
 Conditional blocks
 ==================
