@@ -50,7 +50,7 @@ _G.output_file = PANDOC_STATE.output_file
 
 -- LuaX packages {{{
 
-;(function()
+if not _LUAX_VERSION then (function()
 --[[
 This file is part of luax.
 
@@ -4416,6 +4416,7 @@ local libs = {
 table.insert(package.searchers, 1, function(name) return libs[name] end)
 --}}}
 end)()
+end
 
 _G.F = require "fun"
 _G.sh = require "sh"
