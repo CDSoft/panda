@@ -60,6 +60,8 @@ Installation
 
 `panda` and `panda.lua` can also be installed anywhere. Nothing else is required (except from [Pandoc] obviously).
 
+**Note**: `panda` can also be installed with [makex](https://github.com/CDSoft/makex).
+
 Usage
 =====
 
