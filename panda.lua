@@ -4441,7 +4441,7 @@ local function trace(name, object)
             for i, xi in ipairs(x) do
                 s = s .. l2 .. "["..i.."] = " .. dump(xi, l2) .. ",\n"
             end
-            for k, xk in pairs(x) do
+            for k, xk in F.pairs(x) do
                 if type(k) ~= "number" then
                     s = s .. l2 .. k .. " = " .. dump(xk, l2) .. ",\n"
                 end
@@ -4475,9 +4475,9 @@ local function has_attr(item, name)
 end
 
 local function clean_attr(classes, attributes, attr)
-    local attr = attr:clone()
-    local classes = pandoc.List(classes)
-    local attributes = pandoc.List(attributes)
+    attr = attr:clone()
+    classes = pandoc.List(classes)
+    attributes = pandoc.List(attributes)
     attr.classes = attr.classes:filter(function (c) return classes:find(c) == nil end)
     for _, a in ipairs(attributes) do attr.attributes[a] = nil end
     return attr
@@ -4491,39 +4491,16 @@ local function expand_path(path)
     end
 end
 
-local function file_exists(name)
-    local f = io.open(name, 'r')
-    if f then
-        f:close()
-        return true
-    else
-        return false
-    end
-end
-
-local function file_content(name)
-    local f = io.open(name, 'r')
-    if f then
-        local content = f:read("a")
-        f:close()
-        return content
-    else
-        return nil
-    end
-end
-
 local function basename(name)
-    return (name:gsub(".*/", ""))
+    return pandoc.path.filename(name)
 end
 
 local function dirname(name)
-    return (name:gsub("[^/]*$", ""):gsub("^$", "."))
+    return pandoc.path.directory(name)
 end
 
 local function mkdir(path)
-    if not file_exists(path) then
-        os.execute("mkdir "..path)
-    end
+    return pandoc.system.make_directory(path, true)
 end
 
 -- }}}
@@ -4651,26 +4628,24 @@ end
 
 -- Dependencies {{{
 
-local deps = pandoc.List()
+local deps = F{}
 
 local function add_dep(filename)
-    if not deps:find(filename) then
-        deps:insert(filename)
-    end
+    deps[filename] = true
     if _G["PANDA_TARGET"] then
         local target = _G["PANDA_TARGET"]
         local depfile = _G["PANDA_DEP_FILE"] or target..".d"
-        local f = assert(io.open(depfile, "w"), "Can not create "..depfile)
-        f:write(target..": "..table.concat(deps, " ").."\n")
-        f:close()
+        assert(
+            fs.write(depfile,
+                target, ": ", deps:keys():unwords(), "\n"),
+            "Can not create "..depfile)
     end
 end
 
 track_file = function(filename)
     filename = expand_vars(filename)
     add_dep(filename)
-    local content = assert(io.open(filename)):read("a")
-    return content
+    return fs.read(filename)
 end
 
 -- }}}
@@ -4693,7 +4668,7 @@ local function conditional(empty)
                 table.insert(attributes_to_clean, k)
             end
             if cond then
-                local block = block:clone()
+                block = block:clone()
                 block.attr = clean_attr({"if"}, attributes_to_clean, block.attr)
                 return block
             else
@@ -4836,15 +4811,11 @@ end
 
 local function run_script(cmd, content)
     return system.with_temporary_directory("panda_script", function (tmpdir)
-        local name = tmpdir.."/script"
+        local name = fs.join(tmpdir, "script")
         local ext = script_ext(cmd)
-        local f = assert(io.open(name..ext, "w"))
-        f:write(content)
-        f:close()
-        local p = assert(io.popen(make_script_cmd(cmd, name, ext)))
-        local output = assert(p:read("a"))
-        local ok, _, err = p:close()
-        if ok then
+        fs.write(name..ext, content)
+        local output = sh.read(make_script_cmd(cmd, name, ext))
+        if output then
             return output:gsub("%s*$", "")
         else
             error("script error")
@@ -4856,7 +4827,6 @@ local function script(conf)
     return function(block)
         local cmd = get_attr(block, "cmd")
         local icmd = get_attr(block, "icmd")
-        local shift = tonumber(get_attr(block, "shift"))
         if cmd or icmd then
             local code = block:clone()
             code.text = run_script(cmd or icmd, code.text)
@@ -4914,7 +4884,7 @@ local function make_diagram_cmd(src, img, render)
     return render:gsub("%%i", src):gsub("%%o", img)
 end
 
-local function render_diagram(cmd, contents)
+local function render_diagram(cmd)
     local p = assert(io.popen(cmd))
     local output = p:read("a")
     local ok, _, err = p:close()
@@ -4939,30 +4909,29 @@ local function diagram(block)
         if not img then
             local image_cache = default_image_cache()
             mkdir(image_cache)
-            img = image_cache.."/"..hash_digest
+            img = fs.join(image_cache, hash_digest)
         else
             img = img:gsub("%%h", hash_digest)
         end
-        local out = expand_path(output_path and (output_path.."/"..basename(img)) or img)
+        local out = expand_path(output_path and fs.join(output_path, basename(img)) or img)
         local meta = out..ext..".meta"
-        local meta_content = "source: "..hash_digest.."\n"..
-                             "render: "..render.."\n"..
-                             "img: "..img.."\n"..
-                             "out: "..out.."\n"..
-                             "\n"..contents
+        local meta_content = F.unlines {
+                "source: "..hash_digest,
+                "render: "..render,
+                "img: "..img,
+                "out: "..out,
+                "",
+                contents,
+            }
 
-        local old_meta = file_content(meta) or ""
-        if not file_exists(out..ext) or meta_content ~= old_meta then
+        local old_meta = fs.read(meta) or ""
+        if not fs.is_file(out..ext) or meta_content ~= old_meta then
             system.with_temporary_directory("panda_diagram", function (tmpdir)
-                local name = tmpdir.."/diagram"
-                local f = io.open(name, "w")
-                f:write(contents)
-                f:close()
-                local f = assert(io.open(meta, "w"), "Can not create "..meta)
-                f:write(meta_content)
-                f:close()
+                local name = fs.join(tmpdir, "diagram")
+                assert(fs.write(name, contents), "Can not create "..name)
+                assert(fs.write(meta, meta_content), "Can not create "..meta)
                 render = make_diagram_cmd(name, out, render)
-                render_diagram(render, contents)
+                render_diagram(render)
             end)
         end
 
