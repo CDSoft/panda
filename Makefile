@@ -19,7 +19,18 @@
 INSTALL_PATH := $(firstword $(wildcard $(PREFIX) $(HOME)/.local/bin))
 BUILD = .build
 
+## Test and generate Panda documentation
 all: test doc
+
+# include a reduced version of makex to install Panda test dependencies
+include makex.mk
+
+###############################################################################
+# Help
+###############################################################################
+
+welcome:
+	@echo '${CYAN}Panda${NORMAL}'
 
 #############################################################################
 # Clean
@@ -28,9 +39,11 @@ all: test doc
 .PHONY: clean
 .PHONY: distclean
 
+## Clean the build directory (keep the downloaded jar and css files)
 clean:
 	find $(BUILD) -maxdepth 1 ! -name $(BUILD) ! -name "*.jar" ! -name "*.css" -exec rm -rf {} \;
 
+## Clean the build directory
 distclean:
 	rm -rf $(BUILD)
 
@@ -40,12 +53,14 @@ distclean:
 
 .PHONY: install
 
+## Install panda.lua and panda
 install:
 	install panda.lua $(INSTALL_PATH)/
 	install panda $(INSTALL_PATH)/
 
 .PHONY: install-all
 
+## Install panda, panda.lua, PlantUML and ditaa
 install-all: install
 
 $(INSTALL_PATH)/%.jar: $(BUILD)/%.jar
@@ -57,16 +72,18 @@ $(INSTALL_PATH)/%.jar: $(BUILD)/%.jar
 
 .PHONY: test
 
+## Run Panda tests
 test: $(BUILD)/test.md test/test_result.md
 	diff $(BUILD)/test.md test/test_result.md
 	# Well done
 
-$(BUILD)/test.md: panda panda.lua test/test.md test/test_include.md test/test_include.c $(BUILD)/plantuml.jar $(BUILD)/ditaa.jar
+$(BUILD)/test.md: panda panda.lua test/test.md test/test_include.md test/test_include.c $(BUILD)/plantuml.jar $(BUILD)/ditaa.jar | $(PANDOC)
 	@mkdir -p $(BUILD) $(BUILD)/img
-	build=$(BUILD) PANDA_CACHE=$(BUILD)/cache PANDA_TARGET=$@ PLANTUML=$(BUILD)/plantuml.jar ./panda --standalone test/test.md -o $(BUILD)/test.md
+	build=$(BUILD) PANDA_CACHE=$(BUILD)/cache PANDA_TARGET=$@ PLANTUML=$(BUILD)/plantuml.jar $(PANDOC) -L panda.lua --standalone test/test.md -o $(BUILD)/test.md
 
 .PHONY: diff
 
+## Compare test results
 diff: $(BUILD)/test.md test/test_result.md
 	meld $^
 
@@ -76,17 +93,18 @@ diff: $(BUILD)/test.md test/test_result.md
 
 .PHONY: doc
 
+## Generate Panda documentation
 doc: $(BUILD)/panda.html
 
 CSS = $(BUILD)/cdelord.css
 
-$(BUILD)/panda.html: doc/panda.md doc/hello.dot $(CSS) panda panda.lua
+$(BUILD)/panda.html: doc/panda.md doc/hello.dot $(CSS) panda panda.lua | $(PANDOC)
 	@mkdir -p $(BUILD) $(BUILD)/img
-	doc=doc build=$(BUILD) PANDA_CACHE=$(BUILD)/cache PANDA_TARGET=$@ PLANTUML=$(BUILD)/plantuml.jar DITAA=$(BUILD)/ditaa.jar ./panda --to=html5 --standalone --embed-resources --css=$(CSS) $< -o $@
+	doc=doc build=$(BUILD) PANDA_CACHE=$(BUILD)/cache PANDA_TARGET=$@ PLANTUML=$(BUILD)/plantuml.jar DITAA=$(BUILD)/ditaa.jar $(PANDOC) -L panda.lua --to=html5 --standalone --embed-resources --css=$(CSS) $< -o $@
 
 $(CSS):
 	@mkdir -p $(dir $@)
-	wget http://cdelord.fr/cdelord.css -O $@
+	test -f $@ || wget http://cdelord.fr/cdelord.css -O $@
 
 #############################################################################
 # PlantUML
@@ -99,7 +117,7 @@ PLANTUML_URL = https://github.com/plantuml/plantuml/releases/download/v$(PLANTUM
 
 $(BUILD)/plantuml.jar:
 	@mkdir -p $(BUILD)
-	wget $(PLANTUML_URL) -O $@
+	test -f $@ || wget $(PLANTUML_URL) -O $@
 
 #############################################################################
 # Ditaa
@@ -112,4 +130,4 @@ DITAA_URL = https://github.com/stathissideris/ditaa/releases/download/v$(DITAA_V
 
 $(BUILD)/ditaa.jar:
 	@mkdir -p $(BUILD)
-	wget $(DITAA_URL) -O $@
+	test -f $@ || wget $(DITAA_URL) -O $@
