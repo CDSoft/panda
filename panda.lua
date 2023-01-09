@@ -270,7 +270,7 @@ F.op = {}
 ```lua
 F.op.land(a, b)             -- a and b
 F.op.lor(a, b)              -- a or b
-F.op.lxor(a, b)             -- (a and not b) or (b and not a)
+F.op.lxor(a, b)             -- (not a and b) or (not b and a)
 F.op.lnot(a)                -- not a
 ```
 > Logical operators
@@ -278,7 +278,7 @@ F.op.lnot(a)                -- not a
 
 F.op.land = function(a, b) return a and b end
 F.op.lor = function(a, b) return a or b end
-F.op.lxor = function(a, b) return (a and not b) or (b and not a) end
+F.op.lxor = function(a, b) return (not a and b) or (not b and a) end
 F.op.lnot = function(a) return not a end
 
 --[[@@@
@@ -4324,7 +4324,7 @@ end
 ```lua
 fs.read(filename)
 ```
-returns the content of the file `filename`.
+returns the content of the text file `filename`.
 @@@]]
 
 function fs.read(name)
@@ -4339,12 +4339,43 @@ end
 ```lua
 fs.write(filename, ...)
 ```
-write `...` to the file `filename`.
+write `...` to the text file `filename`.
 @@@]]
 
 function fs.write(name, ...)
     local content = F{...}:flatten():str()
     local f, oerr = io.open(name, "w")
+    if not f then return f, oerr end
+    local ok, werr = f:write(content)
+    f:close()
+    return ok, werr
+end
+
+--[[@@@
+```lua
+fs.read_bin(filename)
+```
+returns the content of the binary file `filename`.
+@@@]]
+
+function fs.read_bin(name)
+    local f, oerr = io.open(name, "rb")
+    if not f then return f, oerr end
+    local content, rerr = f:read("a")
+    f:close()
+    return content, rerr
+end
+
+--[[@@@
+```lua
+fs.write_bin(filename, ...)
+```
+write `...` to the binary file `filename`.
+@@@]]
+
+function fs.write_bin(name, ...)
+    local content = F{...}:flatten():str()
+    local f, oerr = io.open(name, "wb")
     if not f then return f, oerr end
     local ok, werr = f:write(content)
     f:close()
