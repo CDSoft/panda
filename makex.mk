@@ -28,6 +28,11 @@
 #
 # PANDOC
 #     path to the pandoc executable (see https://pandoc.org)
+# PANDOC_LATEX_TEMPLATE
+#     path to a LaTeX template
+#     (see https://github.com/Wandmalfarbe/pandoc-latex-template.git)
+# PANAM_CSS
+#     path to a CSS file (see https://benjam.info/panam)
 #
 # It also adds some targets:
 #
@@ -52,6 +57,14 @@ MAKEX_HELP_TARGET_MAX_LEN ?= 20
 
 # PANDOC_VERSION is the version number of pandoc
 PANDOC_VERSION ?= 2.19.2
+
+# PANDOC_LATEX_TEMPLATE_VERSION is a tag or branch name in the
+# pandoc-latex-template repository
+PANDOC_LATEX_TEMPLATE_VERSION = master
+
+# PANDOC_LETTER_VERSION is a tag or branch name in the
+# pandoc-letter repository
+PANDOC_LETTER_VERSION = master
 
 #}}}
 
@@ -126,6 +139,68 @@ MAKEX_ARCH := $(shell uname -m)
 MAKEX_OS := $(shell uname -s)
 
 ###########################################################################
+# Pandoc LaTeX template
+###########################################################################
+
+PANDOC_LATEX_TEMPLATE_URL = https://github.com/Wandmalfarbe/pandoc-latex-template.git
+PANDOC_LATEX_TEMPLATE = $(MAKEX_INSTALL_PATH)/pandoc/pandoc-latex-template/eisvogel.tex
+
+$(dir $(PANDOC_LATEX_TEMPLATE)):
+	@mkdir -p $@
+
+$(PANDOC_LATEX_TEMPLATE): | $(MAKEX_CACHE) $(dir $(PANDOC_LATEX_TEMPLATE))
+	@echo "$(MAKEX_COLOR)[MAKEX]$(NORMAL) $(TEXT_COLOR)install Pandoc LaTeX Template$(NORMAL)"
+	@test -f $(@) \
+	|| \
+	(   (   test -d $(MAKEX_CACHE)/pandoc-latex-template \
+	        && ( cd $(MAKEX_CACHE)/pandoc-latex-template && git pull ) \
+	        || git clone $(PANDOC_LATEX_TEMPLATE_URL) $(MAKEX_CACHE)/pandoc-latex-template \
+	    ) \
+	    && cd $(MAKEX_CACHE)/pandoc-latex-template \
+	    && git checkout $(PANDOC_LATEX_TEMPLATE_VERSION) \
+	    && cp $(MAKEX_CACHE)/pandoc-latex-template/eisvogel.tex $@ \
+	)
+
+###########################################################################
+# Pandoc Letter
+###########################################################################
+
+PANDOC_LETTER_URL = https://github.com/aaronwolen/pandoc-letter.git
+PANDOC_LETTER = $(MAKEX_INSTALL_PATH)/pandoc/pandoc-letter/template-letter.tex
+
+$(dir $(PANDOC_LETTER)):
+	@mkdir -p $@
+
+$(PANDOC_LETTER): | $(MAKEX_CACHE) $(dir $(PANDOC_LETTER))
+	@echo "$(MAKEX_COLOR)[MAKEX]$(NORMAL) $(TEXT_COLOR)install Pandoc Letter$(NORMAL)"
+	@test -f $(@) \
+	|| \
+	(   (   test -d $(MAKEX_CACHE)/pandoc-letter \
+	        && ( cd $(MAKEX_CACHE)/pandoc-letter && git pull ) \
+	        || git clone $(PANDOC_LETTER_URL) $(MAKEX_CACHE)/pandoc-letter \
+	    ) \
+	    && cd $(MAKEX_CACHE)/pandoc-letter \
+	    && git checkout $(PANDOC_LETTER_VERSION) \
+	    && cp $(MAKEX_CACHE)/pandoc-letter/template-letter.tex $@ \
+	)
+
+###########################################################################
+# Pandoc Panam CSS
+###########################################################################
+
+PANAM_URL = https://benjam.info/panam/styling.css
+PANAM_CSS = $(MAKEX_INSTALL_PATH)/pandoc/panam/styling.css
+
+$(dir $(PANAM_CSS)):
+	@mkdir -p $@
+
+$(PANAM_CSS): | $(MAKEX_CACHE) $(dir $(PANAM_CSS))
+	@echo "$(MAKEX_COLOR)[MAKEX]$(NORMAL) $(TEXT_COLOR)install Pandoc Pan Am CSS$(NORMAL)"
+	@test -f $(@) \
+	|| \
+	wget -c $(PANAM_URL) -O $@
+
+###########################################################################
 # Pandoc
 ###########################################################################
 
@@ -145,7 +220,7 @@ export PATH := $(dir $(PANDOC)):$(PATH)
 $(dir $(PANDOC)) $(MAKEX_CACHE)/pandoc:
 	@mkdir -p $@
 
-$(PANDOC): | $(MAKEX_CACHE) $(MAKEX_CACHE)/pandoc $(dir $(PANDOC))
+$(PANDOC): | $(MAKEX_CACHE) $(MAKEX_CACHE)/pandoc $(dir $(PANDOC)) $(PANDOC_LATEX_TEMPLATE) $(PANDOC_LETTER) $(PANAM_CSS)
 	@echo "$(MAKEX_COLOR)[MAKEX]$(NORMAL) $(TEXT_COLOR)install Pandoc$(NORMAL)"
 	@test -f $(@) \
 	|| \
