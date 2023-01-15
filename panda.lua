@@ -4726,9 +4726,9 @@ local function add_dep(filename)
 end
 
 track_file = function(filename)
-    filename = expand_vars(filename)
+    filename = expand_path(expand_vars(filename))
     add_dep(filename)
-    return fs.read(filename)
+    return assert(fs.read(filename), filename..": file not found")
 end
 
 -- }}}
