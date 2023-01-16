@@ -112,7 +112,7 @@ $(CSS):
 
 install-all: $(INSTALL_PATH)/plantuml.jar
 
-PLANTUML_VERSION = 1.2022.12
+PLANTUML_VERSION = 1.2023.0
 PLANTUML_URL = https://github.com/plantuml/plantuml/releases/download/v$(PLANTUML_VERSION)/plantuml-$(PLANTUML_VERSION).jar
 
 $(BUILD)/plantuml.jar:
