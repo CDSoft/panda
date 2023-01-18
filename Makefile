@@ -22,7 +22,7 @@ BUILD = .build
 ## Test and generate Panda documentation
 all: test doc
 
-# include a reduced version of makex to install Panda test dependencies
+# include makex to install Panda test dependencies
 include makex.mk
 
 ###############################################################################
