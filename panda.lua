@@ -24,10 +24,11 @@ local pandoc = require "pandoc"
 local utils = pandoc.utils
 local system = pandoc.system
 
-local api_1_22 = PANDOC_API_VERSION >= {1, 22}
-
 local nullBlock, nullInline
-if api_1_22 then
+if PANDOC_API_VERSION >= {1, 23} then
+    nullBlock = {}
+    nullInline = pandoc.Inline
+elseif PANDOC_API_VERSION >= {1, 22} then
     nullBlock = pandoc.Null()
     nullInline = pandoc.Inline
 else
