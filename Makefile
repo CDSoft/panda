@@ -16,7 +16,7 @@
 # For further information about Panda you can visit
 # http://cdelord.fr/panda
 
-INSTALL_PATH := $(firstword $(wildcard $(PREFIX) $(HOME)/.local/bin))
+PREFIX := $(firstword $(wildcard $(PREFIX) $(HOME)/.local))
 BUILD = .build
 
 ## Test and generate Panda documentation
@@ -55,15 +55,19 @@ distclean:
 
 ## Install panda.lua and panda
 install:
-	install panda.lua $(INSTALL_PATH)/
-	install panda $(INSTALL_PATH)/
+	@test -n "$(PREFIX)" || (echo "No installation path found" && false)
+	@mkdir -p $(PREFIX)/bin
+	install panda.lua $(PREFIX)/bin
+	install panda $(PREFIX)/bin
 
 .PHONY: install-all
 
 ## Install panda, panda.lua, PlantUML and ditaa
 install-all: install
 
-$(INSTALL_PATH)/%.jar: $(BUILD)/%.jar
+$(PREFIX)/bin/%.jar: $(BUILD)/%.jar
+	@test -n "$(PREFIX)" || (echo "No installation path found" && false)
+	@mkdir -p $(PREFIX)/bin
 	install $< $(dir $@)
 
 #############################################################################
@@ -110,7 +114,7 @@ $(CSS):
 # PlantUML
 #############################################################################
 
-install-all: $(INSTALL_PATH)/plantuml.jar
+install-all: $(PREFIX)/bin/plantuml.jar
 
 PLANTUML_VERSION = 1.2023.0
 PLANTUML_URL = https://github.com/plantuml/plantuml/releases/download/v$(PLANTUML_VERSION)/plantuml-$(PLANTUML_VERSION).jar
@@ -123,7 +127,7 @@ $(BUILD)/plantuml.jar:
 # Ditaa
 #############################################################################
 
-install-all: $(INSTALL_PATH)/ditaa.jar
+install-all: $(PREFIX)/bin/ditaa.jar
 
 DITAA_VERSION = 0.11.0
 DITAA_URL = https://github.com/stathissideris/ditaa/releases/download/v$(DITAA_VERSION)/ditaa-$(DITAA_VERSION)-standalone.jar
