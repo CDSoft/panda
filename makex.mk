@@ -54,6 +54,8 @@
 # LETTER
 #     shortcut to panda with some default parameters
 #     to generate a letter
+# LSVG
+#     path to the lsvg executable (see https://github.com/CDSoft/lsvg)
 # GHCUP, GHC, CABAL, STACK
 #     path to the ghcup, ghc, cabal, stack executables
 #     (see https://www.haskell.org/ghcup/)
@@ -74,6 +76,8 @@
 #     install pandoc
 # makex-install-panda
 #     install panda
+# makex-install-lsvg
+#     install lsvg
 # makex-install-ghcup
 #     install ghcup
 # help
@@ -115,6 +119,9 @@ PANDOC_LETTER_VERSION = master
 
 # PANDA_VERSION is a tag or branch name in the Panda repository
 PANDA_VERSION ?= master
+
+# LSVG_VERSION is a tag or branch name in the lsvg repository
+LSVG_VERSION ?= master
 
 # GHCUP_INSTALL_BASE_PREFIX is the base of ghcup
 GHCUP_INSTALL_BASE_PREFIX ?= $(MAKEX_INSTALL_PATH)/haskell
@@ -380,6 +387,34 @@ $(PANDA): | $(PANDOC) $(MAKEX_CACHE) $(dir $(PANDA)) $(PANDA_CACHE)
 
 makex-install: makex-install-panda
 makex-install-panda: $(PANDA)
+
+###########################################################################
+# lsvg
+###########################################################################
+
+LSVG_URL = https://github.com/CDSoft/lsvg
+LSVG = $(MAKEX_INSTALL_PATH)/lsvg/$(LSVG_VERSION)/bin/lsvg
+
+export PATH := $(dir $(LSVG)):$(PATH)
+
+$(dir $(LSVG)):
+	@mkdir -p $@
+
+$(LSVG): | $(LUAX) $(MAKEX_CACHE) $(dir $(LSVG))
+	@echo "$(MAKEX_COLOR)[MAKEX]$(NORMAL) $(TEXT_COLOR)install lsvg$(NORMAL)"
+	@test -f $(@) \
+	|| \
+	(   (   test -d $(MAKEX_CACHE)/lsvg \
+	        && ( cd $(MAKEX_CACHE)/lsvg && git pull ) \
+	        || git clone $(LSVG_URL) $(MAKEX_CACHE)/lsvg \
+	    ) \
+	    && cd $(MAKEX_CACHE)/lsvg \
+	    && git checkout $(LSVG_VERSION) \
+	    && make install PREFIX=$(realpath $(dir $@)/..) \
+	)
+
+makex-install: makex-install-lsvg
+makex-install-lsvg: $(LSVG)
 
 ###########################################################################
 # Haskell (via GHCup)

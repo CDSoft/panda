@@ -219,6 +219,9 @@ Section title levels are shifted by n (0 if not specified).
 The included file can be in a different format
 (e.g. a markdown file can include a reStructuredText file).
 
+If the block has an input format as a class, the file is parsed according to
+this format.
+
 Block inclusion
 ===============
 
@@ -237,6 +240,9 @@ The optional `fromline` and `toline` defines the first and last lines to be incl
 The optional pattern describes the part of the text that will be rendered.
 The format uses the captures defined by the pattern to format the content of the block
 (`"%1"` if not defined).
+
+If the block has an input format as a class, its result is parsed according to
+this format.
 
 Documentation extraction
 ========================

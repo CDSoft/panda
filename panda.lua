@@ -4816,8 +4816,8 @@ local function apply_pattern(pattern, format, content)
     return content
 end
 
-local function parse_and_shift(text, shift)
-    local doc = pandoc.read(text)
+local function parse_and_shift(text, input_format, shift)
+    local doc = pandoc.read(text, input_format)
     local div = pandoc.Div(doc.blocks)
     if shift then
         div = pandoc.walk_block(div, {
@@ -4833,15 +4833,29 @@ local function parse_and_shift(text, shift)
     return div.content
 end
 
+local supported_formats = {
+    "biblatex", "bibtex", "commonmark", "commonmark_x", "creole", "csljson", "csv", "docbook", "docx", "dokuwiki",
+    "endnotexml", "epub", "fb2", "gfm", "haddock", "html", "ipynb", "jats", "jira", "json", "latex", "man", "markdown",
+    "markdown_github", "markdown_mmd", "markdown_phpextra", "markdown_strict", "mediawiki", "muse", "native", "odt",
+    "opml", "org", "ris", "rst", "rtf", "t2t", "textile", "tikiwiki", "tsv", "twiki", "vimwiki",
+}
+
+local function infer_input_format(block)
+    for _, fmt in ipairs(supported_formats) do
+        if has_class(block, fmt) then return fmt end
+    end
+end
+
 local function include_div(block)
     local filename = get_attr(block, "include")
     if filename then
         local shift = tonumber(get_attr(block, "shift"))
         local pattern = get_attr(block, "pattern")
         local format = get_attr(block, "format")
+        local input_format = infer_input_format(block)
         local content = track_file(filename)
         content = apply_pattern(pattern, format, content)
-        return parse_and_shift(content, shift), false
+        return parse_and_shift(content, input_format, shift), false
     end
 end
 
@@ -4881,13 +4895,14 @@ end
 local function extract_doc(block)
     local filename = get_attr(block, "doc")
     if filename then
+        local input_format = nil -- only markdown supported here
         local shift = tonumber(get_attr(block, "shift"))
         local from = get_attr(block, "from") or "@@@"
         local to = get_attr(block, "to") or "@@@"
         local content = track_file(filename)
         local output = {}
         content:gsub(from.."(.-)"..to, function(doc) output[#output+1] = doc end)
-        return parse_and_shift(table.concat(output, "\n"), shift), false
+        return parse_and_shift(table.concat(output, "\n"), input_format, shift), false
     end
 end
 
@@ -4947,7 +4962,8 @@ local function script(conf)
             code.text = run_script(cmd or icmd, code.text)
             code.attr = clean_attr({}, {"cmd", "icmd", "shift"}, code.attr)
             if icmd then
-                code = parse_and_shift(code.text)
+                local input_format = infer_input_format(block)
+                code = parse_and_shift(code.text, input_format)
                 code = conf.inline and utils.blocks_to_inlines(code) or code
             end
             return code, false

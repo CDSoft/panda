@@ -115,6 +115,11 @@ and
 :::{include=test/test_include.md shift=1}
 :::
 
+## CSV
+
+:::{.csv include=test/test.csv}
+:::
+
 # Documentation extraction
 
 :::{doc=test/test_include.c from="@@@main"}
@@ -143,6 +148,13 @@ print("Pandoc is great!")
 1 + 1 = `echo $((1+1))`{cmd=sh}
 
 1 + 1 = `echo $((1+1))`{icmd=sh}
+
+## Script producing CSV tables
+
+```{.python .csv icmd="python"}
+print("X, Y, Z")
+print("a, b, c")
+```
 
 # Diagrams
 
