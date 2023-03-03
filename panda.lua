@@ -52,7 +52,10 @@ _G.output_file = PANDOC_STATE.output_file
 -- LuaX packages {{{
 
 if not _LUAX_VERSION then (function()
---[[
+_LUAX_VERSION = '2.2.0'
+local function lib(path, src) return assert(load(src, '@'..path, 't')) end
+local libs = {
+["F"] = lib("src/F/F.lua", [=[--[[
 This file is part of luax.
 
 luax is free software: you can redistribute it and/or modify
@@ -72,33 +75,13 @@ For further information about luax you can visit
 http://cdelord.fr/luax
 --]]
 
---[[------------------------------------------------------------------------@@@
-# LuaX in Lua
-
-The script `lib/luax.lua` is a standalone Lua package that reimplements some LuaX modules.
-It can be used in Lua projects without any other LuaX dependency.
-
-These modules may have slightly different and degraded behaviours compared to the LuaX modules.
-Especially `fs` and `ps` may be incomplete and less accurate
-than the same functions implemented in C in LuaX.
-
-```lua
-require "luax"
-```
-> changes the `package` module such that `require` can load `fun`, `fs`, `sh` and `sys`.
-
-@@@]]
-
---{{{ fun module
-local F = {}
-local fun = F
-do
+--@LOAD
 
 --[[------------------------------------------------------------------------@@@
 # Functional programming utilities
 
 ```lua
-local F = require "fun"
+local F = require "F"
 ```
 
 `fun` provides some useful functions inspired by functional programming languages,
@@ -110,6 +93,8 @@ especially by these Haskell modules:
 - [`Prelude`](https://hackage.haskell.org/package/base-4.17.0.0/docs/Prelude.html)
 
 @@@]]
+
+local F = {}
 
 local mt = {__index={}}
 
@@ -146,7 +131,7 @@ end
 ## Standard types, and related functions
 @@@]]
 
-local has_mathx, mathx = pcall(require, "mathx")
+local has_mathx, mathx = pcall(require, "_mathx")
 
 local type_rank = {
     ["nil"]         = 0,
@@ -3690,98 +3675,2227 @@ end
 -- module
 -------------------------------------------------------------------------------
 
-fun = setmetatable(F, {
+return setmetatable(F, {
     __call = function(_, t)
         if type(t) == "table" then return setmt(t) end
         return t
     end,
 })
-end
---}}}
+]=]),
+["L"] = lib("src/L/L.lua", [=[--[[
+This file is part of luax.
 
---{{{ sh module
+luax is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+luax is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with luax.  If not, see <https://www.gnu.org/licenses/>.
+
+For further information about luax you can visit
+http://cdelord.fr/luax
+--]]
+
+--@LOAD
 
 --[[------------------------------------------------------------------------@@@
-# Shell
-@@@]]
+# L: Pandoc List package
 
---[[@@@
 ```lua
-local sh = require "sh"
+local L = require "L"
 ```
-@@@]]
-local sh = {}
 
---[[@@@
-```lua
-sh.run(...)
-```
-Runs the command `...` with `os.execute`.
+`L` is just a shortcut to `Pandoc.List`.
+
 @@@]]
 
-function sh.run(...)
-    local cmd = F.flatten{...}:unwords()
-    return os.execute(cmd)
+local L = pandoc and pandoc.List
+
+if not L then
+
+    local mt = {__index={}}
+
+    L = {}
+
+    function mt.__concat(l1, l2)
+        return setmetatable(F.concat{l1, l2}, mt)
+    end
+
+    function mt.__eq(l1, l2)
+        return F.ueq(l1, l2)
+    end
+
+    function mt.__index:clone()
+        return setmetatable(F.clone(self), mt)
+    end
+
+    function mt.__index:extend(l)
+        for i = 1, #l do
+            self[#self+1] = l[i]
+        end
+    end
+
+    function mt.__index:find(needle, init)
+        for i = init or 1, #self do
+            if F.ueq(self[i], needle) then
+                return self[i], i
+            end
+        end
+    end
+
+    function mt.__index:find_if(pred, init)
+        for i = init or 1, #self do
+            if pred(self[i]) then
+                return self[i], i
+            end
+        end
+    end
+
+    function mt.__index:filter(pred)
+        return setmetatable(F.filter(pred, self), mt)
+    end
+
+    function mt.__index:includes(needle, init)
+        for i = init or 1, #self do
+            if F.ueq(self[i], needle) then
+                return true
+            end
+        end
+        return false
+    end
+
+    function mt.__index:insert(pos, value)
+        return table.insert(self, pos, value)
+    end
+
+    function mt.__index:map(fn)
+        return setmetatable(F.map(fn, self), mt)
+    end
+
+    function mt.__index:new(t)
+        return setmetatable(t or {}, mt)
+    end
+
+    function mt.__index:remove(pos)
+        return table.remove(self, pos)
+    end
+
+    function mt.__index:sort(comp)
+        return table.sort(self, comp)
+    end
+
+    setmetatable(L, {
+        __index = {
+            __call = function(self) return L.new(self) end,
+        },
+    })
+
 end
 
---[[@@@
-```lua
-sh.read(...)
-```
-Runs the command `...` with `io.popen`.
-When `sh.read` succeeds, it returns the content of stdout.
-Otherwise it returns the error identified by `io.popen`.
+-------------------------------------------------------------------------------
+-- module
+-------------------------------------------------------------------------------
+
+return L
+]=]),
+["argparse"] = lib("src/argparse/argparse.lua", [=[-- The MIT License (MIT)
+
+-- Copyright (c) 2013 - 2018 Peter Melnichenko
+
+-- Permission is hereby granted, free of charge, to any person obtaining a copy of
+-- this software and associated documentation files (the "Software"), to deal in
+-- the Software without restriction, including without limitation the rights to
+-- use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
+-- the Software, and to permit persons to whom the Software is furnished to do so,
+-- subject to the following conditions:
+
+-- The above copyright notice and this permission notice shall be included in all
+-- copies or substantial portions of the Software.
+
+-- THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+-- IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
+-- FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
+-- COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
+-- IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+-- CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+local function deep_update(t1, t2)
+   for k, v in pairs(t2) do
+      if type(v) == "table" then
+         v = deep_update({}, v)
+      end
+
+      t1[k] = v
+   end
+
+   return t1
+end
+
+-- A property is a tuple {name, callback}.
+-- properties.args is number of properties that can be set as arguments
+-- when calling an object.
+local function class(prototype, properties, parent)
+   -- Class is the metatable of its instances.
+   local cl = {}
+   cl.__index = cl
+
+   if parent then
+      cl.__prototype = deep_update(deep_update({}, parent.__prototype), prototype)
+   else
+      cl.__prototype = prototype
+   end
+
+   if properties then
+      local names = {}
+
+      -- Create setter methods and fill set of property names.
+      for _, property in ipairs(properties) do
+         local name, callback = property[1], property[2]
+
+         cl[name] = function(self, value)
+            if not callback(self, value) then
+               self["_" .. name] = value
+            end
+
+            return self
+         end
+
+         names[name] = true
+      end
+
+      function cl.__call(self, ...)
+         -- When calling an object, if the first argument is a table,
+         -- interpret keys as property names, else delegate arguments
+         -- to corresponding setters in order.
+         if type((...)) == "table" then
+            for name, value in pairs((...)) do
+               if names[name] then
+                  self[name](self, value)
+               end
+            end
+         else
+            local nargs = select("#", ...)
+
+            for i, property in ipairs(properties) do
+               if i > nargs or i > properties.args then
+                  break
+               end
+
+               local arg = select(i, ...)
+
+               if arg ~= nil then
+                  self[property[1]](self, arg)
+               end
+            end
+         end
+
+         return self
+      end
+   end
+
+   -- If indexing class fails, fallback to its parent.
+   local class_metatable = {}
+   class_metatable.__index = parent
+
+   function class_metatable.__call(self, ...)
+      -- Calling a class returns its instance.
+      -- Arguments are delegated to the instance.
+      local object = deep_update({}, self.__prototype)
+      setmetatable(object, self)
+      return object(...)
+   end
+
+   return setmetatable(cl, class_metatable)
+end
+
+local function typecheck(name, types, value)
+   for _, type_ in ipairs(types) do
+      if type(value) == type_ then
+         return true
+      end
+   end
+
+   error(("bad property '%s' (%s expected, got %s)"):format(name, table.concat(types, " or "), type(value)))
+end
+
+local function typechecked(name, ...)
+   local types = {...}
+   return {name, function(_, value) typecheck(name, types, value) end}
+end
+
+local multiname = {"name", function(self, value)
+   typecheck("name", {"string"}, value)
+
+   for alias in value:gmatch("%S+") do
+      self._name = self._name or alias
+      table.insert(self._aliases, alias)
+   end
+
+   -- Do not set _name as with other properties.
+   return true
+end}
+
+local function parse_boundaries(str)
+   if tonumber(str) then
+      return tonumber(str), tonumber(str)
+   end
+
+   if str == "*" then
+      return 0, math.huge
+   end
+
+   if str == "+" then
+      return 1, math.huge
+   end
+
+   if str == "?" then
+      return 0, 1
+   end
+
+   if str:match "^%d+%-%d+$" then
+      local min, max = str:match "^(%d+)%-(%d+)$"
+      return tonumber(min), tonumber(max)
+   end
+
+   if str:match "^%d+%+$" then
+      local min = str:match "^(%d+)%+$"
+      return tonumber(min), math.huge
+   end
+end
+
+local function boundaries(name)
+   return {name, function(self, value)
+      typecheck(name, {"number", "string"}, value)
+
+      local min, max = parse_boundaries(value)
+
+      if not min then
+         error(("bad property '%s'"):format(name))
+      end
+
+      self["_min" .. name], self["_max" .. name] = min, max
+   end}
+end
+
+local actions = {}
+
+local option_action = {"action", function(_, value)
+   typecheck("action", {"function", "string"}, value)
+
+   if type(value) == "string" and not actions[value] then
+      error(("unknown action '%s'"):format(value))
+   end
+end}
+
+local option_init = {"init", function(self)
+   self._has_init = true
+end}
+
+local option_default = {"default", function(self, value)
+   if type(value) ~= "string" then
+      self._init = value
+      self._has_init = true
+      return true
+   end
+end}
+
+local add_help = {"add_help", function(self, value)
+   typecheck("add_help", {"boolean", "string", "table"}, value)
+
+   if self._has_help then
+      table.remove(self._options)
+      self._has_help = false
+   end
+
+   if value then
+      local help = self:flag()
+         :description "Show this help message and exit."
+         :action(function()
+            print(self:get_help())
+            os.exit(0)
+         end)
+
+      if value ~= true then
+         help = help(value)
+      end
+
+      if not help._name then
+         help "-h" "--help"
+      end
+
+      self._has_help = true
+   end
+end}
+
+local Parser = class({
+   _arguments = {},
+   _options = {},
+   _commands = {},
+   _mutexes = {},
+   _groups = {},
+   _require_command = true,
+   _handle_options = true
+}, {
+   args = 3,
+   typechecked("name", "string"),
+   typechecked("description", "string"),
+   typechecked("epilog", "string"),
+   typechecked("usage", "string"),
+   typechecked("help", "string"),
+   typechecked("require_command", "boolean"),
+   typechecked("handle_options", "boolean"),
+   typechecked("action", "function"),
+   typechecked("command_target", "string"),
+   typechecked("help_vertical_space", "number"),
+   typechecked("usage_margin", "number"),
+   typechecked("usage_max_width", "number"),
+   typechecked("help_usage_margin", "number"),
+   typechecked("help_description_margin", "number"),
+   typechecked("help_max_width", "number"),
+   add_help
+})
+
+local Command = class({
+   _aliases = {}
+}, {
+   args = 3,
+   multiname,
+   typechecked("description", "string"),
+   typechecked("epilog", "string"),
+   typechecked("target", "string"),
+   typechecked("usage", "string"),
+   typechecked("help", "string"),
+   typechecked("require_command", "boolean"),
+   typechecked("handle_options", "boolean"),
+   typechecked("action", "function"),
+   typechecked("command_target", "string"),
+   typechecked("help_vertical_space", "number"),
+   typechecked("usage_margin", "number"),
+   typechecked("usage_max_width", "number"),
+   typechecked("help_usage_margin", "number"),
+   typechecked("help_description_margin", "number"),
+   typechecked("help_max_width", "number"),
+   typechecked("hidden", "boolean"),
+   add_help
+}, Parser)
+
+local Argument = class({
+   _minargs = 1,
+   _maxargs = 1,
+   _mincount = 1,
+   _maxcount = 1,
+   _defmode = "unused",
+   _show_default = true
+}, {
+   args = 5,
+   typechecked("name", "string"),
+   typechecked("description", "string"),
+   option_default,
+   typechecked("convert", "function", "table"),
+   boundaries("args"),
+   typechecked("target", "string"),
+   typechecked("defmode", "string"),
+   typechecked("show_default", "boolean"),
+   typechecked("argname", "string", "table"),
+   typechecked("hidden", "boolean"),
+   option_action,
+   option_init
+})
+
+local Option = class({
+   _aliases = {},
+   _mincount = 0,
+   _overwrite = true
+}, {
+   args = 6,
+   multiname,
+   typechecked("description", "string"),
+   option_default,
+   typechecked("convert", "function", "table"),
+   boundaries("args"),
+   boundaries("count"),
+   typechecked("target", "string"),
+   typechecked("defmode", "string"),
+   typechecked("show_default", "boolean"),
+   typechecked("overwrite", "boolean"),
+   typechecked("argname", "string", "table"),
+   typechecked("hidden", "boolean"),
+   option_action,
+   option_init
+}, Argument)
+
+function Parser:_inherit_property(name, default)
+   local element = self
+
+   while true do
+      local value = element["_" .. name]
+
+      if value ~= nil then
+         return value
+      end
+
+      if not element._parent then
+         return default
+      end
+
+      element = element._parent
+   end
+end
+
+function Argument:_get_argument_list()
+   local buf = {}
+   local i = 1
+
+   while i <= math.min(self._minargs, 3) do
+      local argname = self:_get_argname(i)
+
+      if self._default and self._defmode:find "a" then
+         argname = "[" .. argname .. "]"
+      end
+
+      table.insert(buf, argname)
+      i = i+1
+   end
+
+   while i <= math.min(self._maxargs, 3) do
+      table.insert(buf, "[" .. self:_get_argname(i) .. "]")
+      i = i+1
+
+      if self._maxargs == math.huge then
+         break
+      end
+   end
+
+   if i < self._maxargs then
+      table.insert(buf, "...")
+   end
+
+   return buf
+end
+
+function Argument:_get_usage()
+   local usage = table.concat(self:_get_argument_list(), " ")
+
+   if self._default and self._defmode:find "u" then
+      if self._maxargs > 1 or (self._minargs == 1 and not self._defmode:find "a") then
+         usage = "[" .. usage .. "]"
+      end
+   end
+
+   return usage
+end
+
+function actions.store_true(result, target)
+   result[target] = true
+end
+
+function actions.store_false(result, target)
+   result[target] = false
+end
+
+function actions.store(result, target, argument)
+   result[target] = argument
+end
+
+function actions.count(result, target, _, overwrite)
+   if not overwrite then
+      result[target] = result[target] + 1
+   end
+end
+
+function actions.append(result, target, argument, overwrite)
+   result[target] = result[target] or {}
+   table.insert(result[target], argument)
+
+   if overwrite then
+      table.remove(result[target], 1)
+   end
+end
+
+function actions.concat(result, target, arguments, overwrite)
+   if overwrite then
+      error("'concat' action can't handle too many invocations")
+   end
+
+   result[target] = result[target] or {}
+
+   for _, argument in ipairs(arguments) do
+      table.insert(result[target], argument)
+   end
+end
+
+function Argument:_get_action()
+   local action, init
+
+   if self._maxcount == 1 then
+      if self._maxargs == 0 then
+         action, init = "store_true", nil
+      else
+         action, init = "store", nil
+      end
+   else
+      if self._maxargs == 0 then
+         action, init = "count", 0
+      else
+         action, init = "append", {}
+      end
+   end
+
+   if self._action then
+      action = self._action
+   end
+
+   if self._has_init then
+      init = self._init
+   end
+
+   if type(action) == "string" then
+      action = actions[action]
+   end
+
+   return action, init
+end
+
+-- Returns placeholder for `narg`-th argument.
+function Argument:_get_argname(narg)
+   local argname = self._argname or self:_get_default_argname()
+
+   if type(argname) == "table" then
+      return argname[narg]
+   else
+      return argname
+   end
+end
+
+function Argument:_get_default_argname()
+   return "<" .. self._name .. ">"
+end
+
+function Option:_get_default_argname()
+   return "<" .. self:_get_default_target() .. ">"
+end
+
+-- Returns labels to be shown in the help message.
+function Argument:_get_label_lines()
+   return {self._name}
+end
+
+function Option:_get_label_lines()
+   local argument_list = self:_get_argument_list()
+
+   if #argument_list == 0 then
+      -- Don't put aliases for simple flags like `-h` on different lines.
+      return {table.concat(self._aliases, ", ")}
+   end
+
+   local longest_alias_length = -1
+
+   for _, alias in ipairs(self._aliases) do
+      longest_alias_length = math.max(longest_alias_length, #alias)
+   end
+
+   local argument_list_repr = table.concat(argument_list, " ")
+   local lines = {}
+
+   for i, alias in ipairs(self._aliases) do
+      local line = (" "):rep(longest_alias_length - #alias) .. alias .. " " .. argument_list_repr
+
+      if i ~= #self._aliases then
+         line = line .. ","
+      end
+
+      table.insert(lines, line)
+   end
+
+   return lines
+end
+
+function Command:_get_label_lines()
+   return {table.concat(self._aliases, ", ")}
+end
+
+function Argument:_get_description()
+   if self._default and self._show_default then
+      if self._description then
+         return ("%s (default: %s)"):format(self._description, self._default)
+      else
+         return ("default: %s"):format(self._default)
+      end
+   else
+      return self._description or ""
+   end
+end
+
+function Command:_get_description()
+   return self._description or ""
+end
+
+function Option:_get_usage()
+   local usage = self:_get_argument_list()
+   table.insert(usage, 1, self._name)
+   usage = table.concat(usage, " ")
+
+   if self._mincount == 0 or self._default then
+      usage = "[" .. usage .. "]"
+   end
+
+   return usage
+end
+
+function Argument:_get_default_target()
+   return self._name
+end
+
+function Option:_get_default_target()
+   local res
+
+   for _, alias in ipairs(self._aliases) do
+      if alias:sub(1, 1) == alias:sub(2, 2) then
+         res = alias:sub(3)
+         break
+      end
+   end
+
+   res = res or self._name:sub(2)
+   return (res:gsub("-", "_"))
+end
+
+function Option:_is_vararg()
+   return self._maxargs ~= self._minargs
+end
+
+function Parser:_get_fullname()
+   local parent = self._parent
+   local buf = {self._name}
+
+   while parent do
+      table.insert(buf, 1, parent._name)
+      parent = parent._parent
+   end
+
+   return table.concat(buf, " ")
+end
+
+function Parser:_update_charset(charset)
+   charset = charset or {}
+
+   for _, command in ipairs(self._commands) do
+      command:_update_charset(charset)
+   end
+
+   for _, option in ipairs(self._options) do
+      for _, alias in ipairs(option._aliases) do
+         charset[alias:sub(1, 1)] = true
+      end
+   end
+
+   return charset
+end
+
+function Parser:argument(...)
+   local argument = Argument(...)
+   table.insert(self._arguments, argument)
+   return argument
+end
+
+function Parser:option(...)
+   local option = Option(...)
+
+   if self._has_help then
+      table.insert(self._options, #self._options, option)
+   else
+      table.insert(self._options, option)
+   end
+
+   return option
+end
+
+function Parser:flag(...)
+   return self:option():args(0)(...)
+end
+
+function Parser:command(...)
+   local command = Command():add_help(true)(...)
+   command._parent = self
+   table.insert(self._commands, command)
+   return command
+end
+
+function Parser:mutex(...)
+   local elements = {...}
+
+   for i, element in ipairs(elements) do
+      local mt = getmetatable(element)
+      assert(mt == Option or mt == Argument, ("bad argument #%d to 'mutex' (Option or Argument expected)"):format(i))
+   end
+
+   table.insert(self._mutexes, elements)
+   return self
+end
+
+function Parser:group(name, ...)
+   assert(type(name) == "string", ("bad argument #1 to 'group' (string expected, got %s)"):format(type(name)))
+
+   local group = {name = name, ...}
+
+   for i, element in ipairs(group) do
+      local mt = getmetatable(element)
+      assert(mt == Option or mt == Argument or mt == Command,
+         ("bad argument #%d to 'group' (Option or Argument or Command expected)"):format(i + 1))
+   end
+
+   table.insert(self._groups, group)
+   return self
+end
+
+local usage_welcome = "Usage: "
+
+function Parser:get_usage()
+   if self._usage then
+      return self._usage
+   end
+
+   local usage_margin = self:_inherit_property("usage_margin", #usage_welcome)
+   local max_usage_width = self:_inherit_property("usage_max_width", 70)
+   local lines = {usage_welcome .. self:_get_fullname()}
+
+   local function add(s)
+      if #lines[#lines]+1+#s <= max_usage_width then
+         lines[#lines] = lines[#lines] .. " " .. s
+      else
+         lines[#lines+1] = (" "):rep(usage_margin) .. s
+      end
+   end
+
+   -- Normally options are before positional arguments in usage messages.
+   -- However, vararg options should be after, because they can't be reliable used
+   -- before a positional argument.
+   -- Mutexes come into play, too, and are shown as soon as possible.
+   -- Overall, output usages in the following order:
+   -- 1. Mutexes that don't have positional arguments or vararg options.
+   -- 2. Options that are not in any mutexes and are not vararg.
+   -- 3. Positional arguments - on their own or as a part of a mutex.
+   -- 4. Remaining mutexes.
+   -- 5. Remaining options.
+
+   local elements_in_mutexes = {}
+   local added_elements = {}
+   local added_mutexes = {}
+   local argument_to_mutexes = {}
+
+   local function add_mutex(mutex, main_argument)
+      if added_mutexes[mutex] then
+         return
+      end
+
+      added_mutexes[mutex] = true
+      local buf = {}
+
+      for _, element in ipairs(mutex) do
+         if not element._hidden and not added_elements[element] then
+            if getmetatable(element) == Option or element == main_argument then
+               table.insert(buf, element:_get_usage())
+               added_elements[element] = true
+            end
+         end
+      end
+
+      if #buf == 1 then
+         add(buf[1])
+      elseif #buf > 1 then
+         add("(" .. table.concat(buf, " | ") .. ")")
+      end
+   end
+
+   local function add_element(element)
+      if not element._hidden and not added_elements[element] then
+         add(element:_get_usage())
+         added_elements[element] = true
+      end
+   end
+
+   for _, mutex in ipairs(self._mutexes) do
+      local is_vararg = false
+      local has_argument = false
+
+      for _, element in ipairs(mutex) do
+         if getmetatable(element) == Option then
+            if element:_is_vararg() then
+               is_vararg = true
+            end
+         else
+            has_argument = true
+            argument_to_mutexes[element] = argument_to_mutexes[element] or {}
+            table.insert(argument_to_mutexes[element], mutex)
+         end
+
+         elements_in_mutexes[element] = true
+      end
+
+      if not is_vararg and not has_argument then
+         add_mutex(mutex)
+      end
+   end
+
+   for _, option in ipairs(self._options) do
+      if not elements_in_mutexes[option] and not option:_is_vararg() then
+         add_element(option)
+      end
+   end
+
+   -- Add usages for positional arguments, together with one mutex containing them, if they are in a mutex.
+   for _, argument in ipairs(self._arguments) do
+      -- Pick a mutex as a part of which to show this argument, take the first one that's still available.
+      local mutex
+
+      if elements_in_mutexes[argument] then
+         for _, argument_mutex in ipairs(argument_to_mutexes[argument]) do
+            if not added_mutexes[argument_mutex] then
+               mutex = argument_mutex
+            end
+         end
+      end
+
+      if mutex then
+         add_mutex(mutex, argument)
+      else
+         add_element(argument)
+      end
+   end
+
+   for _, mutex in ipairs(self._mutexes) do
+      add_mutex(mutex)
+   end
+
+   for _, option in ipairs(self._options) do
+      add_element(option)
+   end
+
+   if #self._commands > 0 then
+      if self._require_command then
+         add("<command>")
+      else
+         add("[<command>]")
+      end
+
+      add("...")
+   end
+
+   return table.concat(lines, "\n")
+end
+
+local function split_lines(s)
+   if s == "" then
+      return {}
+   end
+
+   local lines = {}
+
+   if s:sub(-1) ~= "\n" then
+      s = s .. "\n"
+   end
+
+   for line in s:gmatch("([^\n]*)\n") do
+      table.insert(lines, line)
+   end
+
+   return lines
+end
+
+local function autowrap_line(line, max_length)
+   -- Algorithm for splitting lines is simple and greedy.
+   local result_lines = {}
+
+   -- Preserve original indentation of the line, put this at the beginning of each result line.
+   -- If the first word looks like a list marker ('*', '+', or '-'), add spaces so that starts
+   -- of the second and the following lines vertically align with the start of the second word.
+   local indentation = line:match("^ *")
+
+   if line:find("^ *[%*%+%-]") then
+      indentation = indentation .. " " .. line:match("^ *[%*%+%-]( *)")
+   end
+
+   -- Parts of the last line being assembled.
+   local line_parts = {}
+
+   -- Length of the current line.
+   local line_length = 0
+
+   -- Index of the next character to consider.
+   local index = 1
+
+   while true do
+      local word_start, word_finish, word = line:find("([^ ]+)", index)
+
+      if not word_start then
+         -- Ignore trailing spaces, if any.
+         break
+      end
+
+      local preceding_spaces = line:sub(index, word_start - 1)
+      index = word_finish + 1
+
+      if (#line_parts == 0) or (line_length + #preceding_spaces + #word <= max_length) then
+         -- Either this is the very first word or it fits as an addition to the current line, add it.
+         table.insert(line_parts, preceding_spaces) -- For the very first word this adds the indentation.
+         table.insert(line_parts, word)
+         line_length = line_length + #preceding_spaces + #word
+      else
+         -- Does not fit, finish current line and put the word into a new one.
+         table.insert(result_lines, table.concat(line_parts))
+         line_parts = {indentation, word}
+         line_length = #indentation + #word
+      end
+   end
+
+   if #line_parts > 0 then
+      table.insert(result_lines, table.concat(line_parts))
+   end
+
+   if #result_lines == 0 then
+      -- Preserve empty lines.
+      result_lines[1] = ""
+   end
+
+   return result_lines
+end
+
+-- Automatically wraps lines within given array,
+-- attempting to limit line length to `max_length`.
+-- Existing line splits are preserved.
+local function autowrap(lines, max_length)
+   local result_lines = {}
+
+   for _, line in ipairs(lines) do
+      local autowrapped_lines = autowrap_line(line, max_length)
+
+      for _, autowrapped_line in ipairs(autowrapped_lines) do
+         table.insert(result_lines, autowrapped_line)
+      end
+   end
+
+   return result_lines
+end
+
+function Parser:_get_element_help(element)
+   local label_lines = element:_get_label_lines()
+   local description_lines = split_lines(element:_get_description())
+
+   local result_lines = {}
+
+   -- All label lines should have the same length (except the last one, it has no comma).
+   -- If too long, start description after all the label lines.
+   -- Otherwise, combine label and description lines.
+
+   local usage_margin_len = self:_inherit_property("help_usage_margin", 3)
+   local usage_margin = (" "):rep(usage_margin_len)
+   local description_margin_len = self:_inherit_property("help_description_margin", 25)
+   local description_margin = (" "):rep(description_margin_len)
+
+   local help_max_width = self:_inherit_property("help_max_width")
+
+   if help_max_width then
+      local description_max_width = math.max(help_max_width - description_margin_len, 10)
+      description_lines = autowrap(description_lines, description_max_width)
+   end
+
+   if #label_lines[1] >= (description_margin_len - usage_margin_len) then
+      for _, label_line in ipairs(label_lines) do
+         table.insert(result_lines, usage_margin .. label_line)
+      end
+
+      for _, description_line in ipairs(description_lines) do
+         table.insert(result_lines, description_margin .. description_line)
+      end
+   else
+      for i = 1, math.max(#label_lines, #description_lines) do
+         local label_line = label_lines[i]
+         local description_line = description_lines[i]
+
+         local line = ""
+
+         if label_line then
+            line = usage_margin .. label_line
+         end
+
+         if description_line and description_line ~= "" then
+            line = line .. (" "):rep(description_margin_len - #line) .. description_line
+         end
+
+         table.insert(result_lines, line)
+      end
+   end
+
+   return table.concat(result_lines, "\n")
+end
+
+local function get_group_types(group)
+   local types = {}
+
+   for _, element in ipairs(group) do
+      types[getmetatable(element)] = true
+   end
+
+   return types
+end
+
+function Parser:_add_group_help(blocks, added_elements, label, elements)
+   local buf = {label}
+
+   for _, element in ipairs(elements) do
+      if not element._hidden and not added_elements[element] then
+         added_elements[element] = true
+         table.insert(buf, self:_get_element_help(element))
+      end
+   end
+
+   if #buf > 1 then
+      table.insert(blocks, table.concat(buf, ("\n"):rep(self:_inherit_property("help_vertical_space", 0) + 1)))
+   end
+end
+
+function Parser:get_help()
+   if self._help then
+      return self._help
+   end
+
+   local blocks = {self:get_usage()}
+
+   local help_max_width = self:_inherit_property("help_max_width")
+
+   if self._description then
+      local description = self._description
+
+      if help_max_width then
+         description = table.concat(autowrap(split_lines(description), help_max_width), "\n")
+      end
+
+      table.insert(blocks, description)
+   end
+
+   -- 1. Put groups containing arguments first, then other arguments.
+   -- 2. Put remaining groups containing options, then other options.
+   -- 3. Put remaining groups containing commands, then other commands.
+   -- Assume that an element can't be in several groups.
+   local groups_by_type = {
+      [Argument] = {},
+      [Option] = {},
+      [Command] = {}
+   }
+
+   for _, group in ipairs(self._groups) do
+      local group_types = get_group_types(group)
+
+      for _, mt in ipairs({Argument, Option, Command}) do
+         if group_types[mt] then
+            table.insert(groups_by_type[mt], group)
+            break
+         end
+      end
+   end
+
+   local default_groups = {
+      {name = "Arguments", type = Argument, elements = self._arguments},
+      {name = "Options", type = Option, elements = self._options},
+      {name = "Commands", type = Command, elements = self._commands}
+   }
+
+   local added_elements = {}
+
+   for _, default_group in ipairs(default_groups) do
+      local type_groups = groups_by_type[default_group.type]
+
+      for _, group in ipairs(type_groups) do
+         self:_add_group_help(blocks, added_elements, group.name .. ":", group)
+      end
+
+      local default_label = default_group.name .. ":"
+
+      if #type_groups > 0 then
+         default_label = "Other " .. default_label:gsub("^.", string.lower)
+      end
+
+      self:_add_group_help(blocks, added_elements, default_label, default_group.elements)
+   end
+
+   if self._epilog then
+      local epilog = self._epilog
+
+      if help_max_width then
+         epilog = table.concat(autowrap(split_lines(epilog), help_max_width), "\n")
+      end
+
+      table.insert(blocks, epilog)
+   end
+
+   return table.concat(blocks, "\n\n")
+end
+
+local function get_tip(context, wrong_name)
+   local context_pool = {}
+   local possible_name
+   local possible_names = {}
+
+   for name in pairs(context) do
+      if type(name) == "string" then
+         for i = 1, #name do
+            possible_name = name:sub(1, i - 1) .. name:sub(i + 1)
+
+            if not context_pool[possible_name] then
+               context_pool[possible_name] = {}
+            end
+
+            table.insert(context_pool[possible_name], name)
+         end
+      end
+   end
+
+   for i = 1, #wrong_name + 1 do
+      possible_name = wrong_name:sub(1, i - 1) .. wrong_name:sub(i + 1)
+
+      if context[possible_name] then
+         possible_names[possible_name] = true
+      elseif context_pool[possible_name] then
+         for _, name in ipairs(context_pool[possible_name]) do
+            possible_names[name] = true
+         end
+      end
+   end
+
+   local first = next(possible_names)
+
+   if first then
+      if next(possible_names, first) then
+         local possible_names_arr = {}
+
+         for name in pairs(possible_names) do
+            table.insert(possible_names_arr, "'" .. name .. "'")
+         end
+
+         table.sort(possible_names_arr)
+         return "\nDid you mean one of these: " .. table.concat(possible_names_arr, " ") .. "?"
+      else
+         return "\nDid you mean '" .. first .. "'?"
+      end
+   else
+      return ""
+   end
+end
+
+local ElementState = class({
+   invocations = 0
+})
+
+function ElementState:__call(state, element)
+   self.state = state
+   self.result = state.result
+   self.element = element
+   self.target = element._target or element:_get_default_target()
+   self.action, self.result[self.target] = element:_get_action()
+   return self
+end
+
+function ElementState:error(fmt, ...)
+   self.state:error(fmt, ...)
+end
+
+function ElementState:convert(argument, index)
+   local converter = self.element._convert
+
+   if converter then
+      local ok, err
+
+      if type(converter) == "function" then
+         ok, err = converter(argument)
+      elseif type(converter[index]) == "function" then
+         ok, err = converter[index](argument)
+      else
+         ok = converter[argument]
+      end
+
+      if ok == nil then
+         self:error(err and "%s" or "malformed argument '%s'", err or argument)
+      end
+
+      argument = ok
+   end
+
+   return argument
+end
+
+function ElementState:default(mode)
+   return self.element._defmode:find(mode) and self.element._default
+end
+
+local function bound(noun, min, max, is_max)
+   local res = ""
+
+   if min ~= max then
+      res = "at " .. (is_max and "most" or "least") .. " "
+   end
+
+   local number = is_max and max or min
+   return res .. tostring(number) .. " " .. noun ..  (number == 1 and "" or "s")
+end
+
+function ElementState:set_name(alias)
+   self.name = ("%s '%s'"):format(alias and "option" or "argument", alias or self.element._name)
+end
+
+function ElementState:invoke()
+   self.open = true
+   self.overwrite = false
+
+   if self.invocations >= self.element._maxcount then
+      if self.element._overwrite then
+         self.overwrite = true
+      else
+         local num_times_repr = bound("time", self.element._mincount, self.element._maxcount, true)
+         self:error("%s must be used %s", self.name, num_times_repr)
+      end
+   else
+      self.invocations = self.invocations + 1
+   end
+
+   self.args = {}
+
+   if self.element._maxargs <= 0 then
+      self:close()
+   end
+
+   return self.open
+end
+
+function ElementState:pass(argument)
+   argument = self:convert(argument, #self.args + 1)
+   table.insert(self.args, argument)
+
+   if #self.args >= self.element._maxargs then
+      self:close()
+   end
+
+   return self.open
+end
+
+function ElementState:complete_invocation()
+   while #self.args < self.element._minargs do
+      self:pass(self.element._default)
+   end
+end
+
+function ElementState:close()
+   if self.open then
+      self.open = false
+
+      if #self.args < self.element._minargs then
+         if self:default("a") then
+            self:complete_invocation()
+         else
+            if #self.args == 0 then
+               if getmetatable(self.element) == Argument then
+                  self:error("missing %s", self.name)
+               elseif self.element._maxargs == 1 then
+                  self:error("%s requires an argument", self.name)
+               end
+            end
+
+            self:error("%s requires %s", self.name, bound("argument", self.element._minargs, self.element._maxargs))
+         end
+      end
+
+      local args
+
+      if self.element._maxargs == 0 then
+         args = self.args[1]
+      elseif self.element._maxargs == 1 then
+         if self.element._minargs == 0 and self.element._mincount ~= self.element._maxcount then
+            args = self.args
+         else
+            args = self.args[1]
+         end
+      else
+         args = self.args
+      end
+
+      self.action(self.result, self.target, args, self.overwrite)
+   end
+end
+
+local ParseState = class({
+   result = {},
+   options = {},
+   arguments = {},
+   argument_i = 1,
+   element_to_mutexes = {},
+   mutex_to_element_state = {},
+   command_actions = {}
+})
+
+function ParseState:__call(parser, error_handler)
+   self.parser = parser
+   self.error_handler = error_handler
+   self.charset = parser:_update_charset()
+   self:switch(parser)
+   return self
+end
+
+function ParseState:error(fmt, ...)
+   self.error_handler(self.parser, fmt:format(...))
+end
+
+function ParseState:switch(parser)
+   self.parser = parser
+
+   if parser._action then
+      table.insert(self.command_actions, {action = parser._action, name = parser._name})
+   end
+
+   for _, option in ipairs(parser._options) do
+      option = ElementState(self, option)
+      table.insert(self.options, option)
+
+      for _, alias in ipairs(option.element._aliases) do
+         self.options[alias] = option
+      end
+   end
+
+   for _, mutex in ipairs(parser._mutexes) do
+      for _, element in ipairs(mutex) do
+         if not self.element_to_mutexes[element] then
+            self.element_to_mutexes[element] = {}
+         end
+
+         table.insert(self.element_to_mutexes[element], mutex)
+      end
+   end
+
+   for _, argument in ipairs(parser._arguments) do
+      argument = ElementState(self, argument)
+      table.insert(self.arguments, argument)
+      argument:set_name()
+      argument:invoke()
+   end
+
+   self.handle_options = parser._handle_options
+   self.argument = self.arguments[self.argument_i]
+   self.commands = parser._commands
+
+   for _, command in ipairs(self.commands) do
+      for _, alias in ipairs(command._aliases) do
+         self.commands[alias] = command
+      end
+   end
+end
+
+function ParseState:get_option(name)
+   local option = self.options[name]
+
+   if not option then
+      self:error("unknown option '%s'%s", name, get_tip(self.options, name))
+   else
+      return option
+   end
+end
+
+function ParseState:get_command(name)
+   local command = self.commands[name]
+
+   if not command then
+      if #self.commands > 0 then
+         self:error("unknown command '%s'%s", name, get_tip(self.commands, name))
+      else
+         self:error("too many arguments")
+      end
+   else
+      return command
+   end
+end
+
+function ParseState:check_mutexes(element_state)
+   if self.element_to_mutexes[element_state.element] then
+      for _, mutex in ipairs(self.element_to_mutexes[element_state.element]) do
+         local used_element_state = self.mutex_to_element_state[mutex]
+
+         if used_element_state and used_element_state ~= element_state then
+            self:error("%s can not be used together with %s", element_state.name, used_element_state.name)
+         else
+            self.mutex_to_element_state[mutex] = element_state
+         end
+      end
+   end
+end
+
+function ParseState:invoke(option, name)
+   self:close()
+   option:set_name(name)
+   self:check_mutexes(option, name)
+
+   if option:invoke() then
+      self.option = option
+   end
+end
+
+function ParseState:pass(arg)
+   if self.option then
+      if not self.option:pass(arg) then
+         self.option = nil
+      end
+   elseif self.argument then
+      self:check_mutexes(self.argument)
+
+      if not self.argument:pass(arg) then
+         self.argument_i = self.argument_i + 1
+         self.argument = self.arguments[self.argument_i]
+      end
+   else
+      local command = self:get_command(arg)
+      self.result[command._target or command._name] = true
+
+      if self.parser._command_target then
+         self.result[self.parser._command_target] = command._name
+      end
+
+      self:switch(command)
+   end
+end
+
+function ParseState:close()
+   if self.option then
+      self.option:close()
+      self.option = nil
+   end
+end
+
+function ParseState:finalize()
+   self:close()
+
+   for i = self.argument_i, #self.arguments do
+      local argument = self.arguments[i]
+      if #argument.args == 0 and argument:default("u") then
+         argument:complete_invocation()
+      else
+         argument:close()
+      end
+   end
+
+   if self.parser._require_command and #self.commands > 0 then
+      self:error("a command is required")
+   end
+
+   for _, option in ipairs(self.options) do
+      option.name = option.name or ("option '%s'"):format(option.element._name)
+
+      if option.invocations == 0 then
+         if option:default("u") then
+            option:invoke()
+            option:complete_invocation()
+            option:close()
+         end
+      end
+
+      local mincount = option.element._mincount
+
+      if option.invocations < mincount then
+         if option:default("a") then
+            while option.invocations < mincount do
+               option:invoke()
+               option:close()
+            end
+         elseif option.invocations == 0 then
+            self:error("missing %s", option.name)
+         else
+            self:error("%s must be used %s", option.name, bound("time", mincount, option.element._maxcount))
+         end
+      end
+   end
+
+   for i = #self.command_actions, 1, -1 do
+      self.command_actions[i].action(self.result, self.command_actions[i].name)
+   end
+end
+
+function ParseState:parse(args)
+   for _, arg in ipairs(args) do
+      local plain = true
+
+      if self.handle_options then
+         local first = arg:sub(1, 1)
+
+         if self.charset[first] then
+            if #arg > 1 then
+               plain = false
+
+               if arg:sub(2, 2) == first then
+                  if #arg == 2 then
+                     if self.options[arg] then
+                        local option = self:get_option(arg)
+                        self:invoke(option, arg)
+                     else
+                        self:close()
+                     end
+
+                     self.handle_options = false
+                  else
+                     local equals = arg:find "="
+                     if equals then
+                        local name = arg:sub(1, equals - 1)
+                        local option = self:get_option(name)
+
+                        if option.element._maxargs <= 0 then
+                           self:error("option '%s' does not take arguments", name)
+                        end
+
+                        self:invoke(option, name)
+                        self:pass(arg:sub(equals + 1))
+                     else
+                        local option = self:get_option(arg)
+                        self:invoke(option, arg)
+                     end
+                  end
+               else
+                  for i = 2, #arg do
+                     local name = first .. arg:sub(i, i)
+                     local option = self:get_option(name)
+                     self:invoke(option, name)
+
+                     if i ~= #arg and option.element._maxargs > 0 then
+                        self:pass(arg:sub(i + 1))
+                        break
+                     end
+                  end
+               end
+            end
+         end
+      end
+
+      if plain then
+         self:pass(arg)
+      end
+   end
+
+   self:finalize()
+   return self.result
+end
+
+function Parser:error(msg)
+   io.stderr:write(("%s\n\nError: %s\n"):format(self:get_usage(), msg))
+   os.exit(1)
+end
+
+-- Compatibility with strict.lua and other checkers:
+local default_cmdline = rawget(_G, "arg") or {}
+
+function Parser:_parse(args, error_handler)
+   return ParseState(self, error_handler):parse(args or default_cmdline)
+end
+
+function Parser:parse(args)
+   return self:_parse(args, self.error)
+end
+
+local function xpcall_error_handler(err)
+   return tostring(err) .. "\noriginal " .. debug.traceback("", 2):sub(2)
+end
+
+function Parser:pparse(args)
+   local parse_error
+
+   local ok, result = xpcall(function()
+      return self:_parse(args, function(_, err)
+         parse_error = err
+         error(err, 0)
+      end)
+   end, xpcall_error_handler)
+
+   if ok then
+      return true, result
+   elseif not parse_error then
+      error(result, 0)
+   else
+      return false, parse_error
+   end
+end
+
+local argparse = {}
+
+argparse.version = "0.6.0"
+
+setmetatable(argparse, {__call = function(_, ...)
+   return Parser(default_cmdline[0]):add_help(true)(...)
+end})
+
+return argparse
+]=]),
+["complex"] = lib("src/complex/complex.lua", [=[--[[
+This file is part of luax.
+
+luax is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+luax is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with luax.  If not, see <https://www.gnu.org/licenses/>.
+
+For further information about luax you can visit
+http://cdelord.fr/luax
+--]]
+
+--@LOAD
+local _, complex = pcall(require, "_complex")
+complex = _ and complex
+
+return complex
+]=]),
+["crypt"] = lib("src/crypt/crypt.lua", [=[--[[
+This file is part of luax.
+
+luax is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+luax is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with luax.  If not, see <https://www.gnu.org/licenses/>.
+
+For further information about luax you can visit
+http://cdelord.fr/luax
+--]]
+
+--@LOAD
+local _, crypt = pcall(require, "_crypt")
+crypt = _ and crypt
+
+-- Additional definitions for the C implementation
+if crypt then
+
+--[[------------------------------------------------------------------------@@@
+## String methods
+
+Some functions of the `crypt` package are added to the string module:
+
 @@@]]
 
-function sh.read(...)
-    local cmd = F.flatten{...}:unwords()
-    local p, popen_err = io.popen(cmd, "r")
-    if not p then return p, popen_err end
-    local out = p:read("a")
-    local ok, exit, ret = p:close()
-    if ok then
-        return out
+--[[@@@
+```lua
+s:hex()             == crypt.hex(s)
+s:unhex()           == crypt.unhex(s)
+s:base64()          == crypt.base64(s)
+s:unbase64()        == crypt.unbase64(s)
+s:base64url()       == crypt.base64url(s)
+s:unbase64url()     == crypt.unbase64url(s)
+s:crc32()           == crypt.crc32(s)
+s:crc64()           == crypt.crc64(s)
+s:rc4(key, drop)    == crypt.rc4(s, key, drop)
+s:unrc4(key, drop)  == crypt.unrc4(s, key, drop)
+s:sha256()          == crypt.sha256(s)
+s:hmac(key)         == crypt.hmac(s, key)
+s:aes(key)          == crypt.aes(s, key)
+s:unaes(key)        == crypt.unaes(s, key)
+```
+@@@]]
+
+    function string.hex(s)          return crypt.hex(s) end
+    function string.unhex(s)        return crypt.unhex(s) end
+    function string.base64(s)       return crypt.base64(s) end
+    function string.unbase64(s)     return crypt.unbase64(s) end
+    function string.base64url(s)    return crypt.base64url(s) end
+    function string.unbase64url(s)  return crypt.unbase64url(s) end
+    function string.rc4(s, k, d)    return crypt.rc4(s, k, d) end
+    function string.unrc4(s, k, d)  return crypt.unrc4(s, k, d) end
+    function string.crc32(s)        return crypt.crc32(s) end
+    function string.crc64(s)        return crypt.crc64(s) end
+
+    -- TinyCrypt functions
+
+    function string.sha256(s)       return crypt.sha256(s) end
+    function string.hmac(s, k)      return crypt.hmac(s, k) end
+    function string.aes(s, k)       return crypt.aes(s, k) end
+    function string.unaes(s, k)     return crypt.unaes(s, k) end
+
+end
+
+-- Pure Lua implementation
+if not crypt then
+
+    crypt = {}
+
+--[[@@@
+``` lua
+local rng = crypt.prng(seed)
+```
+returns a random number generator starting from the optional seed `seed`.
+@@@]]
+
+    local prng_mt = {__index={}}
+
+    local random = math.random
+
+    local byte = string.byte
+    local char = string.char
+    local format = string.format
+    local gsub = string.gsub
+
+    local concat = table.concat
+
+    local tonumber = tonumber
+
+    local RAND_MAX = 0xFFFFFFFF
+
+    crypt.RAND_MAX = RAND_MAX
+
+    function crypt.prng(seed)
+        seed = seed or random(RAND_MAX)
+        return setmetatable({seed=seed}, prng_mt)
+    end
+
+--[[@@@
+``` lua
+rng:int()
+```
+returns a random integral number between `0` and `crypt.RAND_MAX`.
+
+``` lua
+rng:int(a)
+```
+returns a random integral number between `0` and `a`.
+
+``` lua
+rng:int(a, b)
+```
+returns a random integral number between `a` and `b`.
+@@@]]
+
+    function prng_mt.__index:int(a, b)
+        self.seed = 6364136223846793005*self.seed + 1
+        local r = self.seed >> 32
+        if not a then return r end
+        if not b then return r % (a+1) end
+        return r % (b-a+1) + a
+    end
+
+--[[@@@
+``` lua
+rng:float()
+```
+returns a random floating point number between `0` and `1`.
+
+``` lua
+rng:float(a)
+```
+returns a random floating point number between `0` and `a`.
+
+``` lua
+rng:float(a, b)
+```
+returns a random floating point number between `a` and `b`.
+@@@]]
+
+    function prng_mt.__index:float(a, b)
+        local r = self:int()
+        if not a then return r / RAND_MAX end
+        if not b then return r * a/RAND_MAX end
+        return r * (b-a)/RAND_MAX + a
+    end
+
+--[[@@@
+```lua
+rng:str(n)
+```
+returns a string with `n` random bytes.
+@@@]]
+
+    function prng_mt.__index:str(n)
+        local bs = {}
+        for i = 1, n do
+            bs[i] = char(self:int(0, 255))
+        end
+        return concat(bs)
+    end
+
+--[[------------------------------------------------------------------------@@@
+## Hexadecimal encoding
+
+The hexadecimal encoder transforms a string into a string
+where bytes are coded with hexadecimal digits.
+@@@]]
+
+--[[@@@
+```lua
+crypt.hex(data)
+data:hex()
+```
+encodes `data` in hexa.
+@@@]]
+
+    function crypt.hex(s)
+        return (gsub(s, '.', function(c) return format("%02X", byte(c)) end))
+    end
+
+    string.hex = crypt.hex
+
+--[[@@@
+```lua
+crypt.unhex(data)
+data:unhex()
+```
+decodes the hexa `data`.
+@@@]]
+
+    function crypt.unhex(s)
+        return (gsub(s, '..', function(h) return char(tonumber(h, 16)) end))
+    end
+
+    string.unhex = crypt.unhex
+
+--[[------------------------------------------------------------------------@@@
+## Base64 encoding
+
+The base64 encoder transforms a string with non printable characters
+into a printable string (see <https://en.wikipedia.org/wiki/Base64>).
+
+The implementation has been taken from
+<https://lua-users.org/wiki/BaseSixtyFour>.
+@@@]]
+
+    local b = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/'
+
+--[[@@@
+```lua
+crypt.base64(data)
+data:base64()
+```
+encodes `data` in base64.
+@@@]]
+
+    function crypt.base64(s)
+        return ((s:gsub('.', function(x)
+            local r,b='',x:byte()
+            for i=8,1,-1 do r=r..(b%2^i-b%2^(i-1)>0 and '1' or '0') end
+            return r;
+        end)..'0000'):gsub('%d%d%d?%d?%d?%d?', function(x)
+            if (#x < 6) then return '' end
+            local c=0
+            for i=1,6 do c=c+(x:sub(i,i)=='1' and 2^(6-i) or 0) end
+            return b:sub(c+1,c+1)
+        end)..({ '', '==', '=' })[#s%3+1])
+    end
+
+    string.base64 = crypt.base64
+
+--[[@@@
+```lua
+crypt.unbase64(data)
+data:unbase64()
+```
+decodes the base64 `data`.
+@@@]]
+
+    function crypt.unbase64(s)
+        s = string.gsub(s, '[^'..b..'=]', '')
+        return (s:gsub('.', function(x)
+            if (x == '=') then return '' end
+            local r,f='',(b:find(x)-1)
+            for i=6,1,-1 do r=r..(f%2^i-f%2^(i-1)>0 and '1' or '0') end
+            return r;
+        end):gsub('%d%d%d?%d?%d?%d?%d?%d?', function(x)
+            if (#x ~= 8) then return '' end
+            local c=0
+            for i=1,8 do c=c+(x:sub(i,i)=='1' and 2^(8-i) or 0) end
+            return string.char(c)
+        end))
+    end
+
+    string.unbase64 = crypt.unbase64
+
+--[[------------------------------------------------------------------------@@@
+## CRC32 hash
+
+The CRC-32 algorithm has been generated by [pycrc](https://pycrc.org/)
+with the `crc-32` algorithm.
+@@@]]
+
+--[[@@@
+```lua
+crypt.crc32(data)
+data:crc32()
+```
+computes the CRC32 of `data`.
+@@@]]
+
+    local crc32_table = { [0]=
+        0x00000000, 0x77073096, 0xee0e612c, 0x990951ba, 0x076dc419, 0x706af48f, 0xe963a535, 0x9e6495a3,
+        0x0edb8832, 0x79dcb8a4, 0xe0d5e91e, 0x97d2d988, 0x09b64c2b, 0x7eb17cbd, 0xe7b82d07, 0x90bf1d91,
+        0x1db71064, 0x6ab020f2, 0xf3b97148, 0x84be41de, 0x1adad47d, 0x6ddde4eb, 0xf4d4b551, 0x83d385c7,
+        0x136c9856, 0x646ba8c0, 0xfd62f97a, 0x8a65c9ec, 0x14015c4f, 0x63066cd9, 0xfa0f3d63, 0x8d080df5,
+        0x3b6e20c8, 0x4c69105e, 0xd56041e4, 0xa2677172, 0x3c03e4d1, 0x4b04d447, 0xd20d85fd, 0xa50ab56b,
+        0x35b5a8fa, 0x42b2986c, 0xdbbbc9d6, 0xacbcf940, 0x32d86ce3, 0x45df5c75, 0xdcd60dcf, 0xabd13d59,
+        0x26d930ac, 0x51de003a, 0xc8d75180, 0xbfd06116, 0x21b4f4b5, 0x56b3c423, 0xcfba9599, 0xb8bda50f,
+        0x2802b89e, 0x5f058808, 0xc60cd9b2, 0xb10be924, 0x2f6f7c87, 0x58684c11, 0xc1611dab, 0xb6662d3d,
+        0x76dc4190, 0x01db7106, 0x98d220bc, 0xefd5102a, 0x71b18589, 0x06b6b51f, 0x9fbfe4a5, 0xe8b8d433,
+        0x7807c9a2, 0x0f00f934, 0x9609a88e, 0xe10e9818, 0x7f6a0dbb, 0x086d3d2d, 0x91646c97, 0xe6635c01,
+        0x6b6b51f4, 0x1c6c6162, 0x856530d8, 0xf262004e, 0x6c0695ed, 0x1b01a57b, 0x8208f4c1, 0xf50fc457,
+        0x65b0d9c6, 0x12b7e950, 0x8bbeb8ea, 0xfcb9887c, 0x62dd1ddf, 0x15da2d49, 0x8cd37cf3, 0xfbd44c65,
+        0x4db26158, 0x3ab551ce, 0xa3bc0074, 0xd4bb30e2, 0x4adfa541, 0x3dd895d7, 0xa4d1c46d, 0xd3d6f4fb,
+        0x4369e96a, 0x346ed9fc, 0xad678846, 0xda60b8d0, 0x44042d73, 0x33031de5, 0xaa0a4c5f, 0xdd0d7cc9,
+        0x5005713c, 0x270241aa, 0xbe0b1010, 0xc90c2086, 0x5768b525, 0x206f85b3, 0xb966d409, 0xce61e49f,
+        0x5edef90e, 0x29d9c998, 0xb0d09822, 0xc7d7a8b4, 0x59b33d17, 0x2eb40d81, 0xb7bd5c3b, 0xc0ba6cad,
+        0xedb88320, 0x9abfb3b6, 0x03b6e20c, 0x74b1d29a, 0xead54739, 0x9dd277af, 0x04db2615, 0x73dc1683,
+        0xe3630b12, 0x94643b84, 0x0d6d6a3e, 0x7a6a5aa8, 0xe40ecf0b, 0x9309ff9d, 0x0a00ae27, 0x7d079eb1,
+        0xf00f9344, 0x8708a3d2, 0x1e01f268, 0x6906c2fe, 0xf762575d, 0x806567cb, 0x196c3671, 0x6e6b06e7,
+        0xfed41b76, 0x89d32be0, 0x10da7a5a, 0x67dd4acc, 0xf9b9df6f, 0x8ebeeff9, 0x17b7be43, 0x60b08ed5,
+        0xd6d6a3e8, 0xa1d1937e, 0x38d8c2c4, 0x4fdff252, 0xd1bb67f1, 0xa6bc5767, 0x3fb506dd, 0x48b2364b,
+        0xd80d2bda, 0xaf0a1b4c, 0x36034af6, 0x41047a60, 0xdf60efc3, 0xa867df55, 0x316e8eef, 0x4669be79,
+        0xcb61b38c, 0xbc66831a, 0x256fd2a0, 0x5268e236, 0xcc0c7795, 0xbb0b4703, 0x220216b9, 0x5505262f,
+        0xc5ba3bbe, 0xb2bd0b28, 0x2bb45a92, 0x5cb36a04, 0xc2d7ffa7, 0xb5d0cf31, 0x2cd99e8b, 0x5bdeae1d,
+        0x9b64c2b0, 0xec63f226, 0x756aa39c, 0x026d930a, 0x9c0906a9, 0xeb0e363f, 0x72076785, 0x05005713,
+        0x95bf4a82, 0xe2b87a14, 0x7bb12bae, 0x0cb61b38, 0x92d28e9b, 0xe5d5be0d, 0x7cdcefb7, 0x0bdbdf21,
+        0x86d3d2d4, 0xf1d4e242, 0x68ddb3f8, 0x1fda836e, 0x81be16cd, 0xf6b9265b, 0x6fb077e1, 0x18b74777,
+        0x88085ae6, 0xff0f6a70, 0x66063bca, 0x11010b5c, 0x8f659eff, 0xf862ae69, 0x616bffd3, 0x166ccf45,
+        0xa00ae278, 0xd70dd2ee, 0x4e048354, 0x3903b3c2, 0xa7672661, 0xd06016f7, 0x4969474d, 0x3e6e77db,
+        0xaed16a4a, 0xd9d65adc, 0x40df0b66, 0x37d83bf0, 0xa9bcae53, 0xdebb9ec5, 0x47b2cf7f, 0x30b5ffe9,
+        0xbdbdf21c, 0xcabac28a, 0x53b39330, 0x24b4a3a6, 0xbad03605, 0xcdd70693, 0x54de5729, 0x23d967bf,
+        0xb3667a2e, 0xc4614ab8, 0x5d681b02, 0x2a6f2b94, 0xb40bbe37, 0xc30c8ea1, 0x5a05df1b, 0x2d02ef8d
+    }
+
+    function crypt.crc32(s)
+        local crc = 0xFFFFFFFF
+        for i = 1, #s do
+            crc = (crc>>8) ~ crc32_table[(crc~byte(s, i))&0xFF]
+        end
+        return crc ~ 0xFFFFFFFF
+    end
+
+    string.crc32 = crypt.crc32
+
+--[[------------------------------------------------------------------------@@@
+## CRC64 hash
+
+The CRC-64 algorithm has been generated by [pycrc](https://pycrc.org/)
+with the `crc-64-xz` algorithm.
+@@@]]
+
+--[[@@@
+```lua
+crypt.crc64(data)
+data:crc64()
+```
+computes the CRC64 of `data`.
+@@@]]
+
+    local crc64_table = { [0]=
+        0x0000000000000000, 0xb32e4cbe03a75f6f, 0xf4843657a840a05b, 0x47aa7ae9abe7ff34,
+        0x7bd0c384ff8f5e33, 0xc8fe8f3afc28015c, 0x8f54f5d357cffe68, 0x3c7ab96d5468a107,
+        0xf7a18709ff1ebc66, 0x448fcbb7fcb9e309, 0x0325b15e575e1c3d, 0xb00bfde054f94352,
+        0x8c71448d0091e255, 0x3f5f08330336bd3a, 0x78f572daa8d1420e, 0xcbdb3e64ab761d61,
+        0x7d9ba13851336649, 0xceb5ed8652943926, 0x891f976ff973c612, 0x3a31dbd1fad4997d,
+        0x064b62bcaebc387a, 0xb5652e02ad1b6715, 0xf2cf54eb06fc9821, 0x41e11855055bc74e,
+        0x8a3a2631ae2dda2f, 0x39146a8fad8a8540, 0x7ebe1066066d7a74, 0xcd905cd805ca251b,
+        0xf1eae5b551a2841c, 0x42c4a90b5205db73, 0x056ed3e2f9e22447, 0xb6409f5cfa457b28,
+        0xfb374270a266cc92, 0x48190ecea1c193fd, 0x0fb374270a266cc9, 0xbc9d3899098133a6,
+        0x80e781f45de992a1, 0x33c9cd4a5e4ecdce, 0x7463b7a3f5a932fa, 0xc74dfb1df60e6d95,
+        0x0c96c5795d7870f4, 0xbfb889c75edf2f9b, 0xf812f32ef538d0af, 0x4b3cbf90f69f8fc0,
+        0x774606fda2f72ec7, 0xc4684a43a15071a8, 0x83c230aa0ab78e9c, 0x30ec7c140910d1f3,
+        0x86ace348f355aadb, 0x3582aff6f0f2f5b4, 0x7228d51f5b150a80, 0xc10699a158b255ef,
+        0xfd7c20cc0cdaf4e8, 0x4e526c720f7dab87, 0x09f8169ba49a54b3, 0xbad65a25a73d0bdc,
+        0x710d64410c4b16bd, 0xc22328ff0fec49d2, 0x85895216a40bb6e6, 0x36a71ea8a7ace989,
+        0x0adda7c5f3c4488e, 0xb9f3eb7bf06317e1, 0xfe5991925b84e8d5, 0x4d77dd2c5823b7ba,
+        0x64b62bcaebc387a1, 0xd7986774e864d8ce, 0x90321d9d438327fa, 0x231c512340247895,
+        0x1f66e84e144cd992, 0xac48a4f017eb86fd, 0xebe2de19bc0c79c9, 0x58cc92a7bfab26a6,
+        0x9317acc314dd3bc7, 0x2039e07d177a64a8, 0x67939a94bc9d9b9c, 0xd4bdd62abf3ac4f3,
+        0xe8c76f47eb5265f4, 0x5be923f9e8f53a9b, 0x1c4359104312c5af, 0xaf6d15ae40b59ac0,
+        0x192d8af2baf0e1e8, 0xaa03c64cb957be87, 0xeda9bca512b041b3, 0x5e87f01b11171edc,
+        0x62fd4976457fbfdb, 0xd1d305c846d8e0b4, 0x96797f21ed3f1f80, 0x2557339fee9840ef,
+        0xee8c0dfb45ee5d8e, 0x5da24145464902e1, 0x1a083bacedaefdd5, 0xa9267712ee09a2ba,
+        0x955cce7fba6103bd, 0x267282c1b9c65cd2, 0x61d8f8281221a3e6, 0xd2f6b4961186fc89,
+        0x9f8169ba49a54b33, 0x2caf25044a02145c, 0x6b055fede1e5eb68, 0xd82b1353e242b407,
+        0xe451aa3eb62a1500, 0x577fe680b58d4a6f, 0x10d59c691e6ab55b, 0xa3fbd0d71dcdea34,
+        0x6820eeb3b6bbf755, 0xdb0ea20db51ca83a, 0x9ca4d8e41efb570e, 0x2f8a945a1d5c0861,
+        0x13f02d374934a966, 0xa0de61894a93f609, 0xe7741b60e174093d, 0x545a57dee2d35652,
+        0xe21ac88218962d7a, 0x5134843c1b317215, 0x169efed5b0d68d21, 0xa5b0b26bb371d24e,
+        0x99ca0b06e7197349, 0x2ae447b8e4be2c26, 0x6d4e3d514f59d312, 0xde6071ef4cfe8c7d,
+        0x15bb4f8be788911c, 0xa6950335e42fce73, 0xe13f79dc4fc83147, 0x521135624c6f6e28,
+        0x6e6b8c0f1807cf2f, 0xdd45c0b11ba09040, 0x9aefba58b0476f74, 0x29c1f6e6b3e0301b,
+        0xc96c5795d7870f42, 0x7a421b2bd420502d, 0x3de861c27fc7af19, 0x8ec62d7c7c60f076,
+        0xb2bc941128085171, 0x0192d8af2baf0e1e, 0x4638a2468048f12a, 0xf516eef883efae45,
+        0x3ecdd09c2899b324, 0x8de39c222b3eec4b, 0xca49e6cb80d9137f, 0x7967aa75837e4c10,
+        0x451d1318d716ed17, 0xf6335fa6d4b1b278, 0xb199254f7f564d4c, 0x02b769f17cf11223,
+        0xb4f7f6ad86b4690b, 0x07d9ba1385133664, 0x4073c0fa2ef4c950, 0xf35d8c442d53963f,
+        0xcf273529793b3738, 0x7c0979977a9c6857, 0x3ba3037ed17b9763, 0x888d4fc0d2dcc80c,
+        0x435671a479aad56d, 0xf0783d1a7a0d8a02, 0xb7d247f3d1ea7536, 0x04fc0b4dd24d2a59,
+        0x3886b22086258b5e, 0x8ba8fe9e8582d431, 0xcc0284772e652b05, 0x7f2cc8c92dc2746a,
+        0x325b15e575e1c3d0, 0x8175595b76469cbf, 0xc6df23b2dda1638b, 0x75f16f0cde063ce4,
+        0x498bd6618a6e9de3, 0xfaa59adf89c9c28c, 0xbd0fe036222e3db8, 0x0e21ac88218962d7,
+        0xc5fa92ec8aff7fb6, 0x76d4de52895820d9, 0x317ea4bb22bfdfed, 0x8250e80521188082,
+        0xbe2a516875702185, 0x0d041dd676d77eea, 0x4aae673fdd3081de, 0xf9802b81de97deb1,
+        0x4fc0b4dd24d2a599, 0xfceef8632775faf6, 0xbb44828a8c9205c2, 0x086ace348f355aad,
+        0x34107759db5dfbaa, 0x873e3be7d8faa4c5, 0xc094410e731d5bf1, 0x73ba0db070ba049e,
+        0xb86133d4dbcc19ff, 0x0b4f7f6ad86b4690, 0x4ce50583738cb9a4, 0xffcb493d702be6cb,
+        0xc3b1f050244347cc, 0x709fbcee27e418a3, 0x3735c6078c03e797, 0x841b8ab98fa4b8f8,
+        0xadda7c5f3c4488e3, 0x1ef430e13fe3d78c, 0x595e4a08940428b8, 0xea7006b697a377d7,
+        0xd60abfdbc3cbd6d0, 0x6524f365c06c89bf, 0x228e898c6b8b768b, 0x91a0c532682c29e4,
+        0x5a7bfb56c35a3485, 0xe955b7e8c0fd6bea, 0xaeffcd016b1a94de, 0x1dd181bf68bdcbb1,
+        0x21ab38d23cd56ab6, 0x9285746c3f7235d9, 0xd52f0e859495caed, 0x6601423b97329582,
+        0xd041dd676d77eeaa, 0x636f91d96ed0b1c5, 0x24c5eb30c5374ef1, 0x97eba78ec690119e,
+        0xab911ee392f8b099, 0x18bf525d915feff6, 0x5f1528b43ab810c2, 0xec3b640a391f4fad,
+        0x27e05a6e926952cc, 0x94ce16d091ce0da3, 0xd3646c393a29f297, 0x604a2087398eadf8,
+        0x5c3099ea6de60cff, 0xef1ed5546e415390, 0xa8b4afbdc5a6aca4, 0x1b9ae303c601f3cb,
+        0x56ed3e2f9e224471, 0xe5c372919d851b1e, 0xa26908783662e42a, 0x114744c635c5bb45,
+        0x2d3dfdab61ad1a42, 0x9e13b115620a452d, 0xd9b9cbfcc9edba19, 0x6a978742ca4ae576,
+        0xa14cb926613cf817, 0x1262f598629ba778, 0x55c88f71c97c584c, 0xe6e6c3cfcadb0723,
+        0xda9c7aa29eb3a624, 0x69b2361c9d14f94b, 0x2e184cf536f3067f, 0x9d36004b35545910,
+        0x2b769f17cf112238, 0x9858d3a9ccb67d57, 0xdff2a94067518263, 0x6cdce5fe64f6dd0c,
+        0x50a65c93309e7c0b, 0xe388102d33392364, 0xa4226ac498dedc50, 0x170c267a9b79833f,
+        0xdcd7181e300f9e5e, 0x6ff954a033a8c131, 0x28532e49984f3e05, 0x9b7d62f79be8616a,
+        0xa707db9acf80c06d, 0x14299724cc279f02, 0x5383edcd67c06036, 0xe0ada17364673f59
+    }
+
+    function crypt.crc64(s)
+        local crc = 0xFFFFFFFFFFFFFFFF
+        for i = 1, #s do
+            crc = (crc>>8) ~ crc64_table[(crc~byte(s, i))&0xFF]
+        end
+        return crc ~ 0xFFFFFFFFFFFFFFFF
+    end
+
+    string.crc64 = crypt.crc64
+
+--[[------------------------------------------------------------------------@@@
+## RC4 encryption
+
+RC4 is a stream cipher (see <https://en.wikipedia.org/wiki/RC4>).
+It is design to be fast and simple.
+
+See <https://en.wikipedia.org/wiki/RC4>.
+@@@]]
+
+--[[@@@
+```lua
+crypt.rc4(data, key, [drop])
+data:rc4(key, [drop])
+crypt.unrc4(data, key, [drop])      -- note that unrc4 == rc4
+data:unrc4(key, [drop])
+```
+encrypts/decrypts `data` using the RC4Drop
+algorithm and the encryption key `key` (drops the first `drop` encryption
+steps, the default value of `drop` is 768).
+@@@]]
+
+    function crypt.rc4(input, key, drop)
+        drop = drop or 768
+        local S = {}
+        for i = 0, 255 do S[i] = i end
+        local j = 0
+        for i = 0, 255 do
+            j = (j + S[i] + byte(key, i%#key+1)) % 256
+            S[i], S[j] = S[j], S[i]
+        end
+        local i = 0
+        j = 0
+        for _ = 1, drop do
+            i = (i + 1) % 256
+            j = (j + S[i]) % 256
+            S[i], S[j] = S[j], S[i]
+        end
+        local output = {}
+        for k = 1, #input do
+            i = (i + 1) % 256
+            j = (j + S[i]) % 256
+            S[i], S[j] = S[j], S[i]
+            output[k] = char(byte(input, k) ~ S[(S[i] + S[j]) % 256])
+        end
+        return concat(output)
+    end
+
+    crypt.unrc4 = crypt.rc4
+
+    string.rc4 = crypt.rc4
+    string.unrc4 = crypt.unrc4
+
+end
+
+--[[------------------------------------------------------------------------@@@
+## SHA1 hash
+
+The SHA1 hash is provided by the `pandoc` module.
+`crypt.sha1` is just an alias for `pandoc.utils.sha1`.
+@@@]]
+
+--[[@@@
+```lua
+crypt.sha1(data)
+data:sha1()
+```
+computes the SHA1 of `data`.
+@@@]]
+
+if pandoc then
+
+    crypt.sha1 = pandoc.utils.sha1
+
+    string.sha1 = crypt.sha1
+
+end
+
+return crypt
+]=]),
+["fs"] = lib("src/fs/fs.lua", [=[--[[
+This file is part of luax.
+
+luax is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+luax is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with luax.  If not, see <https://www.gnu.org/licenses/>.
+
+For further information about luax you can visit
+http://cdelord.fr/luax
+--]]
+
+--[[------------------------------------------------------------------------@@@
+## Additional functions (Lua)
+@@@]]
+
+--@LOAD
+local _, fs = pcall(require, "_fs")
+fs = _ and fs
+
+local F = require "F"
+
+-- Pure Lua / Pandoc Lua implementation
+if not fs then
+    fs = {}
+
+    if pandoc then
+        fs.sep = pandoc.path.separator
+        fs.path_sep = pandoc.path.search_path_separator
     else
-        return ok, exit, ret
+        fs.sep = package.config:match("^([^\n]-)\n")
+        fs.path_sep = fs.sep == '\\' and ";" or ":"
     end
-end
-
---[[@@@
-```lua
-sh.write(...)(data)
-```
-Runs the command `...` with `io.popen` and feeds `stdin` with `data`.
-`sh.write` returns the same values returned by `os.execute`.
-@@@]]
-
-function sh.write(...)
-    local cmd = F.flatten{...}:unwords()
-    return function(data)
-        local p, popen_err = io.popen(cmd, "w")
-        if not p then return p, popen_err end
-        p:write(data)
-        return p:close()
-    end
-end
-
---}}}
-
---{{{ fs module
-
---[[------------------------------------------------------------------------@@@
-# File System
-
-`fs` is a File System module. It provides functions to handle files and directory in a portable way.
-
-```lua
-local fs = require "fs"
-```
-@@@]]
-
-local fs = {}
-
-fs.sep = package.config:match("^([^\n]-)\n")
-local pathsep = fs.sep == '\\' and ";" or ":"
 
 --[[@@@
 ```lua
@@ -3790,17 +5904,13 @@ fs.getcwd()
 returns the current working directory.
 @@@]]
 
-if pandoc then
-fs.getcwd = pandoc.system.get_working_directory
-else
-function fs.getcwd()
-    return sh.read "pwd" : trim()
-end
-end
-
-function fs.chdir()
-    error("fs.chdir is not implemented in luax.lua")
-end
+    if pandoc then
+        fs.getcwd = pandoc.system.get_working_directory
+    else
+        function fs.getcwd()
+            return sh.read "pwd" : trim()
+        end
+    end
 
 --[[@@@
 ```lua
@@ -3810,13 +5920,13 @@ returns the list of files and directories in
 `path` (the default path is the current directory).
 @@@]]
 
-if pandoc then
-fs.dir = F.compose{F, pandoc.system.list_directory}
-else
-function fs.dir(path)
-    return sh.read("ls", path) : lines() : sort()
-end
-end
+    if pandoc then
+        fs.dir = F.compose{F, pandoc.system.list_directory}
+    else
+        function fs.dir(path)
+            return sh.read("ls", path) : lines() : sort()
+        end
+    end
 
 --[[@@@
 ```lua
@@ -3825,9 +5935,9 @@ fs.remove(name)
 deletes the file `name`.
 @@@]]
 
-function fs.remove(name)
-    return os.remove(name)
-end
+    function fs.remove(name)
+        return os.remove(name)
+    end
 
 --[[@@@
 ```lua
@@ -3836,9 +5946,9 @@ fs.rename(old_name, new_name)
 renames the file `old_name` to `new_name`.
 @@@]]
 
-function fs.rename(old_name, new_name)
-    return os.rename(old_name, new_name)
-end
+    function fs.rename(old_name, new_name)
+        return os.rename(old_name, new_name)
+    end
 
 --[[@@@
 ```lua
@@ -3848,24 +5958,24 @@ copies file `source_name` to `target_name`.
 The attributes and times are preserved.
 @@@]]
 
-function fs.copy(source_name, target_name)
-    local from, err_from = io.open(source_name, "rb")
-    if not from then return from, err_from end
-    local to, err_to = io.open(target_name, "wb")
-    if not to then from:close(); return to, err_to end
-    while true do
-        local block = from:read(64*1024)
-        if not block then break end
-        local ok, err = to:write(block)
-        if not ok then
-            from:close()
-            to:close()
-            return ok, err
+    function fs.copy(source_name, target_name)
+        local from, err_from = io.open(source_name, "rb")
+        if not from then return from, err_from end
+        local to, err_to = io.open(target_name, "wb")
+        if not to then from:close(); return to, err_to end
+        while true do
+            local block = from:read(64*1024)
+            if not block then break end
+            local ok, err = to:write(block)
+            if not ok then
+                from:close()
+                to:close()
+                return ok, err
+            end
         end
+        from:close()
+        to:close()
     end
-    from:close()
-    to:close()
-end
 
 --[[@@@
 ```lua
@@ -3874,13 +5984,13 @@ fs.mkdir(path)
 creates a new directory `path`.
 @@@]]
 
-if pandoc then
-fs.mkdir = pandoc.system.make_directory
-else
-function fs.mkdir(path)
-    return sh.run("mkdir", path)
-end
-end
+    if pandoc then
+        fs.mkdir = pandoc.system.make_directory
+    else
+        function fs.mkdir(path)
+            return sh.run("mkdir", path)
+        end
+    end
 
 --[[@@@
 ```lua
@@ -3899,57 +6009,57 @@ reads attributes of the file `name`. Attributes are:
 - `aR`, `aW`, `aX`: anybody Read/Write/eXecute permissions
 @@@]]
 
-local S_IRUSR = 1 << 8
-local S_IWUSR = 1 << 7
-local S_IXUSR = 1 << 6
-local S_IRGRP = 1 << 5
-local S_IWGRP = 1 << 4
-local S_IXGRP = 1 << 3
-local S_IROTH = 1 << 2
-local S_IWOTH = 1 << 1
-local S_IXOTH = 1 << 0
+    local S_IRUSR = 1 << 8
+    local S_IWUSR = 1 << 7
+    local S_IXUSR = 1 << 6
+    local S_IRGRP = 1 << 5
+    local S_IWGRP = 1 << 4
+    local S_IXGRP = 1 << 3
+    local S_IROTH = 1 << 2
+    local S_IWOTH = 1 << 1
+    local S_IXOTH = 1 << 0
 
-fs.uR = S_IRUSR
-fs.uW = S_IWUSR
-fs.uX = S_IXUSR
-fs.aR = S_IRUSR|S_IRGRP|S_IROTH
-fs.aW = S_IWUSR|S_IWGRP|S_IWOTH
-fs.aX = S_IXUSR|S_IXGRP|S_IXOTH
-fs.gR = S_IRGRP
-fs.gW = S_IWGRP
-fs.gX = S_IXGRP
-fs.oR = S_IROTH
-fs.oW = S_IWOTH
-fs.oX = S_IXOTH
+    fs.uR = S_IRUSR
+    fs.uW = S_IWUSR
+    fs.uX = S_IXUSR
+    fs.aR = S_IRUSR|S_IRGRP|S_IROTH
+    fs.aW = S_IWUSR|S_IWGRP|S_IWOTH
+    fs.aX = S_IXUSR|S_IXGRP|S_IXOTH
+    fs.gR = S_IRGRP
+    fs.gW = S_IWGRP
+    fs.gX = S_IXGRP
+    fs.oR = S_IROTH
+    fs.oW = S_IWOTH
+    fs.oX = S_IXOTH
 
-function fs.stat(name)
-    local st = sh.read("LANG=C", "stat", "-L", "-c '%s;%Y;%X;%W;%F;%f'", name, "2>/dev/null")
-    if not st then return nil, "cannot stat "..name end
-    local size, mtime, atime, ctime, type, mode = st:trim():split ";":unpack()
-    mode = tonumber(mode, 16)
-    if type == "regular file" then type = "file" end
-    return F{
-        name = name,
-        size = tonumber(size),
-        mtime = tonumber(mtime),
-        atime = tonumber(atime),
-        ctime = tonumber(ctime),
-        type = type,
-        mode = mode,
-        uR = (mode & S_IRUSR) ~= 0,
-        uW = (mode & S_IWUSR) ~= 0,
-        uX = (mode & S_IXUSR) ~= 0,
-        gR = (mode & S_IRGRP) ~= 0,
-        gW = (mode & S_IWGRP) ~= 0,
-        gX = (mode & S_IXGRP) ~= 0,
-        oR = (mode & S_IROTH) ~= 0,
-        oW = (mode & S_IWOTH) ~= 0,
-        oX = (mode & S_IXOTH) ~= 0,
-        aR = (mode & (S_IRUSR|S_IRGRP|S_IROTH)) ~= 0,
-        aW = (mode & (S_IWUSR|S_IWGRP|S_IWOTH)) ~= 0,
-        aX = (mode & (S_IXUSR|S_IXGRP|S_IXOTH)) ~= 0,
-    }
-end
+    function fs.stat(name)
+        local st = sh.read("LANG=C", "stat", "-L", "-c '%s;%Y;%X;%W;%F;%f'", name, "2>/dev/null")
+        if not st then return nil, "cannot stat "..name end
+        local size, mtime, atime, ctime, type, mode = st:trim():split ";":unpack()
+        mode = tonumber(mode, 16)
+        if type == "regular file" then type = "file" end
+        return F{
+            name = name,
+            size = tonumber(size),
+            mtime = tonumber(mtime),
+            atime = tonumber(atime),
+            ctime = tonumber(ctime),
+            type = type,
+            mode = mode,
+            uR = (mode & S_IRUSR) ~= 0,
+            uW = (mode & S_IWUSR) ~= 0,
+            uX = (mode & S_IXUSR) ~= 0,
+            gR = (mode & S_IRGRP) ~= 0,
+            gW = (mode & S_IWGRP) ~= 0,
+            gX = (mode & S_IXGRP) ~= 0,
+            oR = (mode & S_IROTH) ~= 0,
+            oW = (mode & S_IWOTH) ~= 0,
+            oX = (mode & S_IXOTH) ~= 0,
+            aR = (mode & (S_IRUSR|S_IRGRP|S_IROTH)) ~= 0,
+            aW = (mode & (S_IWUSR|S_IWGRP|S_IWOTH)) ~= 0,
+            aX = (mode & (S_IXUSR|S_IXGRP|S_IXOTH)) ~= 0,
+        }
+    end
 
 --[[@@@
 ```lua
@@ -3961,15 +6071,15 @@ Attributes are:
 - `dev`, `ino`: device and inode numbers
 @@@]]
 
-function fs.inode(name)
-    local st = sh.read("LANG=C", "stat", "-L", "-c '%d;%i'", name, "2>/dev/null")
-    if not st then return nil, "cannot stat "..name end
-    local dev, ino = st:trim():split ";":unpack()
-    return F{
-        ino = tonumber(ino),
-        dev = tonumber(dev),
-    }
-end
+    function fs.inode(name)
+        local st = sh.read("LANG=C", "stat", "-L", "-c '%d;%i'", name, "2>/dev/null")
+        if not st then return nil, "cannot stat "..name end
+        local dev, ino = st:trim():split ";":unpack()
+        return F{
+            ino = tonumber(ino),
+            dev = tonumber(dev),
+        }
+    end
 
 --[[@@@
 ```lua
@@ -3985,14 +6095,14 @@ sets file `name` permissions as
 `bit1` or ... or `bitn` (integers).
 @@@]]
 
-function fs.chmod(name, ...)
-    local mode = {...}
-    if type(mode[1]) == "string" then
-        return sh.run("chmod", "--reference="..mode[1], name, "2>/dev/null")
-    else
-        return sh.run("chmod", ("%o"):format(F(mode):fold(F.op.bor, 0)), name)
+    function fs.chmod(name, ...)
+        local mode = {...}
+        if type(mode[1]) == "string" then
+            return sh.run("chmod", "--reference="..mode[1], name, "2>/dev/null")
+        else
+            return sh.run("chmod", ("%o"):format(F(mode):fold(F.op.bor, 0)), name)
+        end
     end
-end
 
 --[[@@@
 ```lua
@@ -4014,17 +6124,17 @@ sets the access time and the
 modification time of file `name` with the times of file `other_name`.
 @@@]]
 
-function fs.touch(name, opt)
-    if opt == nil then
-        return sh.run("touch", name, "2>/dev/null")
-    elseif type(opt) == "number" then
-        return sh.run("touch", "-d", '"'..os.date("%c", opt)..'"', name, "2>/dev/null")
-    elseif type(opt) == "string" then
-        return sh.run("touch", "--reference="..opt, name, "2>/dev/null")
-    else
-        error "bad argument #2 to touch (none, nil, number or string expected)"
+    function fs.touch(name, opt)
+        if opt == nil then
+            return sh.run("touch", name, "2>/dev/null")
+        elseif type(opt) == "number" then
+            return sh.run("touch", "-d", '"'..os.date("%c", opt)..'"', name, "2>/dev/null")
+        elseif type(opt) == "string" then
+            return sh.run("touch", "--reference="..opt, name, "2>/dev/null")
+        else
+            error "bad argument #2 to touch (none, nil, number or string expected)"
+        end
     end
-end
 
 --[[@@@
 ```lua
@@ -4033,13 +6143,13 @@ fs.basename(path)
 return the last component of path.
 @@@]]
 
-if pandoc then
-fs.basename = pandoc.path.filename
-else
-function fs.basename(path)
-    return sh.read("basename", path) : trim()
-end
-end
+    if pandoc then
+        fs.basename = pandoc.path.filename
+    else
+        function fs.basename(path)
+            return sh.read("basename", path) : trim()
+        end
+    end
 
 --[[@@@
 ```lua
@@ -4048,13 +6158,13 @@ fs.dirname(path)
 return all but the last component of path.
 @@@]]
 
-if pandoc then
-fs.dirname = pandoc.path.directory
-else
-function fs.dirname(path)
-    return sh.read("dirname", path) : trim()
-end
-end
+    if pandoc then
+        fs.dirname = pandoc.path.directory
+    else
+        function fs.dirname(path)
+            return sh.read("dirname", path) : trim()
+        end
+    end
 
 --[[@@@
 ```lua
@@ -4063,22 +6173,22 @@ fs.splitext(path)
 return the name without the extension and the extension.
 @@@]]
 
-if pandoc then
-function fs.splitext(path)
-    if fs.basename(path):match "^%." then
-        return path, ""
+    if pandoc then
+        function fs.splitext(path)
+            if fs.basename(path):match "^%." then
+                return path, ""
+            end
+            return pandoc.path.split_extension(path)
+        end
+    else
+        function fs.splitext(path)
+            local name, ext = path:match("^(.*)(%.[^/\\]-)$")
+            if name and ext and #name > 0 and not name:has_suffix(fs.sep) then
+                return name, ext
+            end
+            return path, ""
+        end
     end
-    return pandoc.path.split_extension(path)
-end
-else
-function fs.splitext(path)
-    local name, ext = path:match("^(.*)(%.[^/\\]-)$")
-    if name and ext and #name > 0 and not name:has_suffix(fs.sep) then
-        return name, ext
-    end
-    return path, ""
-end
-end
 
 --[[@@@
 ```lua
@@ -4087,13 +6197,13 @@ fs.realpath(path)
 return the resolved path name of path.
 @@@]]
 
-if pandoc then
-fs.realpath = pandoc.path.normalize
-else
-function fs.realpath(path)
-    return sh.read("realpath", path) : trim()
-end
-end
+    if pandoc then
+        fs.realpath = pandoc.path.normalize
+    else
+        function fs.realpath(path)
+            return sh.read("realpath", path) : trim()
+        end
+    end
 
 --[[@@@
 ```lua
@@ -4102,9 +6212,28 @@ fs.absname(path)
 return the absolute path name of path.
 @@@]]
 
-function fs.absname(path)
-    if path:match "^[/\\]" or path:match "^.:" then return path end
-    return fs.getcwd()..fs.sep..path
+    function fs.absname(path)
+        if path:match "^[/\\]" or path:match "^.:" then return path end
+        return fs.getcwd()..fs.sep..path
+    end
+
+--[[@@@
+```lua
+fs.mkdirs(path)
+```
+creates a new directory `path` and its parent directories.
+@@@]]
+
+    if pandoc then
+        function fs.mkdirs(path)
+            return pandoc.system.make_directory(path, true)
+        end
+    else
+        function fs.mkdirs(path)
+            return sh.run("mkdir", "-p", path)
+        end
+    end
+
 end
 
 --[[@@@
@@ -4117,21 +6246,21 @@ If a component is absolute, the previous components are removed.
 @@@]]
 
 if pandoc then
-function fs.join(...)
-    return pandoc.path.join(F.flatten{...})
-end
-else
-function fs.join(...)
-    local function add_path(ps, p)
-        if p:match("^"..fs.sep) then return F{p} end
-        ps[#ps+1] = p
-        return ps
+    function fs.join(...)
+        return pandoc.path.join(F.flatten{...})
     end
-    return F{...}
-        :flatten()
-        :fold(add_path, F{})
-        :str(fs.sep)
-end
+else
+    function fs.join(...)
+        local function add_path(ps, p)
+            if p:match("^"..fs.sep) then return F{p} end
+            ps[#ps+1] = p
+            return ps
+        end
+        return F{...}
+            :flatten()
+            :fold(add_path, F{})
+            :str(fs.sep)
+    end
 end
 
 --[[@@@
@@ -4168,7 +6297,7 @@ returns the full path of `name` if `name` is found in `$PATH` or `nil`.
 function fs.findpath(name)
     local function exists_in(path) return fs.is_file(fs.join(path, name)) end
     local path = os.getenv("PATH")
-        :split(pathsep)
+        :split(fs.path_sep)
         :find(exists_in)
     if path then return fs.join(path, name) end
     return nil, name..": not found in $PATH"
@@ -4181,14 +6310,12 @@ fs.mkdirs(path)
 creates a new directory `path` and its parent directories.
 @@@]]
 
-if pandoc then
-function fs.mkdirs(path)
-    return pandoc.system.make_directory(path, true)
-end
-else
-function fs.mkdirs(path)
-    return sh.run("mkdir", "-p", path)
-end
+if not fs.mkdirs then
+    function fs.mkdirs(path)
+        if path == "" or fs.stat(path) then return end
+        fs.mkdirs(fs.dirname(path))
+        fs.mkdir(path)
+    end
 end
 
 --[[@@@
@@ -4217,15 +6344,15 @@ deletes the directory `path` and its content recursively.
 @@@]]
 
 if pandoc then
-function fs.rmdir(path)
-    pandoc.system.remove_directory(path, true)
-    return true
-end
+    function fs.rmdir(path)
+        pandoc.system.remove_directory(path, true)
+        return true
+    end
 else
-function fs.rmdir(path)
-    fs.walk(path, {reverse=true}):map(fs.rm)
-    return fs.rm(path)
-end
+    function fs.rmdir(path)
+        fs.walk(path, {reverse=true}):map(fs.rm)
+        return fs.rm(path)
+    end
 end
 
 --[[@@@
@@ -4317,11 +6444,19 @@ fs.with_tmpfile(f)
 calls `f(tmp)` where `tmp` is the name of a temporary file.
 @@@]]
 
-function fs.with_tmpfile(f)
-    local tmp = os.tmpname()
-    local ret = {f(tmp)}
-    fs.rm(tmp)
-    return table.unpack(ret)
+if pandoc then
+    function fs.with_tmpfile(f)
+        return pandoc.system.with_temporary_directory("luax-XXXXXX", function(tmpdir)
+            return f(fs.join(tmpdir, "tmpfile"))
+        end)
+    end
+else
+    function fs.with_tmpfile(f)
+        local tmp = os.tmpname()
+        local ret = {f(tmp)}
+        fs.rm(tmp)
+        return table.unpack(ret)
+    end
 end
 
 --[[@@@
@@ -4331,13 +6466,49 @@ fs.with_tmpdir(f)
 calls `f(tmp)` where `tmp` is the name of a temporary directory.
 @@@]]
 
-function fs.with_tmpdir(f)
-    local tmp = os.tmpname()
-    fs.rm(tmp)
-    fs.mkdir(tmp)
-    local ret = {f(tmp)}
-    fs.rmdir(tmp)
-    return table.unpack(ret)
+if pandoc then
+    function fs.with_tmpdir(f)
+        return pandoc.system.with_temporary_directory("luax-XXXXXX", f)
+    end
+else
+    function fs.with_tmpdir(f)
+        local tmp = os.tmpname()
+        fs.rm(tmp)
+        fs.mkdir(tmp)
+        local ret = {f(tmp)}
+        fs.rmdir(tmp)
+        return table.unpack(ret)
+    end
+end
+
+--[[@@@
+```lua
+fs.with_dir(path, f)
+```
+changes the current working directory to `path` and calls `f()`.
+@@@]]
+
+if pandoc then
+    fs.with_dir = pandoc.system.with_working_directory
+elseif fs.chdir then
+    function fs.with_dir(path, f)
+        local old = fs.getcwd()
+        fs.chdir(path)
+        local ret = {f()}
+        fs.chdir(old)
+        return table.unpack(ret)
+    end
+end
+
+--[[@@@
+```lua
+fs.with_env(env, f)
+```
+changes the environnement to `env` and calls `f()`.
+@@@]]
+
+if pandoc then
+    fs.with_env = pandoc.system.with_environment
 end
 
 --[[@@@
@@ -4402,602 +6573,1204 @@ function fs.write_bin(name, ...)
     return ok, werr
 end
 
---}}}
+return fs
+]=]),
+["imath"] = lib("src/imath/imath.lua", [=[--[[
+This file is part of luax.
 
---{{{ sys module
+luax is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
 
---[[------------------------------------------------------------------------@@@
-# sys: System module
+luax is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
 
-```lua
-local sys = require "sys"
-```
-@@@]]
+You should have received a copy of the GNU General Public License
+along with luax.  If not, see <https://www.gnu.org/licenses/>.
 
-local sys = {}
+For further information about luax you can visit
+http://cdelord.fr/luax
+--]]
 
---[[@@@
-```lua
-sys.os
-```
-`"linux"`, `"macos"` or `"windows"`.
+--@LOAD
+local _, imath = pcall(require, "_imath")
+imath = _ and imath
 
-```lua
-sys.arch
-```
-`"x86_64"`, `"i386"` or `"aarch64"`.
+return imath
+]=]),
+["inspect"] = lib("src/inspect/inspect.lua", [=[local _tl_compat; if (tonumber((_VERSION or ''):match('[%d.]*$')) or 0) < 5.3 then local p, m = pcall(require, 'compat53.module'); if p then _tl_compat = m end end; local math = _tl_compat and _tl_compat.math or math; local string = _tl_compat and _tl_compat.string or string; local table = _tl_compat and _tl_compat.table or table
+local inspect = {Options = {}, }
 
-```lua
-sys.abi
-```
-`"lua"`.
 
-```lua
-sys.type
-```
-`"lua"`
-@@@]]
 
-sys.abi = "lua"
-sys.type = "lua"
 
-setmetatable(sys, {
-    __index = function(_, param)
-        if param == "os" then
-            local os = sh.read("uname"):trim():lower()
-            sys.os = os
-            return os
-        elseif param == "arch" then
-            local arch = sh.read("uname", "-m"):trim()
-            sys.arch = arch
-            return arch
-        end
-    end,
+
+
+
+
+
+
+
+
+
+
+
+
+
+inspect._VERSION = 'inspect.lua 3.1.0'
+inspect._URL = 'http://github.com/kikito/inspect.lua'
+inspect._DESCRIPTION = 'human-readable representations of tables'
+inspect._LICENSE = [[
+  MIT LICENSE
+
+  Copyright (c) 2022 Enrique García Cota
+
+  Permission is hereby granted, free of charge, to any person obtaining a
+  copy of this software and associated documentation files (the
+  "Software"), to deal in the Software without restriction, including
+  without limitation the rights to use, copy, modify, merge, publish,
+  distribute, sublicense, and/or sell copies of the Software, and to
+  permit persons to whom the Software is furnished to do so, subject to
+  the following conditions:
+
+  The above copyright notice and this permission notice shall be included
+  in all copies or substantial portions of the Software.
+
+  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+  OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+  MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+  IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
+  CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
+  TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
+  SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+]]
+inspect.KEY = setmetatable({}, { __tostring = function() return 'inspect.KEY' end })
+inspect.METATABLE = setmetatable({}, { __tostring = function() return 'inspect.METATABLE' end })
+
+local tostring = tostring
+local rep = string.rep
+local match = string.match
+local char = string.char
+local gsub = string.gsub
+local fmt = string.format
+
+local _rawget
+if rawget then
+   _rawget = rawget
+else
+   _rawget = function(t, k) return t[k] end
+end
+
+local function rawpairs(t)
+   return next, t, nil
+end
+
+
+
+local function smartQuote(str)
+   if match(str, '"') and not match(str, "'") then
+      return "'" .. str .. "'"
+   end
+   return '"' .. gsub(str, '"', '\\"') .. '"'
+end
+
+
+local shortControlCharEscapes = {
+   ["\a"] = "\\a", ["\b"] = "\\b", ["\f"] = "\\f", ["\n"] = "\\n",
+   ["\r"] = "\\r", ["\t"] = "\\t", ["\v"] = "\\v", ["\127"] = "\\127",
+}
+local longControlCharEscapes = { ["\127"] = "\127" }
+for i = 0, 31 do
+   local ch = char(i)
+   if not shortControlCharEscapes[ch] then
+      shortControlCharEscapes[ch] = "\\" .. i
+      longControlCharEscapes[ch] = fmt("\\%03d", i)
+   end
+end
+
+local function escape(str)
+   return (gsub(gsub(gsub(str, "\\", "\\\\"),
+   "(%c)%f[0-9]", longControlCharEscapes),
+   "%c", shortControlCharEscapes))
+end
+
+local luaKeywords = {
+   ['and'] = true,
+   ['break'] = true,
+   ['do'] = true,
+   ['else'] = true,
+   ['elseif'] = true,
+   ['end'] = true,
+   ['false'] = true,
+   ['for'] = true,
+   ['function'] = true,
+   ['goto'] = true,
+   ['if'] = true,
+   ['in'] = true,
+   ['local'] = true,
+   ['nil'] = true,
+   ['not'] = true,
+   ['or'] = true,
+   ['repeat'] = true,
+   ['return'] = true,
+   ['then'] = true,
+   ['true'] = true,
+   ['until'] = true,
+   ['while'] = true,
+}
+
+local function isIdentifier(str)
+   return type(str) == "string" and
+   not not str:match("^[_%a][_%a%d]*$") and
+   not luaKeywords[str]
+end
+
+local flr = math.floor
+local function isSequenceKey(k, sequenceLength)
+   return type(k) == "number" and
+   flr(k) == k and
+   1 <= (k) and
+   k <= sequenceLength
+end
+
+local defaultTypeOrders = {
+   ['number'] = 1, ['boolean'] = 2, ['string'] = 3, ['table'] = 4,
+   ['function'] = 5, ['userdata'] = 6, ['thread'] = 7,
+}
+
+local function sortKeys(a, b)
+   local ta, tb = type(a), type(b)
+
+
+   if ta == tb and (ta == 'string' or ta == 'number') then
+      return (a) < (b)
+   end
+
+   local dta = defaultTypeOrders[ta] or 100
+   local dtb = defaultTypeOrders[tb] or 100
+
+
+   return dta == dtb and ta < tb or dta < dtb
+end
+
+local function getKeys(t)
+
+   local seqLen = 1
+   while _rawget(t, seqLen) ~= nil do
+      seqLen = seqLen + 1
+   end
+   seqLen = seqLen - 1
+
+   local keys, keysLen = {}, 0
+   for k in rawpairs(t) do
+      if not isSequenceKey(k, seqLen) then
+         keysLen = keysLen + 1
+         keys[keysLen] = k
+      end
+   end
+   table.sort(keys, sortKeys)
+   return keys, keysLen, seqLen
+end
+
+local function countCycles(x, cycles)
+   if type(x) == "table" then
+      if cycles[x] then
+         cycles[x] = cycles[x] + 1
+      else
+         cycles[x] = 1
+         for k, v in rawpairs(x) do
+            countCycles(k, cycles)
+            countCycles(v, cycles)
+         end
+         countCycles(getmetatable(x), cycles)
+      end
+   end
+end
+
+local function makePath(path, a, b)
+   local newPath = {}
+   local len = #path
+   for i = 1, len do newPath[i] = path[i] end
+
+   newPath[len + 1] = a
+   newPath[len + 2] = b
+
+   return newPath
+end
+
+
+local function processRecursive(process,
+   item,
+   path,
+   visited)
+   if item == nil then return nil end
+   if visited[item] then return visited[item] end
+
+   local processed = process(item, path)
+   if type(processed) == "table" then
+      local processedCopy = {}
+      visited[item] = processedCopy
+      local processedKey
+
+      for k, v in rawpairs(processed) do
+         processedKey = processRecursive(process, k, makePath(path, k, inspect.KEY), visited)
+         if processedKey ~= nil then
+            processedCopy[processedKey] = processRecursive(process, v, makePath(path, processedKey), visited)
+         end
+      end
+
+      local mt = processRecursive(process, getmetatable(processed), makePath(path, inspect.METATABLE), visited)
+      if type(mt) ~= 'table' then mt = nil end
+      setmetatable(processedCopy, mt)
+      processed = processedCopy
+   end
+   return processed
+end
+
+local function puts(buf, str)
+   buf.n = buf.n + 1
+   buf[buf.n] = str
+end
+
+
+
+local Inspector = {}
+
+
+
+
+
+
+
+
+
+
+local Inspector_mt = { __index = Inspector }
+
+local function tabify(inspector)
+   puts(inspector.buf, inspector.newline .. rep(inspector.indent, inspector.level))
+end
+
+function Inspector:getId(v)
+   local id = self.ids[v]
+   local ids = self.ids
+   if not id then
+      local tv = type(v)
+      id = (ids[tv] or 0) + 1
+      ids[v], ids[tv] = id, id
+   end
+   return tostring(id)
+end
+
+function Inspector:putValue(v)
+   local buf = self.buf
+   local tv = type(v)
+   if tv == 'string' then
+      puts(buf, smartQuote(escape(v)))
+   elseif tv == 'number' or tv == 'boolean' or tv == 'nil' or
+      tv == 'cdata' or tv == 'ctype' then
+      puts(buf, tostring(v))
+   elseif tv == 'table' and not self.ids[v] then
+      local t = v
+
+      if t == inspect.KEY or t == inspect.METATABLE then
+         puts(buf, tostring(t))
+      elseif self.level >= self.depth then
+         puts(buf, '{...}')
+      else
+         if self.cycles[t] > 1 then puts(buf, fmt('<%d>', self:getId(t))) end
+
+         local keys, keysLen, seqLen = getKeys(t)
+
+         puts(buf, '{')
+         self.level = self.level + 1
+
+         for i = 1, seqLen + keysLen do
+            if i > 1 then puts(buf, ',') end
+            if i <= seqLen then
+               puts(buf, ' ')
+               self:putValue(t[i])
+            else
+               local k = keys[i - seqLen]
+               tabify(self)
+               if isIdentifier(k) then
+                  puts(buf, k)
+               else
+                  puts(buf, "[")
+                  self:putValue(k)
+                  puts(buf, "]")
+               end
+               puts(buf, ' = ')
+               self:putValue(t[k])
+            end
+         end
+
+         local mt = getmetatable(t)
+         if type(mt) == 'table' then
+            if seqLen + keysLen > 0 then puts(buf, ',') end
+            tabify(self)
+            puts(buf, '<metatable> = ')
+            self:putValue(mt)
+         end
+
+         self.level = self.level - 1
+
+         if keysLen > 0 or type(mt) == 'table' then
+            tabify(self)
+         elseif seqLen > 0 then
+            puts(buf, ' ')
+         end
+
+         puts(buf, '}')
+      end
+
+   else
+      puts(buf, fmt('<%s %d>', tv, self:getId(v)))
+   end
+end
+
+
+
+
+function inspect.inspect(root, options)
+   options = options or {}
+
+   local depth = options.depth or (math.huge)
+   local newline = options.newline or '\n'
+   local indent = options.indent or '  '
+   local process = options.process
+
+   if process then
+      root = processRecursive(process, root, {}, {})
+   end
+
+   local cycles = {}
+   countCycles(root, cycles)
+
+   local inspector = setmetatable({
+      buf = { n = 0 },
+      ids = {},
+      cycles = cycles,
+      depth = depth,
+      level = 0,
+      newline = newline,
+      indent = indent,
+   }, Inspector_mt)
+
+   inspector:putValue(root)
+
+   return table.concat(inspector.buf)
+end
+
+setmetatable(inspect, {
+   __call = function(_, root, options)
+      return inspect.inspect(root, options)
+   end,
 })
 
---}}}
+return inspect
+--@LOAD
+]=]),
+["linenoise"] = lib("src/linenoise/linenoise.lua", [=[--[[
+This file is part of luax.
 
---{{{ ps module
+luax is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
 
---[[------------------------------------------------------------------------@@@
-# ps: Process management module
+luax is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
 
-```lua
-local ps = require "ps"
-```
-@@@]]
+You should have received a copy of the GNU General Public License
+along with luax.  If not, see <https://www.gnu.org/licenses/>.
 
-local ps = {}
+For further information about luax you can visit
+http://cdelord.fr/luax
+--]]
 
---[[@@@
-```lua
-ps.sleep(n)
-```
-sleeps for `n` seconds.
-@@@]]
+--@LOAD
+local _, linenoise = pcall(require, "_linenoise")
+linenoise = _ and linenoise
 
-function ps.sleep(n)
-    return sh.run("sleep", n)
-end
+if not linenoise then
 
---[[@@@
-```lua
-ps.time()
-```
-returns the current time in seconds
-@@@]]
+    linenoise = {}
 
-function ps.time()
-    return os.time()
-end
-
---[[@@@
-```lua
-ps.profile(func)
-```
-executes `func` and returns its execution time in seconds.
-@@@]]
-
-function ps.profile(func)
-    local t0 = os.time()
-    func()
-    local t1 = os.time()
-    return t1 - t0
-end
-
---}}}
-
---{{{ crypt module
-
-local crypt = {}
-
---[[------------------------------------------------------------------------@@@
-# crypt: cryptography module
-
-```lua
-local crypt = require "crypt"
-```
-
-`crypt` provides (weak but simple) cryptography functions.
-
-> **Warning**: for serious cryptography applications, please do not use this module.
-
-@@@]]
-
---[[------------------------------------------------------------------------@@@
-## Random number generator
-
-The LuaX pseudorandom number generator is a
-[linear congruential generator](https://en.wikipedia.org/wiki/Linear_congruential_generator).
-This generator is not a cryptographically secure pseudorandom number generator.
-It can be used as a repeatable generator (e.g. for repeatable tests).
-
-@@@]]
-
---[[@@@
-``` lua
-local rng = crypt.prng(seed)
-```
-returns a random number generator starting from the optional seed `seed`.
-@@@]]
-
-local prng_mt = {__index={}}
-
-local random = math.random
-
-local byte = string.byte
-local char = string.char
-local format = string.format
-local gsub = string.gsub
-
-local concat = table.concat
-
-local tonumber = tonumber
-
-local RAND_MAX = 0xFFFFFFFF
-
-crypt.RAND_MAX = RAND_MAX
-
-function crypt.prng(seed)
-    seed = seed or random(RAND_MAX)
-    return setmetatable({seed=seed}, prng_mt)
-end
-
---[[@@@
-``` lua
-rng:int()
-```
-returns a random integral number between `0` and `crypt.RAND_MAX`.
-
-``` lua
-rng:int(a)
-```
-returns a random integral number between `0` and `a`.
-
-``` lua
-rng:int(a, b)
-```
-returns a random integral number between `a` and `b`.
-@@@]]
-
-function prng_mt.__index:int(a, b)
-    self.seed = 6364136223846793005*self.seed + 1
-    local r = self.seed >> 32
-    if not a then return r end
-    if not b then return r % (a+1) end
-    return r % (b-a+1) + a
-end
-
---[[@@@
-``` lua
-rng:float()
-```
-returns a random floating point number between `0` and `1`.
-
-``` lua
-rng:float(a)
-```
-returns a random floating point number between `0` and `a`.
-
-``` lua
-rng:float(a, b)
-```
-returns a random floating point number between `a` and `b`.
-@@@]]
-
-function prng_mt.__index:float(a, b)
-    local r = self:int()
-    if not a then return r / RAND_MAX end
-    if not b then return r * a/RAND_MAX end
-    return r * (b-a)/RAND_MAX + a
-end
-
-
---[[@@@
-```lua
-rng:str(n)
-```
-returns a string with `n` random bytes.
-@@@]]
-
-function prng_mt.__index:str(n)
-    local bs = {}
-    for i = 1, n do
-        bs[i] = char(self:int(0, 255))
+    function linenoise.read(prompt)
+        io.stdout:write(prompt)
+        io.stdout:flush()
+        return io.stdin:read "l"
     end
-    return concat(bs)
-end
 
---[[------------------------------------------------------------------------@@@
-## Hexadecimal encoding
+    linenoise.read_mask = linenoise.read
 
-The hexadecimal encoder transforms a string into a string
-where bytes are coded with hexadecimal digits.
-@@@]]
+    linenoise.add = F.const()
+    linenoise.set_len = F.const()
+    linenoise.save = F.const()
+    linenoise.load = F.const()
+    linenoise.multi_line = F.const()
+    linenoise.mask = F.const()
 
---[[@@@
-```lua
-crypt.hex(data)
-data:hex()
-```
-encodes `data` in hexa.
-@@@]]
-
-function crypt.hex(s)
-    return (gsub(s, '.', function(c) return format("%02X", byte(c)) end))
-end
-
-string.hex = crypt.hex
-
---[[@@@
-```lua
-crypt.unhex(data)
-data:unhex()
-```
-decodes the hexa `data`.
-@@@]]
-
-function crypt.unhex(s)
-    return (gsub(s, '..', function(h) return char(tonumber(h, 16)) end))
-end
-
-string.unhex = crypt.unhex
-
---[[------------------------------------------------------------------------@@@
-## Base64 encoding
-
-The base64 encoder transforms a string with non printable characters
-into a printable string (see <https://en.wikipedia.org/wiki/Base64>).
-
-The implementation has been taken from
-<https://lua-users.org/wiki/BaseSixtyFour>.
-@@@]]
-
-local b = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/'
-
---[[@@@
-```lua
-crypt.base64(data)
-data:base64()
-```
-encodes `data` in base64.
-@@@]]
-
-function crypt.base64(s)
-    return ((s:gsub('.', function(x)
-        local r,b='',x:byte()
-        for i=8,1,-1 do r=r..(b%2^i-b%2^(i-1)>0 and '1' or '0') end
-        return r;
-    end)..'0000'):gsub('%d%d%d?%d?%d?%d?', function(x)
-        if (#x < 6) then return '' end
-        local c=0
-        for i=1,6 do c=c+(x:sub(i,i)=='1' and 2^(6-i) or 0) end
-        return b:sub(c+1,c+1)
-    end)..({ '', '==', '=' })[#s%3+1])
-end
-
-string.base64 = crypt.base64
-
---[[@@@
-```lua
-crypt.unbase64(data)
-data:unbase64()
-```
-decodes the base64 `data`.
-@@@]]
-
-function crypt.unbase64(s)
-    s = string.gsub(s, '[^'..b..'=]', '')
-    return (s:gsub('.', function(x)
-        if (x == '=') then return '' end
-        local r,f='',(b:find(x)-1)
-        for i=6,1,-1 do r=r..(f%2^i-f%2^(i-1)>0 and '1' or '0') end
-        return r;
-    end):gsub('%d%d%d?%d?%d?%d?%d?%d?', function(x)
-        if (#x ~= 8) then return '' end
-        local c=0
-        for i=1,8 do c=c+(x:sub(i,i)=='1' and 2^(8-i) or 0) end
-        return string.char(c)
-    end))
-end
-
-string.unbase64 = crypt.unbase64
-
---[[------------------------------------------------------------------------@@@
-## CRC32 hash
-
-The CRC-32 algorithm has been generated by [pycrc](https://pycrc.org/)
-with the `crc-32` algorithm.
-@@@]]
-
---[[@@@
-```lua
-crypt.crc32(data)
-data:crc32()
-```
-computes the CRC32 of `data`.
-@@@]]
-
-local crc32_table = { [0]=
-    0x00000000, 0x77073096, 0xee0e612c, 0x990951ba, 0x076dc419, 0x706af48f, 0xe963a535, 0x9e6495a3,
-    0x0edb8832, 0x79dcb8a4, 0xe0d5e91e, 0x97d2d988, 0x09b64c2b, 0x7eb17cbd, 0xe7b82d07, 0x90bf1d91,
-    0x1db71064, 0x6ab020f2, 0xf3b97148, 0x84be41de, 0x1adad47d, 0x6ddde4eb, 0xf4d4b551, 0x83d385c7,
-    0x136c9856, 0x646ba8c0, 0xfd62f97a, 0x8a65c9ec, 0x14015c4f, 0x63066cd9, 0xfa0f3d63, 0x8d080df5,
-    0x3b6e20c8, 0x4c69105e, 0xd56041e4, 0xa2677172, 0x3c03e4d1, 0x4b04d447, 0xd20d85fd, 0xa50ab56b,
-    0x35b5a8fa, 0x42b2986c, 0xdbbbc9d6, 0xacbcf940, 0x32d86ce3, 0x45df5c75, 0xdcd60dcf, 0xabd13d59,
-    0x26d930ac, 0x51de003a, 0xc8d75180, 0xbfd06116, 0x21b4f4b5, 0x56b3c423, 0xcfba9599, 0xb8bda50f,
-    0x2802b89e, 0x5f058808, 0xc60cd9b2, 0xb10be924, 0x2f6f7c87, 0x58684c11, 0xc1611dab, 0xb6662d3d,
-    0x76dc4190, 0x01db7106, 0x98d220bc, 0xefd5102a, 0x71b18589, 0x06b6b51f, 0x9fbfe4a5, 0xe8b8d433,
-    0x7807c9a2, 0x0f00f934, 0x9609a88e, 0xe10e9818, 0x7f6a0dbb, 0x086d3d2d, 0x91646c97, 0xe6635c01,
-    0x6b6b51f4, 0x1c6c6162, 0x856530d8, 0xf262004e, 0x6c0695ed, 0x1b01a57b, 0x8208f4c1, 0xf50fc457,
-    0x65b0d9c6, 0x12b7e950, 0x8bbeb8ea, 0xfcb9887c, 0x62dd1ddf, 0x15da2d49, 0x8cd37cf3, 0xfbd44c65,
-    0x4db26158, 0x3ab551ce, 0xa3bc0074, 0xd4bb30e2, 0x4adfa541, 0x3dd895d7, 0xa4d1c46d, 0xd3d6f4fb,
-    0x4369e96a, 0x346ed9fc, 0xad678846, 0xda60b8d0, 0x44042d73, 0x33031de5, 0xaa0a4c5f, 0xdd0d7cc9,
-    0x5005713c, 0x270241aa, 0xbe0b1010, 0xc90c2086, 0x5768b525, 0x206f85b3, 0xb966d409, 0xce61e49f,
-    0x5edef90e, 0x29d9c998, 0xb0d09822, 0xc7d7a8b4, 0x59b33d17, 0x2eb40d81, 0xb7bd5c3b, 0xc0ba6cad,
-    0xedb88320, 0x9abfb3b6, 0x03b6e20c, 0x74b1d29a, 0xead54739, 0x9dd277af, 0x04db2615, 0x73dc1683,
-    0xe3630b12, 0x94643b84, 0x0d6d6a3e, 0x7a6a5aa8, 0xe40ecf0b, 0x9309ff9d, 0x0a00ae27, 0x7d079eb1,
-    0xf00f9344, 0x8708a3d2, 0x1e01f268, 0x6906c2fe, 0xf762575d, 0x806567cb, 0x196c3671, 0x6e6b06e7,
-    0xfed41b76, 0x89d32be0, 0x10da7a5a, 0x67dd4acc, 0xf9b9df6f, 0x8ebeeff9, 0x17b7be43, 0x60b08ed5,
-    0xd6d6a3e8, 0xa1d1937e, 0x38d8c2c4, 0x4fdff252, 0xd1bb67f1, 0xa6bc5767, 0x3fb506dd, 0x48b2364b,
-    0xd80d2bda, 0xaf0a1b4c, 0x36034af6, 0x41047a60, 0xdf60efc3, 0xa867df55, 0x316e8eef, 0x4669be79,
-    0xcb61b38c, 0xbc66831a, 0x256fd2a0, 0x5268e236, 0xcc0c7795, 0xbb0b4703, 0x220216b9, 0x5505262f,
-    0xc5ba3bbe, 0xb2bd0b28, 0x2bb45a92, 0x5cb36a04, 0xc2d7ffa7, 0xb5d0cf31, 0x2cd99e8b, 0x5bdeae1d,
-    0x9b64c2b0, 0xec63f226, 0x756aa39c, 0x026d930a, 0x9c0906a9, 0xeb0e363f, 0x72076785, 0x05005713,
-    0x95bf4a82, 0xe2b87a14, 0x7bb12bae, 0x0cb61b38, 0x92d28e9b, 0xe5d5be0d, 0x7cdcefb7, 0x0bdbdf21,
-    0x86d3d2d4, 0xf1d4e242, 0x68ddb3f8, 0x1fda836e, 0x81be16cd, 0xf6b9265b, 0x6fb077e1, 0x18b74777,
-    0x88085ae6, 0xff0f6a70, 0x66063bca, 0x11010b5c, 0x8f659eff, 0xf862ae69, 0x616bffd3, 0x166ccf45,
-    0xa00ae278, 0xd70dd2ee, 0x4e048354, 0x3903b3c2, 0xa7672661, 0xd06016f7, 0x4969474d, 0x3e6e77db,
-    0xaed16a4a, 0xd9d65adc, 0x40df0b66, 0x37d83bf0, 0xa9bcae53, 0xdebb9ec5, 0x47b2cf7f, 0x30b5ffe9,
-    0xbdbdf21c, 0xcabac28a, 0x53b39330, 0x24b4a3a6, 0xbad03605, 0xcdd70693, 0x54de5729, 0x23d967bf,
-    0xb3667a2e, 0xc4614ab8, 0x5d681b02, 0x2a6f2b94, 0xb40bbe37, 0xc30c8ea1, 0x5a05df1b, 0x2d02ef8d
-}
-
-function crypt.crc32(s)
-    local crc = 0xFFFFFFFF
-    for i = 1, #s do
-        crc = (crc>>8) ~ crc32_table[(crc~byte(s, i))&0xFF]
+    function linenoise.clear()
+        io.stdout:write "\x1b[1;1H\x1b[2J"
     end
-    return crc ~ 0xFFFFFFFF
+
 end
 
-string.crc32 = crypt.crc32
+return linenoise
+]=]),
+["mathx"] = lib("src/mathx/mathx.lua", [=[--[[
+This file is part of luax.
+
+luax is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+luax is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with luax.  If not, see <https://www.gnu.org/licenses/>.
+
+For further information about luax you can visit
+http://cdelord.fr/luax
+--]]
+
+--@LOAD
+local _, mathx = pcall(require, "_mathx")
+mathx = _ and mathx
+
+return mathx
+]=]),
+["prompt"] = lib("src/prompt/prompt.lua", [=[-- prompt module
+-- @LOAD
+
+--[[
+This file is part of luax.
+
+luax is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+luax is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with luax.  If not, see <https://www.gnu.org/licenses/>.
+
+For further information about luax you can visit
+http://cdelord.fr/luax
+--]]
 
 --[[------------------------------------------------------------------------@@@
-## CRC64 hash
+# prompt: Prompt module
 
-The CRC-64 algorithm has been generated by [pycrc](https://pycrc.org/)
-with the `crc-64-xz` algorithm.
+The prompt module is a basic prompt implementation
+to display a prompt and get user inputs.
+
+The use of [rlwrap](https://github.com/hanslub42/rlwrap)
+is highly recommended for a better user experience on Linux.
+
+```lua
+local prompt = require "prompt"
+```
 @@@]]
+
+local prompt = {}
 
 --[[@@@
 ```lua
-crypt.crc64(data)
-data:crc64()
+s = prompt.read(p)
 ```
-computes the CRC64 of `data`.
+prints `p` and waits for a user input
 @@@]]
 
-local crc64_table = { [0]=
-    0x0000000000000000, 0xb32e4cbe03a75f6f, 0xf4843657a840a05b, 0x47aa7ae9abe7ff34,
-    0x7bd0c384ff8f5e33, 0xc8fe8f3afc28015c, 0x8f54f5d357cffe68, 0x3c7ab96d5468a107,
-    0xf7a18709ff1ebc66, 0x448fcbb7fcb9e309, 0x0325b15e575e1c3d, 0xb00bfde054f94352,
-    0x8c71448d0091e255, 0x3f5f08330336bd3a, 0x78f572daa8d1420e, 0xcbdb3e64ab761d61,
-    0x7d9ba13851336649, 0xceb5ed8652943926, 0x891f976ff973c612, 0x3a31dbd1fad4997d,
-    0x064b62bcaebc387a, 0xb5652e02ad1b6715, 0xf2cf54eb06fc9821, 0x41e11855055bc74e,
-    0x8a3a2631ae2dda2f, 0x39146a8fad8a8540, 0x7ebe1066066d7a74, 0xcd905cd805ca251b,
-    0xf1eae5b551a2841c, 0x42c4a90b5205db73, 0x056ed3e2f9e22447, 0xb6409f5cfa457b28,
-    0xfb374270a266cc92, 0x48190ecea1c193fd, 0x0fb374270a266cc9, 0xbc9d3899098133a6,
-    0x80e781f45de992a1, 0x33c9cd4a5e4ecdce, 0x7463b7a3f5a932fa, 0xc74dfb1df60e6d95,
-    0x0c96c5795d7870f4, 0xbfb889c75edf2f9b, 0xf812f32ef538d0af, 0x4b3cbf90f69f8fc0,
-    0x774606fda2f72ec7, 0xc4684a43a15071a8, 0x83c230aa0ab78e9c, 0x30ec7c140910d1f3,
-    0x86ace348f355aadb, 0x3582aff6f0f2f5b4, 0x7228d51f5b150a80, 0xc10699a158b255ef,
-    0xfd7c20cc0cdaf4e8, 0x4e526c720f7dab87, 0x09f8169ba49a54b3, 0xbad65a25a73d0bdc,
-    0x710d64410c4b16bd, 0xc22328ff0fec49d2, 0x85895216a40bb6e6, 0x36a71ea8a7ace989,
-    0x0adda7c5f3c4488e, 0xb9f3eb7bf06317e1, 0xfe5991925b84e8d5, 0x4d77dd2c5823b7ba,
-    0x64b62bcaebc387a1, 0xd7986774e864d8ce, 0x90321d9d438327fa, 0x231c512340247895,
-    0x1f66e84e144cd992, 0xac48a4f017eb86fd, 0xebe2de19bc0c79c9, 0x58cc92a7bfab26a6,
-    0x9317acc314dd3bc7, 0x2039e07d177a64a8, 0x67939a94bc9d9b9c, 0xd4bdd62abf3ac4f3,
-    0xe8c76f47eb5265f4, 0x5be923f9e8f53a9b, 0x1c4359104312c5af, 0xaf6d15ae40b59ac0,
-    0x192d8af2baf0e1e8, 0xaa03c64cb957be87, 0xeda9bca512b041b3, 0x5e87f01b11171edc,
-    0x62fd4976457fbfdb, 0xd1d305c846d8e0b4, 0x96797f21ed3f1f80, 0x2557339fee9840ef,
-    0xee8c0dfb45ee5d8e, 0x5da24145464902e1, 0x1a083bacedaefdd5, 0xa9267712ee09a2ba,
-    0x955cce7fba6103bd, 0x267282c1b9c65cd2, 0x61d8f8281221a3e6, 0xd2f6b4961186fc89,
-    0x9f8169ba49a54b33, 0x2caf25044a02145c, 0x6b055fede1e5eb68, 0xd82b1353e242b407,
-    0xe451aa3eb62a1500, 0x577fe680b58d4a6f, 0x10d59c691e6ab55b, 0xa3fbd0d71dcdea34,
-    0x6820eeb3b6bbf755, 0xdb0ea20db51ca83a, 0x9ca4d8e41efb570e, 0x2f8a945a1d5c0861,
-    0x13f02d374934a966, 0xa0de61894a93f609, 0xe7741b60e174093d, 0x545a57dee2d35652,
-    0xe21ac88218962d7a, 0x5134843c1b317215, 0x169efed5b0d68d21, 0xa5b0b26bb371d24e,
-    0x99ca0b06e7197349, 0x2ae447b8e4be2c26, 0x6d4e3d514f59d312, 0xde6071ef4cfe8c7d,
-    0x15bb4f8be788911c, 0xa6950335e42fce73, 0xe13f79dc4fc83147, 0x521135624c6f6e28,
-    0x6e6b8c0f1807cf2f, 0xdd45c0b11ba09040, 0x9aefba58b0476f74, 0x29c1f6e6b3e0301b,
-    0xc96c5795d7870f42, 0x7a421b2bd420502d, 0x3de861c27fc7af19, 0x8ec62d7c7c60f076,
-    0xb2bc941128085171, 0x0192d8af2baf0e1e, 0x4638a2468048f12a, 0xf516eef883efae45,
-    0x3ecdd09c2899b324, 0x8de39c222b3eec4b, 0xca49e6cb80d9137f, 0x7967aa75837e4c10,
-    0x451d1318d716ed17, 0xf6335fa6d4b1b278, 0xb199254f7f564d4c, 0x02b769f17cf11223,
-    0xb4f7f6ad86b4690b, 0x07d9ba1385133664, 0x4073c0fa2ef4c950, 0xf35d8c442d53963f,
-    0xcf273529793b3738, 0x7c0979977a9c6857, 0x3ba3037ed17b9763, 0x888d4fc0d2dcc80c,
-    0x435671a479aad56d, 0xf0783d1a7a0d8a02, 0xb7d247f3d1ea7536, 0x04fc0b4dd24d2a59,
-    0x3886b22086258b5e, 0x8ba8fe9e8582d431, 0xcc0284772e652b05, 0x7f2cc8c92dc2746a,
-    0x325b15e575e1c3d0, 0x8175595b76469cbf, 0xc6df23b2dda1638b, 0x75f16f0cde063ce4,
-    0x498bd6618a6e9de3, 0xfaa59adf89c9c28c, 0xbd0fe036222e3db8, 0x0e21ac88218962d7,
-    0xc5fa92ec8aff7fb6, 0x76d4de52895820d9, 0x317ea4bb22bfdfed, 0x8250e80521188082,
-    0xbe2a516875702185, 0x0d041dd676d77eea, 0x4aae673fdd3081de, 0xf9802b81de97deb1,
-    0x4fc0b4dd24d2a599, 0xfceef8632775faf6, 0xbb44828a8c9205c2, 0x086ace348f355aad,
-    0x34107759db5dfbaa, 0x873e3be7d8faa4c5, 0xc094410e731d5bf1, 0x73ba0db070ba049e,
-    0xb86133d4dbcc19ff, 0x0b4f7f6ad86b4690, 0x4ce50583738cb9a4, 0xffcb493d702be6cb,
-    0xc3b1f050244347cc, 0x709fbcee27e418a3, 0x3735c6078c03e797, 0x841b8ab98fa4b8f8,
-    0xadda7c5f3c4488e3, 0x1ef430e13fe3d78c, 0x595e4a08940428b8, 0xea7006b697a377d7,
-    0xd60abfdbc3cbd6d0, 0x6524f365c06c89bf, 0x228e898c6b8b768b, 0x91a0c532682c29e4,
-    0x5a7bfb56c35a3485, 0xe955b7e8c0fd6bea, 0xaeffcd016b1a94de, 0x1dd181bf68bdcbb1,
-    0x21ab38d23cd56ab6, 0x9285746c3f7235d9, 0xd52f0e859495caed, 0x6601423b97329582,
-    0xd041dd676d77eeaa, 0x636f91d96ed0b1c5, 0x24c5eb30c5374ef1, 0x97eba78ec690119e,
-    0xab911ee392f8b099, 0x18bf525d915feff6, 0x5f1528b43ab810c2, 0xec3b640a391f4fad,
-    0x27e05a6e926952cc, 0x94ce16d091ce0da3, 0xd3646c393a29f297, 0x604a2087398eadf8,
-    0x5c3099ea6de60cff, 0xef1ed5546e415390, 0xa8b4afbdc5a6aca4, 0x1b9ae303c601f3cb,
-    0x56ed3e2f9e224471, 0xe5c372919d851b1e, 0xa26908783662e42a, 0x114744c635c5bb45,
-    0x2d3dfdab61ad1a42, 0x9e13b115620a452d, 0xd9b9cbfcc9edba19, 0x6a978742ca4ae576,
-    0xa14cb926613cf817, 0x1262f598629ba778, 0x55c88f71c97c584c, 0xe6e6c3cfcadb0723,
-    0xda9c7aa29eb3a624, 0x69b2361c9d14f94b, 0x2e184cf536f3067f, 0x9d36004b35545910,
-    0x2b769f17cf112238, 0x9858d3a9ccb67d57, 0xdff2a94067518263, 0x6cdce5fe64f6dd0c,
-    0x50a65c93309e7c0b, 0xe388102d33392364, 0xa4226ac498dedc50, 0x170c267a9b79833f,
-    0xdcd7181e300f9e5e, 0x6ff954a033a8c131, 0x28532e49984f3e05, 0x9b7d62f79be8616a,
-    0xa707db9acf80c06d, 0x14299724cc279f02, 0x5383edcd67c06036, 0xe0ada17364673f59
-}
-
-function crypt.crc64(s)
-    local crc = 0xFFFFFFFFFFFFFFFF
-    for i = 1, #s do
-        crc = (crc>>8) ~ crc64_table[(crc~byte(s, i))&0xFF]
-    end
-    return crc ~ 0xFFFFFFFFFFFFFFFF
-end
-
-string.crc64 = crypt.crc64
-
---[[------------------------------------------------------------------------@@@
-## SHA1 hash
-
-The SHA1 hash is provided by the `pandoc` module.
-`crypt.sha1` is just an alias for `pandoc.utils.sha1`.
-@@@]]
-
---[[@@@
-```lua
-crypt.sha1(data)
-data:sha1()
-```
-computes the SHA1 of `data`.
-@@@]]
-
-
-if pandoc then
-
-    crypt.sha1 = pandoc.utils.sha1
-
-    string.sha1 = crypt.sha1
-
-end
-
---[[------------------------------------------------------------------------@@@
-## RC4 encryption
-
-RC4 is a stream cipher (see <https://en.wikipedia.org/wiki/RC4>).
-It is design to be fast and simple.
-
-See <https://en.wikipedia.org/wiki/RC4>.
-@@@]]
-
---[[@@@
-```lua
-crypt.rc4(data, key, [drop])
-data:rc4(key, [drop])
-crypt.unrc4(data, key, [drop])      -- note that unrc4 == rc4
-data:unrc4(key, [drop])
-```
-encrypts/decrypts `data` using the RC4Drop
-algorithm and the encryption key `key` (drops the first `drop` encryption
-steps, the default value of `drop` is 768).
-@@@]]
-
-function crypt.rc4(input, key, drop)
-    drop = drop or 768
-    local S = {}
-    for i = 0, 255 do S[i] = i end
-    local j = 0
-    for i = 0, 255 do
-        j = (j + S[i] + byte(key, i%#key+1)) % 256
-        S[i], S[j] = S[j], S[i]
-    end
-    local i = 0
-    j = 0
-    for _ = 1, drop do
-        i = (i + 1) % 256
-        j = (j + S[i]) % 256
-        S[i], S[j] = S[j], S[i]
-    end
-    local output = {}
-    for k = 1, #input do
-        i = (i + 1) % 256
-        j = (j + S[i]) % 256
-        S[i], S[j] = S[j], S[i]
-        output[k] = char(byte(input, k) ~ S[(S[i] + S[j]) % 256])
-    end
-    return concat(output)
-end
-
-crypt.unrc4 = crypt.rc4
-
-string.rc4 = crypt.rc4
-string.unrc4 = crypt.unrc4
-
---}}}
-
---{{{ fake linenoise module
-
-local linenoise = {}
-
-function linenoise.read(prompt)
-    io.stdout:write(prompt)
+function prompt.read(p)
+    io.stdout:write(p)
     io.stdout:flush()
     return io.stdin:read "l"
 end
 
-linenoise.read_mask = linenoise.read
+--[[@@@
+```lua
+prompt.clear()
+```
+clears the screen
+@@@]]
 
-linenoise.add = F.const()
-linenoise.set_len = F.const()
-linenoise.save = F.const()
-linenoise.load = F.const()
-linenoise.multi_line = F.const()
-linenoise.mask = F.const()
-
-function linenoise.clear()
+function prompt.clear()
     io.stdout:write "\x1b[1;1H\x1b[2J"
 end
 
---}}}
+-------------------------------------------------------------------------------
+-- module
+-------------------------------------------------------------------------------
 
---{{{ luax module
-local libs = {
-    luax = function() end,
-    fun = function() return fun end,
-    sh = function() return sh end,
-    fs = function() return fs end,
-    ps = function() return ps end,
-    sys = function() return sys end,
-    crypt = function() return crypt end,
-    linenoise = function() return linenoise end,
-}
+return prompt
+]=]),
+["ps"] = lib("src/ps/ps.lua", [=[--[[
+This file is part of luax.
 
-table.insert(package.searchers, 1, function(name) return libs[name] end)
---}}}
-end)()
+luax is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+luax is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with luax.  If not, see <https://www.gnu.org/licenses/>.
+
+For further information about luax you can visit
+http://cdelord.fr/luax
+--]]
+
+--@LOAD
+local _, ps = pcall(require, "_ps")
+ps = _ and ps
+
+if not ps then
+    ps = {}
+
+    function ps.sleep(n)
+        return sh.run("sleep", n)
+    end
+
+    function ps.time()
+        return os.time()
+    end
+
+    function ps.profile(func)
+        local t0 = os.time()
+        func()
+        local t1 = os.time()
+        return t1 - t0
+    end
+
 end
 
-_G.F = require "fun"
-_G.sh = require "sh"
-_G.fs = require "fs"
+return ps
+]=]),
+["qmath"] = lib("src/qmath/qmath.lua", [=[--[[
+This file is part of luax.
+
+luax is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+luax is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with luax.  If not, see <https://www.gnu.org/licenses/>.
+
+For further information about luax you can visit
+http://cdelord.fr/luax
+--]]
+
+--@LOAD
+local _, qmath = pcall(require, "_qmath")
+qmath = _ and qmath
+
+return qmath
+]=]),
+["serpent"] = lib("src/serpent/serpent.lua", [=[local n, v = "serpent", "0.303" -- (C) 2012-18 Paul Kulchenko; MIT License
+local c, d = "Paul Kulchenko", "Lua serializer and pretty printer"
+local snum = {[tostring(1/0)]='1/0 --[[math.huge]]',[tostring(-1/0)]='-1/0 --[[-math.huge]]',[tostring(0/0)]='0/0'}
+local badtype = {thread = true, userdata = true, cdata = true}
+local getmetatable = debug and debug.getmetatable or getmetatable
+local pairs = function(t) return next, t end -- avoid using __pairs in Lua 5.2+
+local keyword, globals, G = {}, {}, (_G or _ENV)
+for _,k in ipairs({'and', 'break', 'do', 'else', 'elseif', 'end', 'false',
+  'for', 'function', 'goto', 'if', 'in', 'local', 'nil', 'not', 'or', 'repeat',
+  'return', 'then', 'true', 'until', 'while'}) do keyword[k] = true end
+for k,v in pairs(G) do globals[v] = k end -- build func to name mapping
+for _,g in ipairs({'coroutine', 'debug', 'io', 'math', 'string', 'table', 'os'}) do
+  for k,v in pairs(type(G[g]) == 'table' and G[g] or {}) do globals[v] = g..'.'..k end end
+
+local function s(t, opts)
+  local name, indent, fatal, maxnum = opts.name, opts.indent, opts.fatal, opts.maxnum
+  local sparse, custom, huge = opts.sparse, opts.custom, not opts.nohuge
+  local space, maxl = (opts.compact and '' or ' '), (opts.maxlevel or math.huge)
+  local maxlen, metatostring = tonumber(opts.maxlength), opts.metatostring
+  local iname, comm = '_'..(name or ''), opts.comment and (tonumber(opts.comment) or math.huge)
+  local numformat = opts.numformat or "%.17g"
+  local seen, sref, syms, symn = {}, {'local '..iname..'={}'}, {}, 0
+  local function gensym(val) return '_'..(tostring(tostring(val)):gsub("[^%w]",""):gsub("(%d%w+)",
+    -- tostring(val) is needed because __tostring may return a non-string value
+    function(s) if not syms[s] then symn = symn+1; syms[s] = symn end return tostring(syms[s]) end)) end
+  local function safestr(s) return type(s) == "number" and (huge and snum[tostring(s)] or numformat:format(s))
+    or type(s) ~= "string" and tostring(s) -- escape NEWLINE/010 and EOF/026
+    or ("%q"):format(s):gsub("\010","n"):gsub("\026","\\026") end
+  -- handle radix changes in some locales
+  if opts.fixradix and (".1f"):format(1.2) ~= "1.2" then
+    local origsafestr = safestr
+    safestr = function(s) return type(s) == "number"
+      and (nohuge and snum[tostring(s)] or numformat:format(s):gsub(",",".")) or origsafestr(s)
+    end
+  end
+  local function comment(s,l) return comm and (l or 0) < comm and ' --[['..select(2, pcall(tostring, s))..']]' or '' end
+  local function globerr(s,l) return globals[s] and globals[s]..comment(s,l) or not fatal
+    and safestr(select(2, pcall(tostring, s))) or error("Can't serialize "..tostring(s)) end
+  local function safename(path, name) -- generates foo.bar, foo[3], or foo['b a r']
+    local n = name == nil and '' or name
+    local plain = type(n) == "string" and n:match("^[%l%u_][%w_]*$") and not keyword[n]
+    local safe = plain and n or '['..safestr(n)..']'
+    return (path or '')..(plain and path and '.' or '')..safe, safe end
+  local alphanumsort = type(opts.sortkeys) == 'function' and opts.sortkeys or function(k, o, n) -- k=keys, o=originaltable, n=padding
+    local maxn, to = tonumber(n) or 12, {number = 'a', string = 'b'}
+    local function padnum(d) return ("%0"..tostring(maxn).."d"):format(tonumber(d)) end
+    table.sort(k, function(a,b)
+      -- sort numeric keys first: k[key] is not nil for numerical keys
+      return (k[a] ~= nil and 0 or to[type(a)] or 'z')..(tostring(a):gsub("%d+",padnum))
+           < (k[b] ~= nil and 0 or to[type(b)] or 'z')..(tostring(b):gsub("%d+",padnum)) end) end
+  local function val2str(t, name, indent, insref, path, plainindex, level)
+    local ttype, level, mt = type(t), (level or 0), getmetatable(t)
+    local spath, sname = safename(path, name)
+    local tag = plainindex and
+      ((type(name) == "number") and '' or name..space..'='..space) or
+      (name ~= nil and sname..space..'='..space or '')
+    if seen[t] then -- already seen this element
+      sref[#sref+1] = spath..space..'='..space..seen[t]
+      return tag..'nil'..comment('ref', level)
+    end
+    -- protect from those cases where __tostring may fail
+    if type(mt) == 'table' and metatostring ~= false then
+      local to, tr = pcall(function() return mt.__tostring(t) end)
+      local so, sr = pcall(function() return mt.__serialize(t) end)
+      if (to or so) then -- knows how to serialize itself
+        seen[t] = insref or spath
+        t = so and sr or tr
+        ttype = type(t)
+      end -- new value falls through to be serialized
+    end
+    if ttype == "table" then
+      if level >= maxl then return tag..'{}'..comment('maxlvl', level) end
+      seen[t] = insref or spath
+      if next(t) == nil then return tag..'{}'..comment(t, level) end -- table empty
+      if maxlen and maxlen < 0 then return tag..'{}'..comment('maxlen', level) end
+      local maxn, o, out = math.min(#t, maxnum or #t), {}, {}
+      for key = 1, maxn do o[key] = key end
+      if not maxnum or #o < maxnum then
+        local n = #o -- n = n + 1; o[n] is much faster than o[#o+1] on large tables
+        for key in pairs(t) do
+          if o[key] ~= key then n = n + 1; o[n] = key end
+        end
+      end
+      if maxnum and #o > maxnum then o[maxnum+1] = nil end
+      if opts.sortkeys and #o > maxn then alphanumsort(o, t, opts.sortkeys) end
+      local sparse = sparse and #o > maxn -- disable sparsness if only numeric keys (shorter output)
+      for n, key in ipairs(o) do
+        local value, ktype, plainindex = t[key], type(key), n <= maxn and not sparse
+        if opts.valignore and opts.valignore[value] -- skip ignored values; do nothing
+        or opts.keyallow and not opts.keyallow[key]
+        or opts.keyignore and opts.keyignore[key]
+        or opts.valtypeignore and opts.valtypeignore[type(value)] -- skipping ignored value types
+        or sparse and value == nil then -- skipping nils; do nothing
+        elseif ktype == 'table' or ktype == 'function' or badtype[ktype] then
+          if not seen[key] and not globals[key] then
+            sref[#sref+1] = 'placeholder'
+            local sname = safename(iname, gensym(key)) -- iname is table for local variables
+            sref[#sref] = val2str(key,sname,indent,sname,iname,true)
+          end
+          sref[#sref+1] = 'placeholder'
+          local path = seen[t]..'['..tostring(seen[key] or globals[key] or gensym(key))..']'
+          sref[#sref] = path..space..'='..space..tostring(seen[value] or val2str(value,nil,indent,path))
+        else
+          out[#out+1] = val2str(value,key,indent,nil,seen[t],plainindex,level+1)
+          if maxlen then
+            maxlen = maxlen - #out[#out]
+            if maxlen < 0 then break end
+          end
+        end
+      end
+      local prefix = string.rep(indent or '', level)
+      local head = indent and '{\n'..prefix..indent or '{'
+      local body = table.concat(out, ','..(indent and '\n'..prefix..indent or space))
+      local tail = indent and "\n"..prefix..'}' or '}'
+      return (custom and custom(tag,head,body,tail,level) or tag..head..body..tail)..comment(t, level)
+    elseif badtype[ttype] then
+      seen[t] = insref or spath
+      return tag..globerr(t, level)
+    elseif ttype == 'function' then
+      seen[t] = insref or spath
+      if opts.nocode then return tag.."function() --[[..skipped..]] end"..comment(t, level) end
+      local ok, res = pcall(string.dump, t)
+      local func = ok and "(load("..safestr(res)..",'@serialized'))"..comment(t, level)
+      return tag..(func or globerr(t, level))
+    else return tag..safestr(t) end -- handle all other types
+  end
+  local sepr = indent and "\n" or ";"..space
+  local body = val2str(t, name, indent) -- this call also populates sref
+  local tail = #sref>1 and table.concat(sref, sepr)..sepr or ''
+  local warn = opts.comment and #sref>1 and space.."--[[incomplete output with shared/self-references skipped]]" or ''
+  return not name and body..warn or "do local "..body..sepr..tail.."return "..name..sepr.."end"
+end
+
+local function deserialize(data, opts)
+  local env = (opts and opts.safe == false) and G
+    or setmetatable({}, {
+        __index = function(t,k) return t end,
+        __call = function(t,...) error("cannot call functions") end
+      })
+  local f, res = load('return '..data, nil, nil, env)
+  if not f then f, res = load(data, nil, nil, env) end
+  if not f then return f, res end
+  return pcall(f)
+end
+
+local function merge(a, b) if b then for k,v in pairs(b) do a[k] = v end end; return a; end
+return { _NAME = n, _COPYRIGHT = c, _DESCRIPTION = d, _VERSION = v, serialize = s,
+  load = deserialize,
+  dump = function(a, opts) return s(a, merge({name = '_', compact = true, sparse = true}, opts)) end,
+  line = function(a, opts) return s(a, merge({sortkeys = true, comment = true}, opts)) end,
+  block = function(a, opts) return s(a, merge({indent = '  ', sortkeys = true, comment = true}, opts)) end }
+--@LOAD
+]=]),
+["sh"] = lib("src/sh/sh.lua", [=[--[[
+This file is part of luax.
+
+luax is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+luax is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with luax.  If not, see <https://www.gnu.org/licenses/>.
+
+For further information about luax you can visit
+http://cdelord.fr/luax
+--]]
+
+--@LOAD
+
+--[[------------------------------------------------------------------------@@@
+## Shell
+@@@]]
+
+--[[@@@
+```lua
+local sh = require "sh"
+```
+@@@]]
+local sh = {}
+
+local F = require "F"
+
+--[[@@@
+```lua
+sh.run(...)
+```
+Runs the command `...` with `os.execute`.
+@@@]]
+
+function sh.run(...)
+    local cmd = F.flatten{...}:unwords()
+    return os.execute(cmd)
+end
+
+--[[@@@
+```lua
+sh.read(...)
+```
+Runs the command `...` with `io.popen`.
+When `sh.read` succeeds, it returns the content of stdout.
+Otherwise it returns the error identified by `io.popen`.
+@@@]]
+
+function sh.read(...)
+    local cmd = F.flatten{...}:unwords()
+    local p, popen_err = io.popen(cmd, "r")
+    if not p then return p, popen_err end
+    local out = p:read("a")
+    local ok, exit, ret = p:close()
+    if ok then
+        return out
+    else
+        return ok, exit, ret
+    end
+end
+
+--[[@@@
+```lua
+sh.write(...)(data)
+```
+Runs the command `...` with `io.popen` and feeds `stdin` with `data`.
+`sh.write` returns the same values returned by `os.execute`.
+@@@]]
+
+function sh.write(...)
+    local cmd = F.flatten{...}:unwords()
+    return function(data)
+        local p, popen_err = io.popen(cmd, "w")
+        if not p then return p, popen_err end
+        p:write(data)
+        return p:close()
+    end
+end
+
+if pandoc then
+
+--[[@@@
+```lua
+sh.pipe(...)(data)
+```
+Runs the command `...` with `pandoc.pipe` and feeds `stdin` with `data`.
+When `sh.pipe` succeeds, it returns the content of stdout.
+Otherwise it returns the error identified by `pandoc.pipe`.
+@@@]]
+
+    function sh.pipe(...)
+        local cmd = F.flatten{...}
+        return function(data)
+            local ok, out = pcall(pandoc.pipe, cmd:head(), cmd:tail(), data)
+            if not ok then return nil, out end
+            return out
+        end
+    end
+
+end
+
+--[[@@@
+``` lua
+sh(...)
+```
+`sh` can be called as a function. `sh(...)` is a shortcut to `sh.read(...)`.
+@@@]]
+setmetatable(sh, {
+    __call = function(_, ...) return sh.read(...) end,
+})
+
+return sh
+]=]),
+["sys"] = lib("src/sys/sys.lua", [=[--[[
+This file is part of luax.
+
+luax is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+luax is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with luax.  If not, see <https://www.gnu.org/licenses/>.
+
+For further information about luax you can visit
+http://cdelord.fr/luax
+--]]
+
+--@LOAD
+local _, sys = pcall(require, "_sys")
+sys = _ and sys
+
+if not sys then
+
+    sys = {}
+
+    sys.arch = pandoc and pandoc.system.arch
+    sys.os = pandoc and pandoc.system.os
+    sys.abi = "lua"
+
+    setmetatable(sys, {
+        __index = function(_, param)
+            if param == "os" then
+                local os = sh.read("uname", "-s"):trim()
+                os =   os == "Linux" and "linux"
+                    or os == "Darwin" and "macos"
+                    or os:match "^MINGW" and "windows"
+                    or "unknown"
+                sys.os = os
+                return os
+            elseif param == "arch" then
+                local arch = sh.read("uname", "-m"):trim()
+                sys.arch = arch
+                return arch
+            end
+        end,
+    })
+
+end
+
+return sys
+]=]),
+["term"] = lib("src/term/term.lua", [=[--[[
+This file is part of luax.
+
+luax is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+luax is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with luax.  If not, see <https://www.gnu.org/licenses/>.
+
+For further information about luax you can visit
+http://cdelord.fr/luax
+--]]
+
+--[[------------------------------------------------------------------------@@@
+# Terminal
+
+`term` provides some functions to deal with the terminal in a quite portable way.
+It is heavily inspired by:
+
+- [lua-term](https://github.com/hoelzro/lua-term/): Terminal operations for Lua
+- [nocurses](https://github.com/osch/lua-nocurses/): A terminal screen manipulation library
+
+```lua
+local term = require "term"
+```
+@@@]]
+
+local term = require "_term"
+
+if not term.isatty then
+
+    function term.isatty()
+        return (sh.run("tty", "--slient", "2>/dev/null"))
+    end
+
+end
+
+if not term.size then
+
+    function term.size()
+        local rows, cols = sh.read("stty", "size"):words():map(tonumber):unpack()
+        return {rows=rows, cols=cols}
+    end
+
+end
+
+local ESC = '\027'
+local CSI = ESC..'['
+
+--[[------------------------------------------------------------------------@@@
+## Colors
+
+The table `term.colors` contain objects that can be used to build
+colorized string with ANSI sequences.
+
+An object `term.color.X` can be used:
+
+- as a string
+- as a function
+- in combination with other color attributes
+
+``` lua
+-- change colors in a string
+" ... " .. term.color.X .. " ... "
+
+-- change colors for a string and reset colors at the end of the string
+term.color.X("...")
+
+-- build a complex color with attributes
+local c = term.color.red + term.color.italic + term.color.oncyan
+```
+@@@]]
+
+local color_mt, color_reset
+color_mt = {
+    __tostring = function(self) return self.value end,
+    __concat = function(self, other) return tostring(self)..tostring(other) end,
+    __call = function(self, s) return self..s..color_reset end,
+    __add = function(self, other) return setmetatable({value=self..other}, color_mt) end,
+}
+local function color(value) return setmetatable({value=CSI..tostring(value).."m"}, color_mt) end
+--                                @@@`term.color` field     Description                         @@@
+--                                @@@---------------------- ------------------------------------@@@
+term.color = {
+    -- attributes
+    reset       = color(0),     --@@@reset                  reset the colors                    @@@
+    clear       = color(0),     --@@@clear                  same as reset                       @@@
+    default     = color(0),     --@@@default                same as reset                       @@@
+    bright      = color(1),     --@@@bright                 bold or more intense                @@@
+    bold        = color(1),     --@@@bold                   same as bold                        @@@
+    dim         = color(2),     --@@@dim                    thiner or less intense              @@@
+    italic      = color(3),     --@@@italic                 italic (sometimes inverse or blink) @@@
+    underline   = color(4),     --@@@underline              underlined                          @@@
+    blink       = color(5),     --@@@blink                  slow blinking (less than 150 bpm)   @@@
+    fast        = color(6),     --@@@fast                   fast blinking (more than 150 bpm)   @@@
+    reverse     = color(7),     --@@@reverse                swap foreground and background      @@@
+    hidden      = color(8),     --@@@hidden                 hidden text                         @@@
+    strike      = color(9),     --@@@strike                 strike or crossed-out               @@@
+    -- foreground
+    black       = color(30),    --@@@black                  black foreground                    @@@
+    red         = color(31),    --@@@red                    red foreground                      @@@
+    green       = color(32),    --@@@green                  green foreground                    @@@
+    yellow      = color(33),    --@@@yellow                 yellow foreground                   @@@
+    blue        = color(34),    --@@@blue                   blue foreground                     @@@
+    magenta     = color(35),    --@@@magenta                magenta foreground                  @@@
+    cyan        = color(36),    --@@@cyan                   cyan foreground                     @@@
+    white       = color(37),    --@@@white                  white foreground                    @@@
+    -- background
+    onblack     = color(40),    --@@@onblack                black background                    @@@
+    onred       = color(41),    --@@@onred                  red background                      @@@
+    ongreen     = color(42),    --@@@ongreen                green background                    @@@
+    onyellow    = color(43),    --@@@onyellow               yellow background                   @@@
+    onblue      = color(44),    --@@@onblue                 blue background                     @@@
+    onmagenta   = color(45),    --@@@onmagenta              magenta background                  @@@
+    oncyan      = color(46),    --@@@oncyan                 cyan background                     @@@
+    onwhite     = color(47),    --@@@onwhite                white background                    @@@
+}
+
+color_reset = term.color.reset
+
+--[[------------------------------------------------------------------------@@@
+## Cursor
+
+The table `term.cursor` contains functions to change the shape of the cursor:
+
+``` lua
+-- turns the cursor into a blinking vertical thin bar
+term.cursor.bar_blink()
+```
+
+@@@]]
+
+local function cursor(shape)
+    shape = CSI..shape..' q'
+    return function()
+        io.stdout:write(shape)
+    end
+end
+
+--                                  @@@`term.cursor` field      Description                         @@@
+--                                  @@@------------------------ ------------------------------------@@@
+term.cursor = {
+    reset           = cursor(0),  --@@@reset                    reset to the initial shape          @@@
+    block_blink     = cursor(1),  --@@@block_blink              blinking block cursor               @@@
+    block           = cursor(2),  --@@@block                    fixed block cursor                  @@@
+    underline_blink = cursor(3),  --@@@underline_blink          blinking underline cursor           @@@
+    underline       = cursor(4),  --@@@underline                fixed underline cursor              @@@
+    bar_blink       = cursor(5),  --@@@bar_blink                blinking bar cursor                 @@@
+    bar             = cursor(6),  --@@@bar                      fixed bar cursor                    @@@
+}
+
+--[[------------------------------------------------------------------------@@@
+## Terminal
+
+@@@]]
+
+local function f(fmt)
+    local function w(h, ...)
+        if io.type(h) ~= 'file' then
+            return w(io.stdout, h, ...)
+        end
+        return h:write(fmt:format(...))
+    end
+    return w
+end
+
+--[[@@@
+``` lua
+term.reset()
+```
+resets the colors and the cursor shape.
+@@@]]
+term.reset    = f(color_reset..     -- reset colors
+                  CSI.."0 q"..      -- reset cursor shape
+                  CSI..'?25h'       -- restore cursor
+                 )
+
+--[[@@@
+``` lua
+term.clear()
+term.clearline()
+term.cleareol()
+term.clearend()
+```
+clears the terminal, the current line, the end of the current line or from the cursor to the end of the terminal.
+@@@]]
+term.clear       = f(CSI..'1;1H'..CSI..'2J')
+term.clearline   = f(CSI..'2K'..CSI..'E')
+term.cleareol    = f(CSI..'K')
+term.clearend    = f(CSI..'J')
+
+--[[@@@
+``` lua
+term.pos(row, col)
+```
+moves the cursor to the line `row` and the column `col`.
+@@@]]
+term.pos         = f(CSI..'%d;%dH')
+
+--[[@@@
+``` lua
+term.save_pos()
+term.restore_pos()
+```
+saves and restores the position of the cursor.
+@@@]]
+term.save_pos    = f(CSI..'s')
+term.restore_pos = f(CSI..'u')
+
+--[[@@@
+``` lua
+term.up([n])
+term.down([n])
+term.right([n])
+term.left([n])
+```
+moves the cursor by `n` characters up, down, right or left.
+@@@]]
+term.up          = f(CSI..'%d;A')
+term.down        = f(CSI..'%d;B')
+term.right       = f(CSI..'%d;C')
+term.left        = f(CSI..'%d;D')
+
+return term
+]=]),
+}
+table.insert(package.searchers, 2, function(name) return libs[name] end)
+_ENV["F"] = require "F"
+_ENV["L"] = require "L"
+_ENV["complex"] = require "complex"
+_ENV["crypt"] = require "crypt"
+_ENV["fs"] = require "fs"
+_ENV["imath"] = require "imath"
+_ENV["inspect"] = require "inspect"
+_ENV["linenoise"] = require "linenoise"
+_ENV["mathx"] = require "mathx"
+_ENV["prompt"] = require "prompt"
+_ENV["ps"] = require "ps"
+_ENV["qmath"] = require "qmath"
+_ENV["serpent"] = require "serpent"
+_ENV["sh"] = require "sh"
+_ENV["sys"] = require "sys"
+end)()
+end
 
 -- }}}
 
