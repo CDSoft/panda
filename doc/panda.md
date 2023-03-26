@@ -1,6 +1,6 @@
 % Panda - Pandoc add-ons (Lua filters for Pandoc)
 % Christophe Delord - <http://cdelord.fr/panda>
-% 19th december 2022
+% 26th march 2023
 
 [panda]: http://cdelord.fr/panda "Pandoc add-ons (Lua filters for Pandoc)"
 [GraphViz]: http://graphviz.org/
@@ -17,6 +17,7 @@
 [GitHub]: https://github.com/CDSoft/panda
 [cdelord.fr]: http://cdelord.fr
 [gnuplot]: http://www.gnuplot.info/
+[lsvg]: http://cdelord.fr/lsvg/
 [UPP]: http://cdelord.fr/upp "Universal PreProcessor"
 [LuaX]: http://cdelord.fr/luax "Lua eXtended interpretor"
 [LuaX documentation]: http://cdelord.fr/luax/luax.lua.html
@@ -317,6 +318,9 @@ If `img` contains `%h`, it is replaced by a hash computed from the diagram sourc
 The file format (extension) must be in the `render` field,
 after the `%o` tag (e.g.: `%o.png`), not in the `img` field.
 
+If the program requires a specific input file extension, it can be specified in the `render` field,
+after the `%i` tag (e.g.: `%i.xyz`).
+
 ```meta
 _plantuml = "{{plantuml}}"
 _build = "output_path"
@@ -368,6 +372,11 @@ Diagram         Predefined variable     Render command
 [gnuplot]       `gnuplot`               `{{gnuplot}}`
                 `gnuplot.svg`           `{{gnuplot.svg}}`
                 `gnuplot.png`           `{{gnuplot.png}}`
+                `gnuplot.pdf`           `{{gnuplot.pdf}}`
+[lsvg]          `lsvg`                  `{{lsvg}}`
+                `lsvg.svg`              `{{lsvg.svg}}`
+                `lsvg.png`              `{{lsvg.png}}`
+                `lsvg.pdf`              `{{lsvg.pdf}}`
 
 Notes:
 

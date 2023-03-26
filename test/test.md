@@ -169,3 +169,14 @@ Alice -> Bob: hello
 Alice -> Bob: hello
 @enduml
 ```
+
+```{.lua render="{{lsvg}}" img="{{build}}/img/lsvg_test" out="{{build}}/img"}
+local w, h = 320, 240
+img {
+    width = w,
+    height = h,
+    font_size = h/2,
+    text_anchor = "middle",
+    Text "lsvg" { x=(w/2, y=h/2, dy="0.25em", fill="red" },
+}
+```

@@ -8240,6 +8240,11 @@ local function set_diagram_env()
         return cmd:gsub("%%svg", ext=="svg" and "--svg" or "")
     end)
     engines("gnuplot", "svg png pdf", "%exe -e 'set terminal %ext' -e 'set output \"%o\"' -c %i")
+    engines("lsvg", "svg png pdf", "%exe %i.lua %o")
+end
+
+local function get_input_ext(s)
+    return s:match("%%i(%.%w+)") or ""
 end
 
 local function get_ext(s)
@@ -8267,6 +8272,7 @@ local function diagram(block)
     local render = get_attr(block, "render")
     if render then
         local contents = block.text
+        local input_ext = get_input_ext(render)
         local ext = get_ext(render)
         local img = get_attr(block, "img")
         local output_path = get_attr(block, "out")
@@ -8294,7 +8300,8 @@ local function diagram(block)
         if not fs.is_file(out..ext) or meta_content ~= old_meta then
             system.with_temporary_directory("panda_diagram", function (tmpdir)
                 local name = fs.join(tmpdir, "diagram")
-                assert(fs.write(name, contents), "Can not create "..name)
+                local name_ext = name..input_ext
+                assert(fs.write(name_ext, contents), "Can not create "..name_ext)
                 assert(fs.write(meta, meta_content), "Can not create "..meta)
                 render = make_diagram_cmd(name, out, render)
                 render_diagram(render)
