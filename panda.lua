@@ -52,7 +52,7 @@ _G.output_file = PANDOC_STATE.output_file
 -- LuaX packages {{{
 
 if not _LUAX_VERSION then (function()
-_LUAX_VERSION = '2.2.0'
+_LUAX_VERSION = '2.4.1'
 local function lib(path, src) return assert(load(src, '@'..path, 't')) end
 local libs = {
 ["F"] = lib("src/F/F.lua", [=[--[[
@@ -131,7 +131,7 @@ end
 ## Standard types, and related functions
 @@@]]
 
-local has_mathx, mathx = pcall(require, "_mathx")
+local mathx = require "mathx"
 
 local type_rank = {
     ["nil"]         = 0,
@@ -398,7 +398,10 @@ If `ti` is a function, it is applied to `x` and the test becomes `ti(x) == x`.
 If `vi` is a function, the value returned by `F.case` is `vi(x)`.
 @@@]]
 
-local otherwise = {}
+local otherwise = setmetatable({}, {
+    __call = function(_) return true end,
+    __tostring = function(_) return "otherwise" end,
+})
 
 function F.case(val)
     return function(cases)
@@ -586,7 +589,7 @@ F.quot(a, b)
 > integer division truncated toward zero
 @@@]]
 function F.quot(a, b)
-    local q, r = F.quot_rem(a, b)
+    local q, _ = F.quot_rem(a, b)
     return q
 end
 
@@ -597,7 +600,7 @@ F.rem(a, b)
 > integer remainder satisfying quot(a, b)*b + rem(a, b) == a, 0 <= rem(a, b) < abs(b)
 @@@]]
 function F.rem(a, b)
-    local q, r = F.quot_rem(a, b)
+    local _, r = F.quot_rem(a, b)
     return r
 end
 
@@ -620,7 +623,7 @@ F.div(a, b)
 > integer division truncated toward negative infinity
 @@@]]
 function F.div(a, b)
-    local q, r = F.div_mod(a, b)
+    local q, _ = F.div_mod(a, b)
     return q
 end
 
@@ -631,7 +634,7 @@ F.mod(a, b)
 > integer modulus satisfying div(a, b)*b + mod(a, b) == a, 0 <= mod(a, b) < abs(b)
 @@@]]
 function F.mod(a, b)
-    local q, r = F.div_mod(a, b)
+    local _, r = F.div_mod(a, b)
     return r
 end
 
@@ -688,14 +691,12 @@ F.tan = math.tan
 F.asin = math.asin
 F.acos = math.acos
 F.atan = math.atan
-if has_mathx then
-    F.sinh = mathx.sinh
-    F.cosh = mathx.cosh
-    F.tanh = mathx.tanh
-    F.asinh = mathx.asinh
-    F.acosh = mathx.acosh
-    F.atanh = mathx.atanh
-end
+F.sinh = mathx.sinh
+F.cosh = mathx.cosh
+F.tanh = mathx.tanh
+F.asinh = mathx.asinh
+F.acosh = mathx.acosh
+F.atanh = mathx.atanh
 
 --[[@@@
 ```lua
@@ -727,11 +728,7 @@ F.round(x)
 > returns the nearest integer to x; the even integer if x is equidistant between two integers
 @@@]]
 
-F.round = has_mathx
-    and mathx.round
-    or function(x)
-        return x >= 0 and math.floor(x + 0.5) or math.ceil(x - 0.5)
-    end
+F.round = mathx.round
 
 --[[@@@
 ```lua
@@ -760,9 +757,7 @@ F.is_nan(x)
 > True if the argument is an IEEE "not-a-number" (NaN) value
 @@@]]
 
-if has_mathx then
-    F.is_nan = mathx.isnan
-end
+F.is_nan = mathx.isnan
 
 --[[@@@
 ```lua
@@ -771,9 +766,7 @@ F.is_infinite(x)
 > True if the argument is an IEEE infinity or negative infinity
 @@@]]
 
-if has_mathx then
-    F.is_infinite = mathx.isinf
-end
+F.is_infinite = mathx.isinf
 
 --[[@@@
 ```lua
@@ -782,10 +775,8 @@ F.is_normalized(x)
 > True if the argument is represented in normalized format
 @@@]]
 
-if has_mathx then
-    function F.is_normalized(x)
-        return mathx.isnormal(x)
-    end
+function F.is_normalized(x)
+    return mathx.isnormal(x)
 end
 
 --[[@@@
@@ -795,10 +786,8 @@ F.is_denormalized(x)
 > True if the argument is too small to be represented in normalized format
 @@@]]
 
-if has_mathx then
-    function F.is_denormalized(x)
-        return not mathx.isnormal(x)
-    end
+function F.is_denormalized(x)
+    return not mathx.isnormal(x)
 end
 
 --[[@@@
@@ -808,10 +797,8 @@ F.is_negative_zero(x)
 > True if the argument is an IEEE negative zero
 @@@]]
 
-if has_mathx then
-    function F.is_negative_zero(x)
-        return mathx.copysign(1, x) < 0
-    end
+function F.is_negative_zero(x)
+    return mathx.copysign(1, x) < 0
 end
 
 --[[@@@
@@ -871,7 +858,7 @@ F.const(...)
 @@@]]
 function F.const(...)
     local val = {...}
-    return function(...)
+    return function(...) ---@diagnostic disable-line:unused-vararg
         return table.unpack(val)
     end
 end
@@ -1291,19 +1278,19 @@ xs:flatten()
 @@@]]
 
 register1 "flatten" (function(xs)
-    local ys = {}
-    local function f(xs)
-        for i = 1, #xs do
-            local x = xs[i]
+    local zs = {}
+    local function f(ys)
+        for i = 1, #ys do
+            local x = ys[i]
             if type(x) == "table" then
                 f(x)
             else
-                ys[#ys+1] = x
+                zs[#zs+1] = x
             end
         end
     end
     f(xs)
-    return setmt(ys)
+    return setmt(zs)
 end)
 
 --[[@@@
@@ -2972,8 +2959,8 @@ F.Nil
 > `F.Nil` is a singleton used to represent `nil` (see `F.patch`)
 @@@]]
 local Nil = setmetatable({}, {
-    __call = F.const(nil),
-    __tostring = F.const "Nil",
+    __call = function(_) return nil end,
+    __tostring = function(_) return "Nil" end,
 })
 F.Nil = Nil
 
@@ -5356,6 +5343,226 @@ http://cdelord.fr/luax
 local _, complex = pcall(require, "_complex")
 complex = _ and complex
 
+if not complex then
+
+    -- see https://github.com/krakow10/Complex-Number-Library/blob/master/Lua/Complex.lua
+
+    local mathx = require "mathx"
+
+    local e = math.exp(1)
+    local pi = math.pi
+    local abs = math.abs
+    local exp = math.exp
+    local log = math.log
+    local cos = math.cos
+    local sin = math.sin
+    local cosh = mathx.cosh
+    local sinh = mathx.sinh
+    local atan2 = math.atan
+
+    local mt = {__index={}}
+
+    ---@diagnostic disable:unused-vararg
+    local function ni(f) return function(...) error(f.." not implemented") end end
+
+    local forget = 1e-14
+
+    local function new(x, y)
+        if forget then
+            if x and abs(x) <= forget then x = 0 end
+            if y and abs(y) <= forget then y = 0 end
+        end
+        return setmetatable({x=x or 0, y=y or 0}, mt)
+    end
+
+    local i = new(0, 1)
+
+    local function _z(z)
+        if type(z) == "table" and getmetatable(z) == mt then return z end
+        return new(tonumber(z), 0)
+    end
+
+    function mt.__index.real(z) return z.x end
+
+    function mt.__index.imag(z) return z.y end
+
+    local function rect(r, phi)
+        return new(r*cos(phi), r*sin(phi))
+    end
+
+    local function arg(z)
+        return atan2(z.y, z.x)
+    end
+
+    local function ln(z)
+        return new(log(z.x^2+z.y^2)/2, atan2(z.y, z.x))
+    end
+
+    function mt.__index.conj(z)
+        return new(z.x, -z.y)
+    end
+
+    function mt.__add(z1, z2)
+        z1 = _z(z1)
+        z2 = _z(z2)
+        return new(z1.x+z2.x, z1.y+z2.y)
+    end
+
+    function mt.__sub(z1, z2)
+        z1 = _z(z1)
+        z2 = _z(z2)
+        return new(z1.x-z2.x, z1.y-z2.y)
+    end
+
+    function mt.__mul(z1, z2)
+        z1 = _z(z1)
+        z2 = _z(z2)
+        return new(z1.x*z2.x-z1.y*z2.y, z1.x*z2.y+z2.x*z1.y)
+    end
+
+    function mt.__div(z1, z2)
+        z1 = _z(z1)
+        z2 = _z(z2)
+        local d = z2.x^2 + z2.y^2
+        return new((z1.x*z2.x+z1.y*z2.y)/d, (z2.x*z1.y-z1.x*z2.y)/d)
+    end
+
+    function mt.__pow(z1, z2)
+        z1 = _z(z1)
+        z2 = _z(z2)
+        local z1sq = z1.x^2 + z1.y^2
+        if z1sq == 0 then
+            if z2.x == 0 and z2.y == 0 then return 1 end
+            return 0
+        end
+        local phi = arg(z1)
+        return rect(z1sq^(z2.x/2)*exp(-z2.y*phi), z2.y*log(z1sq)/2+z2.x*phi)
+    end
+
+    function mt.__unm(z)
+        return new(-z.x, -z.y)
+    end
+
+    function mt.__eq(z1, z2)
+        z1 = _z(z1)
+        z2 = _z(z2)
+        return z1.x == z2.x and z1.y == z2.y
+    end
+
+    function mt.__tostring(z)
+        if z.y == 0 then return tostring(z.x) end
+        if z.x == 0 then
+            if z.y == 1 then return "i" end
+            if z.y == -1 then return "-i" end
+            return z.y.."i"
+        end
+        if z.y == 1 then return z.x.."+i" end
+        if z.y == -1 then return z.x.."-i" end
+        if z.y < 0 then return z.x..z.y.."i" end
+        return z.x.."+"..z.y.."i"
+    end
+
+    function mt.__index.abs(z)
+        return (z.x^2+z.y^2)^0.5
+    end
+
+    mt.__index.arg = arg
+
+    function mt.__index.exp(z)
+        return e^z
+    end
+
+    function mt.__index.sqrt(z)
+        return z^0.5
+    end
+
+    function mt.__index.sin(z)
+        return new(sin(z.x)*cosh(z.y), cos(z.x)*sinh(z.y))
+    end
+
+    function mt.__index.cos(z)
+        return new(cos(z.x)*cosh(z.y), -sin(z.x)*sinh(z.y))
+    end
+
+    function mt.__index.tan(z)
+        z = 2*z
+        local div = cos(z.x) + cosh(z.y)
+        return new(sin(z.x)/div, sinh(z.y)/div)
+    end
+
+    function mt.__index.sinh(z)
+        return new(cos(z.y)*sinh(z.x), sin(z.y)*cosh(z.x))
+    end
+
+    function mt.__index.cosh(z)
+        return new(cos(z.y)*cosh(z.x), sin(z.y)*sinh(z.x))
+    end
+
+    function mt.__index.tanh(z)
+        z = 2*z
+        local div = cos(z.y) + cosh(z.x)
+        return new(sinh(z.x)/div, sin(z.y)/div)
+    end
+
+    function mt.__index.asin(z)
+        return -i*ln(i*z+(1-z^2)^0.5)
+    end
+
+    function mt.__index.acos(z)
+        return pi/2 + i*ln(i*z+(1-z^2)^0.5)
+    end
+
+    function mt.__index.atan(z)
+        local z3, z4 = new(1-z.y, z.x), new(1+z.x^2-z.y^2, 2*z.x*z.y)
+        return new(arg(z3/z4^0.5), -log(z3:abs()/z4:abs()^0.5))
+    end
+
+    function mt.__index.asinh(z)
+        return ln(z+(1+z^2)^0.5)
+    end
+
+    function mt.__index.acosh(z)
+        return 2*ln((z-1)^0.5+(z+1)^0.5)-log(2)
+    end
+
+    function mt.__index.atanh(z)
+        return (ln(1+z)-ln(1-z))/2
+    end
+
+    mt.__index.log = ln
+
+    mt.__index.proj = ni "proj"
+
+    complex = {
+        new = new,
+        I = i,
+        real = function(z) return _z(z):real() end,
+        imag = function(z) return _z(z):imag() end,
+        abs = function(z) return _z(z):abs() end,
+        arg = function(z) return _z(z):arg() end,
+        exp = function(z) return _z(z):exp() end,
+        sqrt = function(z) return _z(z):sqrt() end,
+        sin = function(z) return _z(z):sin() end,
+        cos = function(z) return _z(z):cos() end,
+        tan = function(z) return _z(z):tan() end,
+        sinh = function(z) return _z(z):sinh() end,
+        cosh = function(z) return _z(z):cosh() end,
+        tanh = function(z) return _z(z):tanh() end,
+        asin = function(z) return _z(z):asin() end,
+        acos = function(z) return _z(z):acos() end,
+        atan = function(z) return _z(z):atan() end,
+        asinh = function(z) return _z(z):asinh() end,
+        acosh = function(z) return _z(z):acosh() end,
+        atanh = function(z) return _z(z):atanh() end,
+        pow = function(z, z2) return _z(z) ^ z2 end,
+        log = function(z) return _z(z):log() end,
+        proj = function(z) return _z(z):proj() end,
+        conj = function(z) return _z(z):conj() end,
+        tostring = function(z) return _z(z):tostring() end,
+    }
+
+end
+
 return complex
 ]=]),
 ["crypt"] = lib("src/crypt/crypt.lua", [=[--[[
@@ -5382,66 +5589,16 @@ http://cdelord.fr/luax
 local _, crypt = pcall(require, "_crypt")
 crypt = _ and crypt
 
--- Additional definitions for the C implementation
-if crypt then
-
---[[------------------------------------------------------------------------@@@
-## String methods
-
-Some functions of the `crypt` package are added to the string module:
-
-@@@]]
-
---[[@@@
-```lua
-s:hex()             == crypt.hex(s)
-s:unhex()           == crypt.unhex(s)
-s:base64()          == crypt.base64(s)
-s:unbase64()        == crypt.unbase64(s)
-s:base64url()       == crypt.base64url(s)
-s:unbase64url()     == crypt.unbase64url(s)
-s:crc32()           == crypt.crc32(s)
-s:crc64()           == crypt.crc64(s)
-s:rc4(key, drop)    == crypt.rc4(s, key, drop)
-s:unrc4(key, drop)  == crypt.unrc4(s, key, drop)
-s:sha256()          == crypt.sha256(s)
-s:hmac(key)         == crypt.hmac(s, key)
-s:aes(key)          == crypt.aes(s, key)
-s:unaes(key)        == crypt.unaes(s, key)
-```
-@@@]]
-
-    function string.hex(s)          return crypt.hex(s) end
-    function string.unhex(s)        return crypt.unhex(s) end
-    function string.base64(s)       return crypt.base64(s) end
-    function string.unbase64(s)     return crypt.unbase64(s) end
-    function string.base64url(s)    return crypt.base64url(s) end
-    function string.unbase64url(s)  return crypt.unbase64url(s) end
-    function string.rc4(s, k, d)    return crypt.rc4(s, k, d) end
-    function string.unrc4(s, k, d)  return crypt.unrc4(s, k, d) end
-    function string.crc32(s)        return crypt.crc32(s) end
-    function string.crc64(s)        return crypt.crc64(s) end
-
-    -- TinyCrypt functions
-
-    function string.sha256(s)       return crypt.sha256(s) end
-    function string.hmac(s, k)      return crypt.hmac(s, k) end
-    function string.aes(s, k)       return crypt.aes(s, k) end
-    function string.unaes(s, k)     return crypt.unaes(s, k) end
-
-end
 
 -- Pure Lua implementation
 if not crypt then
 
     crypt = {}
 
---[[@@@
-``` lua
-local rng = crypt.prng(seed)
-```
-returns a random number generator starting from the optional seed `seed`.
-@@@]]
+    ---@diagnostic disable:unused-vararg
+    local function ni(f) return function(...) error(f.." not implemented") end end
+
+    -- Random number generator
 
     local prng_mt = {__index={}}
 
@@ -5465,23 +5622,6 @@ returns a random number generator starting from the optional seed `seed`.
         return setmetatable({seed=seed}, prng_mt)
     end
 
---[[@@@
-``` lua
-rng:int()
-```
-returns a random integral number between `0` and `crypt.RAND_MAX`.
-
-``` lua
-rng:int(a)
-```
-returns a random integral number between `0` and `a`.
-
-``` lua
-rng:int(a, b)
-```
-returns a random integral number between `a` and `b`.
-@@@]]
-
     function prng_mt.__index:int(a, b)
         self.seed = 6364136223846793005*self.seed + 1
         local r = self.seed >> 32
@@ -5490,36 +5630,12 @@ returns a random integral number between `a` and `b`.
         return r % (b-a+1) + a
     end
 
---[[@@@
-``` lua
-rng:float()
-```
-returns a random floating point number between `0` and `1`.
-
-``` lua
-rng:float(a)
-```
-returns a random floating point number between `0` and `a`.
-
-``` lua
-rng:float(a, b)
-```
-returns a random floating point number between `a` and `b`.
-@@@]]
-
     function prng_mt.__index:float(a, b)
         local r = self:int()
         if not a then return r / RAND_MAX end
         if not b then return r * a/RAND_MAX end
         return r * (b-a)/RAND_MAX + a
     end
-
---[[@@@
-```lua
-rng:str(n)
-```
-returns a string with `n` random bytes.
-@@@]]
 
     function prng_mt.__index:str(n)
         local bs = {}
@@ -5529,20 +5645,14 @@ returns a string with `n` random bytes.
         return concat(bs)
     end
 
---[[------------------------------------------------------------------------@@@
-## Hexadecimal encoding
+    -- global random number generator
+    local _rng = crypt.prng()
+    function crypt.seed(...) return _rng:seed(...) end
+    function crypt.int(...) return _rng:int(...) end
+    function crypt.float(...) return _rng:float(...) end
+    function crypt.str(...) return _rng:str(...) end
 
-The hexadecimal encoder transforms a string into a string
-where bytes are coded with hexadecimal digits.
-@@@]]
-
---[[@@@
-```lua
-crypt.hex(data)
-data:hex()
-```
-encodes `data` in hexa.
-@@@]]
+    -- Hexadecimal encoding
 
     function crypt.hex(s)
         return (gsub(s, '.', function(c) return format("%02X", byte(c)) end))
@@ -5550,39 +5660,17 @@ encodes `data` in hexa.
 
     string.hex = crypt.hex
 
---[[@@@
-```lua
-crypt.unhex(data)
-data:unhex()
-```
-decodes the hexa `data`.
-@@@]]
-
     function crypt.unhex(s)
         return (gsub(s, '..', function(h) return char(tonumber(h, 16)) end))
     end
 
     string.unhex = crypt.unhex
 
---[[------------------------------------------------------------------------@@@
-## Base64 encoding
+    -- Base64 encoding
 
-The base64 encoder transforms a string with non printable characters
-into a printable string (see <https://en.wikipedia.org/wiki/Base64>).
+    -- see <https://en.wikipedia.org/wiki/Base64>
 
-The implementation has been taken from
-<https://lua-users.org/wiki/BaseSixtyFour>.
-@@@]]
-
-    local b = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/'
-
---[[@@@
-```lua
-crypt.base64(data)
-data:base64()
-```
-encodes `data` in base64.
-@@@]]
+    local b64chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/'
 
     function crypt.base64(s)
         return ((s:gsub('.', function(x)
@@ -5593,25 +5681,22 @@ encodes `data` in base64.
             if (#x < 6) then return '' end
             local c=0
             for i=1,6 do c=c+(x:sub(i,i)=='1' and 2^(6-i) or 0) end
-            return b:sub(c+1,c+1)
+            return b64chars:sub(c+1,c+1)
         end)..({ '', '==', '=' })[#s%3+1])
     end
 
-    string.base64 = crypt.base64
+    function crypt.base64url(s)
+        return crypt.base64(s):gsub("+", "-"):gsub("/", "_")
+    end
 
---[[@@@
-```lua
-crypt.unbase64(data)
-data:unbase64()
-```
-decodes the base64 `data`.
-@@@]]
+    string.base64 = crypt.base64
+    string.base64url = crypt.base64url
 
     function crypt.unbase64(s)
-        s = string.gsub(s, '[^'..b..'=]', '')
+        s = string.gsub(s, '[^'..b64chars..'=]', '')
         return (s:gsub('.', function(x)
             if (x == '=') then return '' end
-            local r,f='',(b:find(x)-1)
+            local r,f='',(b64chars:find(x)-1)
             for i=6,1,-1 do r=r..(f%2^i-f%2^(i-1)>0 and '1' or '0') end
             return r;
         end):gsub('%d%d%d?%d?%d?%d?%d?%d?', function(x)
@@ -5622,22 +5707,14 @@ decodes the base64 `data`.
         end))
     end
 
+    function crypt.unbase64url(s)
+        return crypt.unbase64(s:gsub("-", "+"):gsub("_", "/"))
+    end
+
     string.unbase64 = crypt.unbase64
+    string.unbase64url = crypt.unbase64url
 
---[[------------------------------------------------------------------------@@@
-## CRC32 hash
-
-The CRC-32 algorithm has been generated by [pycrc](https://pycrc.org/)
-with the `crc-32` algorithm.
-@@@]]
-
---[[@@@
-```lua
-crypt.crc32(data)
-data:crc32()
-```
-computes the CRC32 of `data`.
-@@@]]
+    -- CRC32 hash
 
     local crc32_table = { [0]=
         0x00000000, 0x77073096, 0xee0e612c, 0x990951ba, 0x076dc419, 0x706af48f, 0xe963a535, 0x9e6495a3,
@@ -5684,20 +5761,7 @@ computes the CRC32 of `data`.
 
     string.crc32 = crypt.crc32
 
---[[------------------------------------------------------------------------@@@
-## CRC64 hash
-
-The CRC-64 algorithm has been generated by [pycrc](https://pycrc.org/)
-with the `crc-64-xz` algorithm.
-@@@]]
-
---[[@@@
-```lua
-crypt.crc64(data)
-data:crc64()
-```
-computes the CRC64 of `data`.
-@@@]]
+    -- CRC64 hash
 
     local crc64_table = { [0]=
         0x0000000000000000, 0xb32e4cbe03a75f6f, 0xf4843657a840a05b, 0x47aa7ae9abe7ff34,
@@ -5776,26 +5840,7 @@ computes the CRC64 of `data`.
 
     string.crc64 = crypt.crc64
 
---[[------------------------------------------------------------------------@@@
-## RC4 encryption
-
-RC4 is a stream cipher (see <https://en.wikipedia.org/wiki/RC4>).
-It is design to be fast and simple.
-
-See <https://en.wikipedia.org/wiki/RC4>.
-@@@]]
-
---[[@@@
-```lua
-crypt.rc4(data, key, [drop])
-data:rc4(key, [drop])
-crypt.unrc4(data, key, [drop])      -- note that unrc4 == rc4
-data:unrc4(key, [drop])
-```
-encrypts/decrypts `data` using the RC4Drop
-algorithm and the encryption key `key` (drops the first `drop` encryption
-steps, the default value of `drop` is 768).
-@@@]]
+    -- RC4 encryption
 
     function crypt.rc4(input, key, drop)
         drop = drop or 768
@@ -5828,30 +5873,82 @@ steps, the default value of `drop` is 768).
     string.rc4 = crypt.rc4
     string.unrc4 = crypt.unrc4
 
+    function crypt.sha256(s)
+        return fs.with_tmpfile(function(tmp)
+            assert(sh.write("sha256sum >", tmp)(s))
+            return fs.read_bin(tmp):words():head()
+        end)
+    end
+
+    crypt.hmac = ni "hmac"
+    crypt.hmac_prng = ni "hmac_prng"
+    crypt.ctr_prng = ni "ctr_prng"
+
+    function crypt.aes(s, key)
+        return fs.with_tmpfile(function(tmp)
+            local iv = crypt.prng(42):str(16):hex()
+            local k = (key..("\0"):rep(16-#key)):take(16):hex()
+            assert(sh.write("openssl aes-128-cbc", "-K", k, "-iv", iv, "-nosalt", "-in", "-", "-out", tmp)(s))
+            return fs.read_bin(tmp)
+        end)
+    end
+
+    function crypt.unaes(s, key)
+        return fs.with_tmpfile(function(tmp)
+            local iv = crypt.prng(42):str(16):hex()
+            local k = (key..("\0"):rep(16-#key)):take(16):hex()
+            assert(sh.write("openssl aes-128-cbc -d", "-K", k, "-iv", iv, "-nosalt", "-in", "-", "-out", tmp)(s))
+            return fs.read_bin(tmp)
+        end)
+    end
+
 end
 
---[[------------------------------------------------------------------------@@@
-## SHA1 hash
+-- Additional definitions for the C implementation
 
-The SHA1 hash is provided by the `pandoc` module.
-`crypt.sha1` is just an alias for `pandoc.utils.sha1`.
+--[[------------------------------------------------------------------------@@@
+## String methods
+
+Some functions of the `crypt` package are added to the string module:
+
 @@@]]
 
 --[[@@@
 ```lua
-crypt.sha1(data)
-data:sha1()
+s:hex()             == crypt.hex(s)
+s:unhex()           == crypt.unhex(s)
+s:base64()          == crypt.base64(s)
+s:unbase64()        == crypt.unbase64(s)
+s:base64url()       == crypt.base64url(s)
+s:unbase64url()     == crypt.unbase64url(s)
+s:crc32()           == crypt.crc32(s)
+s:crc64()           == crypt.crc64(s)
+s:rc4(key, drop)    == crypt.rc4(s, key, drop)
+s:unrc4(key, drop)  == crypt.unrc4(s, key, drop)
+s:sha256()          == crypt.sha256(s)
+s:hmac(key)         == crypt.hmac(s, key)
+s:aes(key)          == crypt.aes(s, key)
+s:unaes(key)        == crypt.unaes(s, key)
 ```
-computes the SHA1 of `data`.
 @@@]]
 
-if pandoc then
+function string.hex(s)          return crypt.hex(s) end
+function string.unhex(s)        return crypt.unhex(s) end
+function string.base64(s)       return crypt.base64(s) end
+function string.unbase64(s)     return crypt.unbase64(s) end
+function string.base64url(s)    return crypt.base64url(s) end
+function string.unbase64url(s)  return crypt.unbase64url(s) end
+function string.rc4(s, k, d)    return crypt.rc4(s, k, d) end
+function string.unrc4(s, k, d)  return crypt.unrc4(s, k, d) end
+function string.crc32(s)        return crypt.crc32(s) end
+function string.crc64(s)        return crypt.crc64(s) end
 
-    crypt.sha1 = pandoc.utils.sha1
+-- TinyCrypt functions
 
-    string.sha1 = crypt.sha1
-
-end
+function string.sha256(s)       return crypt.sha256(s) end
+function string.hmac(s, k)      return crypt.hmac(s, k) end
+function string.aes(s, k)       return crypt.aes(s, k) end
+function string.unaes(s, k)     return crypt.unaes(s, k) end
 
 return crypt
 ]=]),
@@ -5897,13 +5994,6 @@ if not fs then
         fs.path_sep = fs.sep == '\\' and ";" or ":"
     end
 
---[[@@@
-```lua
-fs.getcwd()
-```
-returns the current working directory.
-@@@]]
-
     if pandoc then
         fs.getcwd = pandoc.system.get_working_directory
     else
@@ -5911,14 +6001,6 @@ returns the current working directory.
             return sh.read "pwd" : trim()
         end
     end
-
---[[@@@
-```lua
-fs.dir([path])
-```
-returns the list of files and directories in
-`path` (the default path is the current directory).
-@@@]]
 
     if pandoc then
         fs.dir = F.compose{F, pandoc.system.list_directory}
@@ -5928,35 +6010,13 @@ returns the list of files and directories in
         end
     end
 
---[[@@@
-```lua
-fs.remove(name)
-```
-deletes the file `name`.
-@@@]]
-
     function fs.remove(name)
         return os.remove(name)
     end
 
---[[@@@
-```lua
-fs.rename(old_name, new_name)
-```
-renames the file `old_name` to `new_name`.
-@@@]]
-
     function fs.rename(old_name, new_name)
         return os.rename(old_name, new_name)
     end
-
---[[@@@
-```lua
-fs.copy(source_name, target_name)
-```
-copies file `source_name` to `target_name`.
-The attributes and times are preserved.
-@@@]]
 
     function fs.copy(source_name, target_name)
         local from, err_from = io.open(source_name, "rb")
@@ -5977,13 +6037,6 @@ The attributes and times are preserved.
         to:close()
     end
 
---[[@@@
-```lua
-fs.mkdir(path)
-```
-creates a new directory `path`.
-@@@]]
-
     if pandoc then
         fs.mkdir = pandoc.system.make_directory
     else
@@ -5991,23 +6044,6 @@ creates a new directory `path`.
             return sh.run("mkdir", path)
         end
     end
-
---[[@@@
-```lua
-fs.stat(name)
-```
-reads attributes of the file `name`. Attributes are:
-
-- `name`: name
-- `type`: `"file"` or `"directory"`
-- `size`: size in bytes
-- `mtime`, `atime`, `ctime`: modification, access and creation times.
-- `mode`: file permissions
-- `uR`, `uW`, `uX`: user Read/Write/eXecute permissions
-- `gR`, `gW`, `gX`: group Read/Write/eXecute permissions
-- `oR`, `oW`, `oX`: other Read/Write/eXecute permissions
-- `aR`, `aW`, `aX`: anybody Read/Write/eXecute permissions
-@@@]]
 
     local S_IRUSR = 1 << 8
     local S_IWUSR = 1 << 7
@@ -6061,16 +6097,6 @@ reads attributes of the file `name`. Attributes are:
         }
     end
 
---[[@@@
-```lua
-fs.inode(name)
-```
-reads device and inode attributes of the file `name`.
-Attributes are:
-
-- `dev`, `ino`: device and inode numbers
-@@@]]
-
     function fs.inode(name)
         local st = sh.read("LANG=C", "stat", "-L", "-c '%d;%i'", name, "2>/dev/null")
         if not st then return nil, "cannot stat "..name end
@@ -6081,20 +6107,6 @@ Attributes are:
         }
     end
 
---[[@@@
-```lua
-fs.chmod(name, other_file_name)
-```
-sets file `name` permissions as
-file `other_file_name` (string containing the name of another file).
-
-```lua
-fs.chmod(name, bit1, ..., bitn)
-```
-sets file `name` permissions as
-`bit1` or ... or `bitn` (integers).
-@@@]]
-
     function fs.chmod(name, ...)
         local mode = {...}
         if type(mode[1]) == "string" then
@@ -6103,26 +6115,6 @@ sets file `name` permissions as
             return sh.run("chmod", ("%o"):format(F(mode):fold(F.op.bor, 0)), name)
         end
     end
-
---[[@@@
-```lua
-fs.touch(name)
-```
-sets the access time and the modification time of
-file `name` with the current time.
-
-```lua
-fs.touch(name, number)
-```
-sets the access time and the modification
-time of file `name` with `number`.
-
-```lua
-fs.touch(name, other_name)
-```
-sets the access time and the
-modification time of file `name` with the times of file `other_name`.
-@@@]]
 
     function fs.touch(name, opt)
         if opt == nil then
@@ -6136,13 +6128,6 @@ modification time of file `name` with the times of file `other_name`.
         end
     end
 
---[[@@@
-```lua
-fs.basename(path)
-```
-return the last component of path.
-@@@]]
-
     if pandoc then
         fs.basename = pandoc.path.filename
     else
@@ -6151,13 +6136,6 @@ return the last component of path.
         end
     end
 
---[[@@@
-```lua
-fs.dirname(path)
-```
-return all but the last component of path.
-@@@]]
-
     if pandoc then
         fs.dirname = pandoc.path.directory
     else
@@ -6165,13 +6143,6 @@ return all but the last component of path.
             return sh.read("dirname", path) : trim()
         end
     end
-
---[[@@@
-```lua
-fs.splitext(path)
-```
-return the name without the extension and the extension.
-@@@]]
 
     if pandoc then
         function fs.splitext(path)
@@ -6190,13 +6161,6 @@ return the name without the extension and the extension.
         end
     end
 
---[[@@@
-```lua
-fs.realpath(path)
-```
-return the resolved path name of path.
-@@@]]
-
     if pandoc then
         fs.realpath = pandoc.path.normalize
     else
@@ -6205,24 +6169,10 @@ return the resolved path name of path.
         end
     end
 
---[[@@@
-```lua
-fs.absname(path)
-```
-return the absolute path name of path.
-@@@]]
-
     function fs.absname(path)
         if path:match "^[/\\]" or path:match "^.:" then return path end
         return fs.getcwd()..fs.sep..path
     end
-
---[[@@@
-```lua
-fs.mkdirs(path)
-```
-creates a new directory `path` and its parent directories.
-@@@]]
 
     if pandoc then
         function fs.mkdirs(path)
@@ -6598,6 +6548,435 @@ http://cdelord.fr/luax
 --@LOAD
 local _, imath = pcall(require, "_imath")
 imath = _ and imath
+
+if not imath then
+
+    imath = {}
+    local mt = {__index={}}
+
+    ---@diagnostic disable:unused-vararg
+    local function ni(f) return function(...) error(f.." not implemented") end end
+
+    local floor = math.floor
+    local ceil = math.ceil
+    local sqrt = math.sqrt
+    local log = math.log
+    local max = math.max
+
+    local RADIX = 10000000
+    local RADIX_LEN = floor(log(RADIX, 10))
+
+    assert(RADIX^2 < 2^53, "RADIX^2 shall be storable on a Lua number")
+
+    local int_add, int_sub, int_mul, int_divmod, int_abs
+
+    local function int_trim(a)
+        for i = #a, 1, -1 do
+            if a[i] and a[i] ~= 0 then break end
+            a[i] = nil
+        end
+        if #a == 0 then a.sign = 1 end
+    end
+
+    local function int(n, base)
+        n = n or 0
+        if type(n) == "table" then return n end
+        if type(n) == "number" then n = ("%.0f"):format(floor(n)) end
+        assert(type(n) == "string")
+        n = n:gsub("[ _]", "")
+        local sign = 1
+        local d = 1 -- current digit index
+        if n:sub(d, d) == "+" then d = d+1
+        elseif n:sub(d, d) == "-" then sign = -1; d = d+1
+        end
+        if n:sub(d, d+1) == "0x" then d = d+2; base = 16
+        elseif n:sub(d, d+1) == "0o" then d = d+2; base = 8
+        elseif n:sub(d, d+1) == "0b" then d = d+2; base = 2
+        else base = base or 10
+        end
+        local self = {sign=1}
+        if base == 10 then
+            for i = #n, d, -RADIX_LEN do
+                local digit = n:sub(max(d, i-RADIX_LEN+1), i)
+                self[#self+1] = tonumber(digit)
+            end
+        else
+            local bn_base = {sign=1, base}
+            local bn_shift = {sign=1, 1}
+            local bn_digit = {sign=1, 0}
+            for i = #n, d, -1 do
+                bn_digit[1] = tonumber(n:sub(i, i), base)
+                self = int_add(self, int_mul(bn_digit, bn_shift))
+                bn_shift = int_mul(bn_shift, bn_base)
+            end
+        end
+        self.sign = sign
+        int_trim(self)
+        return setmetatable(self, mt)
+    end
+
+    int_zero = int(0)
+    int_one = int(1)
+    int_two = int(2)
+
+    local function int_copy(n)
+        local c = {sign=n.sign}
+        for i = 1, #n do
+            c[i] = n[i]
+        end
+        return setmetatable(c, mt)
+    end
+
+
+    local function int_tonumber(n)
+        local s = n.sign < 0 and "-0" or "0"
+        local fmt = ("%%0%dd"):format(RADIX_LEN)
+        for i = #n, 1, -1 do
+            s = s..fmt:format(n[i])
+        end
+        return tonumber(s..".")
+    end
+
+    local function int_tostring(n, base)
+        base = base or 10
+        local s = ""
+        local sign = n.sign
+        if base == 10 then
+            local fmt = ("%%0%dd"):format(RADIX_LEN)
+            for i = 1, #n do
+                s = fmt:format(n[i]) .. s
+            end
+            s = s:gsub("^[_0]+", "")
+            if s == "" then s = "0" end
+        else
+            local bn_base = int(base)
+            local absn = int_abs(n)
+            while #absn > 0 do
+                local d
+                absn, d = int_divmod(absn, bn_base)
+                d = int_tonumber(d)
+                s = ("0123456789ABCDEF"):sub(d+1, d+1) .. s
+            end
+            s = s:gsub("^0+", "")
+            if s == "" then s = "0" end
+        end
+        if sign < 0 then s = "-" .. s end
+        return s
+    end
+
+    local function int_iszero(a)
+        return #a == 0
+    end
+
+    local function int_isone(a)
+        return #a == 1 and a[1] == 1 and a.sign == 1
+    end
+
+    local function int_cmp(a, b)
+        if #a == 0 and #b == 0 then return 0 end -- 0 == -0
+        if a.sign > b.sign then return 1 end
+        if a.sign < b.sign then return -1 end
+        if #a > #b then return a.sign end
+        if #a < #b then return -a.sign end
+        for i = #a, 1, -1 do
+            if a[i] > b[i] then return a.sign end
+            if a[i] < b[i] then return -a.sign end
+        end
+        return 0
+    end
+
+    local function int_abscmp(a, b)
+        if #a > #b then return 1 end
+        if #a < #b then return -1 end
+        for i = #a, 1, -1 do
+            if a[i] > b[i] then return 1 end
+            if a[i] < b[i] then return -1 end
+        end
+        return 0
+    end
+
+    local function int_neg(a)
+        local b = int_copy(a)
+        b.sign = -a.sign
+        return b
+    end
+
+    int_add = function(a, b)
+        if a.sign == b.sign then            -- a+b = a+b, (-a)+(-b) = -(a+b)
+            local c = int()
+            c.sign = a.sign
+            local carry = 0
+            for i = 1, max(#a, #b) + 1 do -- +1 for the last carry
+                c[i] = carry + (a[i] or 0) + (b[i] or 0)
+                if c[i] >= RADIX then
+                    c[i] = c[i] - RADIX
+                    carry = 1
+                else
+                    carry = 0
+                end
+            end
+            int_trim(c)
+            return c
+        else
+            return int_sub(a, int_neg(b))
+        end
+    end
+
+    int_sub = function(a, b)
+        if a.sign == b.sign then
+            local A, B
+            local cmp = int_abscmp(a, b)
+            if cmp >= 0 then A = a; B = b; else A = b; B = a; end
+            local c = int()
+            local carry = 0
+            for i = 1, #A do
+                c[i] = A[i] - (B[i] or 0) - carry
+                if c[i] < 0 then
+                    c[i] = c[i] + RADIX
+                    carry = 1
+                else
+                    carry = 0
+                end
+            end
+            assert(carry == 0) -- should be true if |A| >= |B|
+            c.sign = (cmp >= 0) and a.sign or -a.sign
+            int_trim(c)
+            return c
+        else
+            local c = int_add(a, int_neg(b))
+            c.sign = a.sign
+            return c
+        end
+    end
+
+    int_mul = function(a, b)
+        local c = int()
+        for i = 1, #a do
+            local carry = 0
+            for j = 1, #b do
+                carry = (c[i+j-1] or 0) + a[i]*b[j] + carry
+                c[i+j-1] = carry % RADIX
+                carry = math.floor(carry / RADIX)
+            end
+            if carry ~= 0 then
+                c[i + #b] = carry
+            end
+        end
+        int_trim(c)
+        c.sign = a.sign * b.sign
+        return c
+    end
+
+    local function int_absdiv2(a)
+        local c = int()
+        local carry = 0
+        for i = 1, #a do
+            c[i] = 0
+        end
+        for i = #a, 1, -1 do
+            c[i] = floor(carry + a[i] / 2)
+            if a[i] % 2 ~= 0 then
+                carry = RADIX // 2
+            else
+                carry = 0
+            end
+        end
+        c.sign = a.sign
+        int_trim(c)
+        return c, (a[1] or 0) % 2
+    end
+
+    int_divmod = function(a, b)
+        -- euclidian division using dichotomie
+        -- searching q and r such that a = q*b + r and |r| < |b|
+        assert(not int_iszero(b), "Division by zero")
+        if int_iszero(a) then return int_zero, int_zero end
+        if int_isone(b) then return a, int_zero end
+        if b.sign < 0 then a = int_neg(a); b = int_neg(b) end
+        local qmin = int_neg(a)
+        local qmax = a
+        if int_cmp(qmax, qmin) < 0 then qmin, qmax = qmax, qmin end
+        local rmin = int_sub(a, int_mul(qmin, b))
+        if rmin.sign > 0 and int_cmp(rmin, b) < 0 then return qmin, rmin end
+        local rmax = int_sub(a, int_mul(qmax, b))
+        if rmax.sign > 0 and int_cmp(rmax, b) < 0 then return qmax, rmax end
+        assert(rmin.sign ~= rmax.sign)
+        local q = int_absdiv2(int_add(qmin, qmax))
+        local r = int_sub(a, int_mul(q, b))
+        while r.sign < 0 or int_cmp(r, b) >= 0 do
+            if r.sign == rmin.sign then
+                qmin, qmax = q, qmax
+                rmin, rmax = r, rmax
+            else
+                qmin, qmax = qmin, q
+                rmin, rmax = rmin, r
+            end
+            q = int_absdiv2(int_add(qmin, qmax))
+            r = int_sub(a, int_mul(q, b))
+        end
+        return q, r
+    end
+
+    local function int_sqrt(a)
+        assert(a.sign >= 0, "Square root of a negative number")
+        if int_iszero(a) then return int_zero end
+        local b = int()
+        local c = int()
+        for i = #a//2+1, #a do b[#b+1] = ceil(sqrt(a[i])) end
+        while b ~= c do
+            c = b
+            local q, _ = int_divmod(a, b)
+            b = int_absdiv2(int_add(b, q))
+            --if b^2 <= a and (b+1)^2 > a then break end
+        end
+        assert(b^2 <= a and (b+1)^2 > a)
+        return b
+    end
+
+    local function int_pow(a, b)
+        assert(b.sign > 0)
+        if #b == 0 then return int_one end
+        if #b == 1 and b[1] == 1 then return a end
+        if #b == 1 and b[1] == 2 then return int_mul(a, a) end
+        local c
+        local q, r = int_absdiv2(b)
+        c = int_pow(a, q)
+        c = int_mul(c, c)
+        if r == 1 then c = int_mul(c, a) end
+        return c
+    end
+
+    int_abs = function(a)
+        local b = int_copy(a)
+        b.sign = 1
+        return b
+    end
+
+    local function int_gcd(a, b)
+        a = int_abs(a)
+        b = int_abs(b)
+        while true do
+            local _
+            local order = int_cmp(a, b)
+            if order == 0 then return a end
+            if order > 0 then
+                _, a = int_divmod(a, b)
+                if int_iszero(a) then return b end
+            else
+                _, b = int_divmod(b, a)
+                if int_iszero(b) then return a end
+            end
+        end
+    end
+
+    local function int_lcm(a, b)
+        a = int_abs(a)
+        b = int_abs(b)
+        return int_mul((int_divmod(a, int_gcd(a, b))), b)
+    end
+
+    local function int_iseven(a)
+        return #a == 0 or a[1]%2 == 0
+    end
+
+    local function int_isodd(a)
+        return #a > 0 and a[1]%2 == 1
+    end
+
+    local int_shift_left, int_shift_right
+
+    int_shift_left = function(a, b)
+        if int_iszero(b) then return a end
+        if b.sign > 0 then
+            return int_mul(a, int_two^b)
+        else
+            return int_shift_right(a, int_neg(b))
+        end
+    end
+
+    int_shift_right = function(a, b)
+        if int_iszero(b) then return a end
+        if b.sign < 0 then
+            return int_shift_left(a, int_neg(b))
+        else
+            return (int_divmod(a, int_two^b))
+        end
+    end
+
+    mt.__add = function(a, b) return int_add(int(a), int(b)) end
+    mt.__div = function(a, b) local q, _ = int_divmod(int(a), int(b)); return q end
+    mt.__eq = function(a, b) return int_cmp(int(a), int(b)) == 0 end
+    mt.__idiv = mt.__div
+    mt.__le = function(a, b) return int_cmp(int(a), int(b)) <= 0 end
+    mt.__lt = function(a, b) return int_cmp(int(a), int(b)) < 0 end
+    mt.__mod = function(a, b) local _, r = int_divmod(int(a), int(b)); return r end
+    mt.__mul = function(a, b) return int_mul(int(a), int(b)) end
+    mt.__pow = function(a, b) return int_pow(int(a), int(b)) end
+    mt.__shl = function(a, b) return int_shift_left(int(a), int(b)) end
+    mt.__shr = function(a, b) return int_shift_right(int(a), int(b)) end
+    mt.__sub = function(a, b) return int_sub(int(a), int(b)) end
+    mt.__tostring = function(a, base) return int_tostring(a, base) end
+    mt.__unm = function(a) return int_neg(a) end
+
+    mt.__index.add = mt.__add
+    mt.__index.bits = ni "bits"
+    mt.__index.compare = function(a, b) return int_cmp(int(a), int(b)) end
+    mt.__index.div = mt.__div
+    mt.__index.egcd = ni "egcd"
+    mt.__index.gcd = function(a, b) return int_gcd(int(a), int(b)) end
+    mt.__index.invmod = ni "invmod"
+    mt.__index.iseven = int_iseven
+    mt.__index.isodd = int_isodd
+    mt.__index.iszero = int_iszero
+    mt.__index.isone = int_isone
+    mt.__index.lcm = function(a, b) return int_lcm(int(a), int(b)) end
+    mt.__index.mod = mt.__mod
+    mt.__index.mul = mt.__mul
+    mt.__index.neg = mt.__unm
+    mt.__index.pow = mt.__pow
+    mt.__index.powmod = ni "powmod"
+    mt.__index.quotrem = function(a, b) return int_divmod(int(a), int(b)) end
+    mt.__index.root = ni "root"
+    mt.__index.shift = mt.__index.shl
+    mt.__index.sqr = function(a) return int_mul(a, a) end
+    mt.__index.sqrt = int_sqrt
+    mt.__index.sub = mt.__sub
+    mt.__index.abs = function(a) return int_abs(a) end
+    mt.__index.tonumber = int_tonumber
+    mt.__index.tostring = mt.__tostring
+    mt.__index.totext = ni "totext"
+
+    imath.abs = function(a) return int(a):abs() end
+    imath.add = function(a, b) return int(a) + int(b) end
+    imath.bits = function(a) return int(a):bits() end
+    imath.compare = function(a, b) return int(a):compare(int(b)) end
+    imath.div = function(a, b) return int(a) / int(b) end
+    imath.egcd = function(a, b) return int(a):egcd(int(b)) end
+    imath.gcd = function(a, b) return int(a):gcd(int(b)) end
+    imath.invmod = function(a, b) return int(a):invmod(int(b)) end
+    imath.iseven = function(a) return int(a):iseven() end
+    imath.isodd = function(a) return int(a):isodd() end
+    imath.iszero = function(a) return int(a):iszero() end
+    imath.isone = function(a) return int(a):isone() end
+    imath.lcm = function(a, b) return int(a):lcm(int(b)) end
+    imath.mod = function(a, b) return int(a) % int(b) end
+    imath.mul = function(a, b) return int(a) * int(b) end
+    imath.neg = function(a) return -int(a) end
+    imath.new = int
+    imath.pow = function(a, b) return int(a) ^ b end
+    imath.powmod = function(a, b) return int(a):powmod(int(b)) end
+    imath.quotrem = function(a, b) return int(a):quotrem(int(b)) end
+    imath.root = function(a) return int(a):root() end
+    imath.shift = function(a, b) return int(a) << b end
+    imath.sqr = function(a) return int(a):sqr() end
+    imath.sqrt = function(a) return int(a):sqrt() end
+    imath.sub = function(a, b) return int(a) - int(b) end
+    imath.text = ni "text"
+    imath.tonumber = function(a) return int(a):tonumber() end
+    imath.tostring = function(a) return int(a):tostring() end
+    imath.totext = function(a) return int(a):totext() end
+
+end
 
 return imath
 ]=]),
@@ -7049,6 +7428,116 @@ http://cdelord.fr/luax
 local _, mathx = pcall(require, "_mathx")
 mathx = _ and mathx
 
+if not mathx then
+
+    mathx = {}
+
+    local exp = math.exp
+    local log = math.log
+    local log2 = function(x) return log(x, 2) end
+    local abs = math.abs
+    local max = math.max
+    local floor = math.floor
+    local ceil = math.ceil
+    local modf = math.modf
+
+    local pack = string.pack
+    local unpack = string.unpack
+
+    local inf = 1/0
+
+    ---@diagnostic disable:unused-vararg
+    local function ni(f) return function(...) error(f.." not implemented") end end
+
+    local function sign(x) return x < 0 and -1 or 1 end
+
+    mathx.fabs = math.abs
+    mathx.acos = math.acos
+    mathx.acosh = function(x) return log(x + (x^2-1)^0.5) end
+    mathx.asin = math.asin
+    mathx.asinh = function(x) return log(x + (x^2+1)^0.5) end
+    mathx.atan = math.atan
+    mathx.atan2 = math.atan
+    mathx.atanh = function(x) return 0.5*log((1+x)/(1-x)) end
+    mathx.cbrt = function(x) return x < 0 and -(-x)^(1/3) or x^(1/3) end
+    mathx.ceil = math.ceil
+    mathx.copysign = function(x, y) return abs(x) * sign(y) end
+    mathx.cos = math.cos
+    mathx.cosh = function(x) return (exp(x)+exp(-x))/2 end
+    mathx.deg = math.deg
+    mathx.erf = ni "erf"
+    mathx.erfc = ni "erfc"
+    mathx.exp = math.exp
+    mathx.exp2 = function(x) return 2^x end
+    mathx.expm1 = function(x) return exp(x)-1 end
+    mathx.fdim = function(x, y) return max(x-y, 0) end
+    mathx.floor = math.floor
+    mathx.fma = function(x, y, z) return x*y + z end
+    mathx.fmax = math.max
+    mathx.fmin = math.min
+    mathx.fmod = math.fmod
+    mathx.frexp = function(x)
+        if x == 0 then return 0, 0 end
+        local ax = abs(x)
+        local e = ceil(log2(ax))
+        local m = ax / (2^e)
+        if m == 1 then m, e = m/2, e+1 end
+        return m*sign(x), e
+    end
+    mathx.gamma = ni "gamma"
+    mathx.hypot = function(x, y)
+        if x == 0 and y == 0 then return 0.0 end
+        local ax, ay = abs(x), abs(y)
+        if ax > ay then return ax * (1+(y/x)^2)^0.5 end
+        return ay * (1+(x/y)^2)^0.5
+    end
+    mathx.isfinite = function(x) return abs(x) < inf end
+    mathx.isinf = function(x) return abs(x) == inf end
+    mathx.isnan = function(x) return x ~= x end
+    mathx.isnormal = ni "isnormal"
+    mathx.ldexp = function(x, e) return x*2^e end
+    mathx.lgamma = ni "lgamma"
+    mathx.log = math.log
+    mathx.log10 = function(x) return log(x, 10) end
+    mathx.log1p = function(x) return log(1+x) end
+    mathx.log2 = function(x) return log(x, 2) end
+    mathx.logb = ni "logb"
+    mathx.modf = math.modf
+    mathx.nearbyint = function(x)
+        local m = modf(x)
+        if m%2 == 0 then
+            return x < 0 and floor(x+0.5) or ceil(x-0.5)
+        else
+            return x >= 0 and floor(x+0.5) or ceil(x-0.5)
+        end
+    end
+    mathx.nextafter = function(x, y)
+        if x == y then return x end
+        if x == 0 then
+            if y > 0 then return 0x0.0000000000001p-1022 end
+            if y < 0 then return -0x0.0000000000001p-1022 end
+        end
+        local i = unpack("i8", pack("d", x))
+        i = i + (  y > x and x < 0 and -1
+                or y < x and x < 0 and 1
+                or y > x and x > 0 and 1
+                or y < x and x > 0 and -1
+                )
+        return unpack("d", pack("i8", i))
+    end
+    mathx.pow = function(x, y) return x^y end
+    mathx.rad = math.rad
+    mathx.round = function(x) return x >= 0 and floor(x+0.5) or ceil(x-0.5) end
+    mathx.scalbn = ni "scalbn"
+    mathx.sin = math.sin
+    mathx.sinh = function(x) return (exp(x)-exp(-x))/2 end
+    mathx.sqrt = math.sqrt
+    mathx.tan = math.tan
+    mathx.tanh = function(x) return (exp(x)-exp(-x))/(exp(x)+exp(-x)) end
+    mathx.trunc = function(x) return x >= 0 and floor(x) or ceil(x) end
+
+end
+
 return mathx
 ]=]),
 ["prompt"] = lib("src/prompt/prompt.lua", [=[-- prompt module
@@ -7189,6 +7678,147 @@ http://cdelord.fr/luax
 --@LOAD
 local _, qmath = pcall(require, "_qmath")
 qmath = _ and qmath
+
+--[[@@@
+## qmath additional functions
+@@@]]
+
+if not qmath then
+
+    qmath = {}
+    local mt = {__index={}}
+
+    local imath = require "imath"
+    local Z = imath.new
+    local gcd = imath.gcd
+
+    local function rat(num, den)
+        if not den then
+            if type(num) == "table" and num.num and num.den then return num end
+            den = 1
+        end
+        num, den = Z(num), Z(den)
+        assert(den ~= 0, "(qmath) result undefined")
+        if den < 0 then num, den = -num, -den end
+        if num:iszero() then
+            den = Z(1)
+        else
+            local d = gcd(num, den)
+            num, den = num/d, den/d
+        end
+        return setmetatable({num=num, den=den}, mt)
+    end
+
+    local rat_zero = rat(0)
+    local rat_one = rat(1)
+
+    local function rat_tostring(r)
+        if r.den:isone() then return tostring(r.num) end
+        return ("%s/%s"):format(r.num, r.den)
+    end
+
+    local function compare(a, b)
+        return (a.num*b.den):compare(b.num*a.den)
+    end
+
+    mt.__add = function(a, b) a, b = rat(a), rat(b); return rat(a.num*b.den + b.num*a.den, a.den*b.den) end
+    mt.__div = function(a, b) a, b = rat(a), rat(b); return rat(a.num*b.den, a.den*b.num) end
+    mt.__eq = function(a, b) a, b = rat(a), rat(b); return compare(a, b) == 0 end
+    mt.__le = function(a, b) a, b = rat(a), rat(b); return compare(a, b) <= 0 end
+    mt.__lt = function(a, b) a, b = rat(a), rat(b); return compare(a, b) < 0 end
+    mt.__mul = function(a, b) a, b = rat(a), rat(b); return rat(a.num*b.num, a.den*b.den) end
+    mt.__pow = function(a, b)
+        if type(b) == "number" and math.type(b) == "float" then
+            error("bad argument #2 to 'pow' (number has no integer representation)")
+        end
+        if b == 0 then return rat_one end
+        if a == 0 then return rat_zero end
+        if a == 1 then return rat_one end
+        if b < 0 then
+            b = -b
+            return rat(a.den^b, a.num^b)
+        end
+        return rat(a.num^b, a.den^b)
+    end
+    mt.__sub = function(a, b) a, b = rat(a), rat(b); return rat(a.num*b.den - b.num*a.den, a.den*b.den) end
+    mt.__tostring = rat_tostring
+    mt.__unm = function(a) return rat(-a.num, a.den) end
+    mt.__index.abs = function(a) return rat(a.num:abs(), a.den) end
+    mt.__index.add = mt.__add
+    mt.__index.compare = function(a, b) return compare(rat(a), rat(b)) end
+    mt.__index.denom = function(a) return rat(a.den) end
+    mt.__index.div = mt.__div
+    mt.__index.int = function(a) return rat(a.num / a.den) end
+    mt.__index.inv = function(a) return rat(a.den, a.num) end
+    mt.__index.isinteger = function(a) return a.den:isone() end
+    mt.__index.iszero = function(a) return a.num:iszero() end
+    mt.__index.mul = mt.__mul
+    mt.__index.neg = mt.__unm
+    mt.__index.numer = function(a) return rat(a.num) end
+    mt.__index.pow = mt.__pow
+    mt.__index.sign = function(a) return compare(a, rat_zero) end
+    mt.__index.sub = mt.__sub
+    mt.__index.todecimal = function(a) return tostring(a.num // a.den) end
+    mt.__index.tonumber = function(a) return a.num:tonumber()/a.den:tonumber() end
+
+    qmath.abs = function(a) return rat(a):abs() end
+    qmath.add = function(a, b) return rat(a) + rat(b) end
+    qmath.compare = function(a, b) return rat(a):compare(rat(b)) end
+    qmath.denom = function(a) return rat(a):denom() end
+    qmath.div = function(a, b) return rat(a) / rat(b) end
+    qmath.int = function(a) return rat(a):int() end
+    qmath.inv = function(a) return rat(a):inv() end
+    qmath.isinteger = function(a) return rat(a):isinteger() end
+    qmath.iszero = function(a) return rat(a):iszero() end
+    qmath.mul = function(a, b) return rat(a) * rat(b) end
+    qmath.neg = function(a) return -rat(a) end
+    qmath.new = rat
+    qmath.numer = function(a) return rat(a):numer() end
+    qmath.pow = function(a, b) return rat(a) ^ b end
+    qmath.sign = function(a) return rat(a):sign() end
+    qmath.sub = function(a, b) return rat(a) - rat(b) end
+    qmath.todecimal = function(a) return rat(a):todecimal() end
+    qmath.tonumber = function(a) return rat(a):tonumber() end
+    qmath.tostring = mt.__tostring
+
+end
+
+--[[@@@
+```lua
+q = qmath.torat(x, [eps])
+```
+approximates a floating point number `x` with a rational value.
+The rational number `q` is an approximation of `x` such that $|q - x| < eps$.
+The default `eps` value is $10^{-6}$.
+@@@]]
+
+local rat = qmath.new
+local floor = math.floor
+local abs = math.abs
+
+function qmath.torat(n, eps)
+    if n == 0 then return rat(0, 1) end
+    eps = eps or 1e-6
+    local absn = abs(n)
+    local num, den
+    if absn >= 1 then
+        num, den = floor(absn), 1
+    else
+        num, den = 1, floor(1/absn)
+    end
+    local r = num / den
+    while abs(absn-r) > eps do
+        if r < absn then
+            num = num + 1
+        else
+            den = den + 1
+            num = floor(absn * den)
+        end
+        r = num / den
+    end
+    if n < 0 then num = -num end
+    return rat(num, den)
+end
 
 return qmath
 ]=]),
@@ -7752,6 +8382,71 @@ term.left        = f(CSI..'%d;D')
 
 return term
 ]=]),
+["lz4"] = lib("src/lz4/lz4.lua", [=[--[[
+This file is part of luax.
+
+luax is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+luax is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with luax.  If not, see <https://www.gnu.org/licenses/>.
+
+For further information about luax you can visit
+http://cdelord.fr/luax
+--]]
+
+--[[------------------------------------------------------------------------@@@
+## String methods
+
+The `lz4` functions are also available as `string` methods:
+@@@]]
+
+--@LOAD
+local _, lz4 = pcall(require, "_lz4")
+lz4 = _ and lz4
+
+if not lz4 then
+
+    lz4 = {}
+
+    local fs = require "fs"
+    local sh = require "sh"
+
+    function lz4.lz4(s)
+        return fs.with_tmpfile(function(tmp)
+            assert(sh.write("lz4 -q -z -12 -f -", tmp)(s))
+            return fs.read_bin(tmp)
+        end)
+    end
+
+    function lz4.unlz4(s)
+        return fs.with_tmpfile(function(tmp)
+            assert(sh.write("lz4 -q -d -f -", tmp)(s))
+            return fs.read_bin(tmp)
+        end)
+    end
+
+end
+
+--[[@@@
+```lua
+s:lz4()         == lz4.lz4(s)
+s:unlz4()       == lz4.unlz4(s)
+```
+@@@]]
+
+function string.lz4(s)      return lz4.lz4(s) end
+function string.unlz4(s)    return lz4.unlz4(s) end
+
+return lz4
+]=]),
 }
 table.insert(package.searchers, 2, function(name) return libs[name] end)
 _ENV["F"] = require "F"
@@ -7769,6 +8464,7 @@ _ENV["qmath"] = require "qmath"
 _ENV["serpent"] = require "serpent"
 _ENV["sh"] = require "sh"
 _ENV["sys"] = require "sys"
+_ENV["lz4"] = require "lz4"
 end)()
 end
 
