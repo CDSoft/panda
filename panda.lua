@@ -52,7 +52,7 @@ _G.output_file = PANDOC_STATE.output_file
 -- LuaX packages {{{
 
 if not _LUAX_VERSION then (function()
-_LUAX_VERSION = '2.4.1'
+_LUAX_VERSION = '2.5.1'
 local function lib(path, src) return assert(load(src, '@'..path, 't')) end
 local libs = {
 ["F"] = lib("src/F/F.lua", [=[--[[
@@ -5595,9 +5595,6 @@ if not crypt then
 
     crypt = {}
 
-    ---@diagnostic disable:unused-vararg
-    local function ni(f) return function(...) error(f.." not implemented") end end
-
     -- Random number generator
 
     local prng_mt = {__index={}}
@@ -5617,14 +5614,26 @@ if not crypt then
 
     crypt.RAND_MAX = RAND_MAX
 
-    function crypt.prng(seed)
-        seed = seed or random(RAND_MAX)
-        return setmetatable({seed=seed}, prng_mt)
+    function crypt.prng(seed, inc)
+        local self = setmetatable({}, prng_mt)
+        self:seed(seed or random(0), inc)
+        return self
+    end
+
+    function prng_mt.__index:seed(seed, inc)
+        self.state = assert(seed, "seed parameter missing")
+        self.inc = (inc or 1) | 1
+        self.state = 6364136223846793005*self.state + self.inc
+        self.state = 6364136223846793005*self.state + self.inc
     end
 
     function prng_mt.__index:int(a, b)
-        self.seed = 6364136223846793005*self.seed + 1
-        local r = self.seed >> 32
+        local oldstate = self.state
+        self.state = 6364136223846793005*self.state + self.inc
+        local xorshifted = (((oldstate >> 18) ~ oldstate) >> 27) & 0xFFFFFFFF
+        local rot = oldstate >> 59;
+        local r = ((xorshifted >> rot) | (xorshifted << ((-rot) & 31))) & 0xFFFFFFFF
+
         if not a then return r end
         if not b then return r % (a+1) end
         return r % (b-a+1) + a
@@ -5655,16 +5664,12 @@ if not crypt then
     -- Hexadecimal encoding
 
     function crypt.hex(s)
-        return (gsub(s, '.', function(c) return format("%02X", byte(c)) end))
+        return (gsub(s, '.', function(c) return format("%02x", byte(c)) end))
     end
-
-    string.hex = crypt.hex
 
     function crypt.unhex(s)
         return (gsub(s, '..', function(h) return char(tonumber(h, 16)) end))
     end
-
-    string.unhex = crypt.unhex
 
     -- Base64 encoding
 
@@ -5689,9 +5694,6 @@ if not crypt then
         return crypt.base64(s):gsub("+", "-"):gsub("/", "_")
     end
 
-    string.base64 = crypt.base64
-    string.base64url = crypt.base64url
-
     function crypt.unbase64(s)
         s = string.gsub(s, '[^'..b64chars..'=]', '')
         return (s:gsub('.', function(x)
@@ -5710,9 +5712,6 @@ if not crypt then
     function crypt.unbase64url(s)
         return crypt.unbase64(s:gsub("-", "+"):gsub("_", "/"))
     end
-
-    string.unbase64 = crypt.unbase64
-    string.unbase64url = crypt.unbase64url
 
     -- CRC32 hash
 
@@ -5758,8 +5757,6 @@ if not crypt then
         end
         return crc ~ 0xFFFFFFFF
     end
-
-    string.crc32 = crypt.crc32
 
     -- CRC64 hash
 
@@ -5838,8 +5835,6 @@ if not crypt then
         return crc ~ 0xFFFFFFFFFFFFFFFF
     end
 
-    string.crc64 = crypt.crc64
-
     -- RC4 encryption
 
     function crypt.rc4(input, key, drop)
@@ -5870,36 +5865,34 @@ if not crypt then
 
     crypt.unrc4 = crypt.rc4
 
-    string.rc4 = crypt.rc4
-    string.unrc4 = crypt.unrc4
-
-    function crypt.sha256(s)
-        return fs.with_tmpfile(function(tmp)
-            assert(sh.write("sha256sum >", tmp)(s))
-            return fs.read_bin(tmp):words():head()
-        end)
+    if pandoc then
+        crypt.sha1 = pandoc.utils.sha1
+    else
+        function crypt.sha1(s)
+            return fs.with_tmpfile(function(tmp)
+                assert(sh.write("sha1sum >", tmp)(s))
+                return fs.read_bin(tmp):words():head()
+            end)
+        end
     end
 
-    crypt.hmac = ni "hmac"
-    crypt.hmac_prng = ni "hmac_prng"
-    crypt.ctr_prng = ni "ctr_prng"
-
-    function crypt.aes(s, key)
-        return fs.with_tmpfile(function(tmp)
-            local iv = crypt.prng(42):str(16):hex()
-            local k = (key..("\0"):rep(16-#key)):take(16):hex()
-            assert(sh.write("openssl aes-128-cbc", "-K", k, "-iv", iv, "-nosalt", "-in", "-", "-out", tmp)(s))
-            return fs.read_bin(tmp)
-        end)
-    end
-
-    function crypt.unaes(s, key)
-        return fs.with_tmpfile(function(tmp)
-            local iv = crypt.prng(42):str(16):hex()
-            local k = (key..("\0"):rep(16-#key)):take(16):hex()
-            assert(sh.write("openssl aes-128-cbc -d", "-K", k, "-iv", iv, "-nosalt", "-in", "-", "-out", tmp)(s))
-            return fs.read_bin(tmp)
-        end)
+    function crypt.hash(s)
+        local state1 = 0xA5A5A5A5A5A5A5A5
+        local state2 = ~state1
+        state1 = state1 * 6364136223846793005 + 1; state2 = state2 * 6364136223846793005 + 1
+        state1 = state1 * 6364136223846793005 + 1; state2 = state2 * 6364136223846793005 + 1
+        for i = 1, #s do
+            local inc = (byte(s, i) << 1) | 1
+            state1 = state1 * 6364136223846793005 + inc; state2 = state2 * 6364136223846793005 + inc
+        end
+        state1 = state1 * 6364136223846793005 + 1; state2 = state2 * 6364136223846793005 + 1
+        local xorshifted1 = (((state1 >> 18) ~ state1) >> 27) & 0xFFFFFFFF
+        local xorshifted2 = (((state2 >> 18) ~ state2) >> 27) & 0xFFFFFFFF
+        local rot1 = state1 >> 59
+        local rot2 = state2 >> 59
+        local hash1 = ((xorshifted1 >> rot1) | (xorshifted1 << ((-rot1) & 31))) & 0xFFFFFFFF
+        local hash2 = ((xorshifted2 >> rot2) | (xorshifted2 << ((-rot2) & 31))) & 0xFFFFFFFF
+        return ("<I8"):pack((hash1 << 32) | hash2):hex()
     end
 
 end
@@ -5925,10 +5918,8 @@ s:crc32()           == crypt.crc32(s)
 s:crc64()           == crypt.crc64(s)
 s:rc4(key, drop)    == crypt.rc4(s, key, drop)
 s:unrc4(key, drop)  == crypt.unrc4(s, key, drop)
-s:sha256()          == crypt.sha256(s)
-s:hmac(key)         == crypt.hmac(s, key)
-s:aes(key)          == crypt.aes(s, key)
-s:unaes(key)        == crypt.unaes(s, key)
+s:sha1()            == crypt.sha1(s)
+s:hash()            == crypt.hash(s)
 ```
 @@@]]
 
@@ -5940,15 +5931,10 @@ function string.base64url(s)    return crypt.base64url(s) end
 function string.unbase64url(s)  return crypt.unbase64url(s) end
 function string.rc4(s, k, d)    return crypt.rc4(s, k, d) end
 function string.unrc4(s, k, d)  return crypt.unrc4(s, k, d) end
+function string.sha1(s)         return crypt.sha1(s) end
+function string.hash(s)         return crypt.hash(s) end
 function string.crc32(s)        return crypt.crc32(s) end
 function string.crc64(s)        return crypt.crc64(s) end
-
--- TinyCrypt functions
-
-function string.sha256(s)       return crypt.sha256(s) end
-function string.hmac(s, k)      return crypt.hmac(s, k) end
-function string.aes(s, k)       return crypt.aes(s, k) end
-function string.unaes(s, k)     return crypt.unaes(s, k) end
 
 return crypt
 ]=]),
