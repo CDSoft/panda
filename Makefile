@@ -22,12 +22,51 @@ BUILD = .build
 ## Test and generate Panda documentation
 all: test doc
 
-# include makex to install Panda test dependencies
-include makex.mk
-
 ###############################################################################
 # Help
 ###############################################################################
+
+.PHONY: help welcome
+
+BLACK     := $(shell tput -Txterm setaf 0)
+RED       := $(shell tput -Txterm setaf 1)
+GREEN     := $(shell tput -Txterm setaf 2)
+YELLOW    := $(shell tput -Txterm setaf 3)
+BLUE      := $(shell tput -Txterm setaf 4)
+PURPLE    := $(shell tput -Txterm setaf 5)
+CYAN      := $(shell tput -Txterm setaf 6)
+WHITE     := $(shell tput -Txterm setaf 7)
+BG_BLACK  := $(shell tput -Txterm setab 0)
+BG_RED    := $(shell tput -Txterm setab 1)
+BG_GREEN  := $(shell tput -Txterm setab 2)
+BG_YELLOW := $(shell tput -Txterm setab 3)
+BG_BLUE   := $(shell tput -Txterm setab 4)
+BG_PURPLE := $(shell tput -Txterm setab 5)
+BG_CYAN   := $(shell tput -Txterm setab 6)
+BG_WHITE  := $(shell tput -Txterm setab 7)
+NORMAL    := $(shell tput -Txterm sgr0)
+
+CMD_COLOR    := ${YELLOW}
+TARGET_COLOR := ${GREEN}
+TEXT_COLOR   := ${CYAN}
+TARGET_MAX_LEN := 16
+
+## show this help massage
+help: welcome
+	@echo ''
+	@echo 'Usage:'
+	@echo '  ${CMD_COLOR}make${NORMAL} ${TARGET_COLOR}<target>${NORMAL}'
+	@echo ''
+	@echo 'Targets:'
+	@awk '/^[a-zA-Z\-_0-9]+:/ { \
+	    helpMessage = match(lastLine, /^## (.*)/); \
+	    if (helpMessage) { \
+	        helpCommand = substr($$1, 0, index($$1, ":")-1); \
+	        helpMessage = substr(lastLine, RSTART + 3, RLENGTH); \
+	        printf "  ${TARGET_COLOR}%-$(TARGET_MAX_LEN)s${NORMAL} ${TEXT_COLOR}%s${NORMAL}\n", helpCommand, helpMessage; \
+	    } \
+	} \
+	{ lastLine = $$0 }' $(MAKEFILE_LIST)
 
 welcome:
 	@echo '${CYAN}Panda${NORMAL}'
@@ -81,9 +120,9 @@ test: $(BUILD)/test.md test/test_result.md
 	diff $(BUILD)/test.md test/test_result.md
 	# Well done
 
-$(BUILD)/test.md: panda panda.lua test/test.md test/test_include.md test/test_include.c $(BUILD)/plantuml.jar $(BUILD)/ditaa.jar | $(PANDOC)
+$(BUILD)/test.md: panda panda.lua test/test.md test/test_include.md test/test_include.c $(BUILD)/plantuml.jar $(BUILD)/ditaa.jar
 	@mkdir -p $(BUILD) $(BUILD)/img
-	build=$(BUILD) PANDA_CACHE=$(BUILD)/cache PANDA_TARGET=$@ PLANTUML=$(BUILD)/plantuml.jar $(PANDOC) -L panda.lua --standalone test/test.md -o $(BUILD)/test.md
+	build=$(BUILD) PANDA_CACHE=$(BUILD)/cache PANDA_TARGET=$@ PLANTUML=$(BUILD)/plantuml.jar pandoc -L panda.lua --standalone test/test.md -o $(BUILD)/test.md
 
 .PHONY: diff
 
@@ -102,9 +141,9 @@ doc: $(BUILD)/panda.html
 
 CSS = $(BUILD)/cdelord.css
 
-$(BUILD)/panda.html: doc/panda.md doc/hello.dot $(CSS) panda panda.lua | $(PANDOC)
+$(BUILD)/panda.html: doc/panda.md doc/hello.dot $(CSS) panda panda.lua
 	@mkdir -p $(BUILD) $(BUILD)/img
-	doc=doc build=$(BUILD) PANDA_CACHE=$(BUILD)/cache PANDA_TARGET=$@ PLANTUML=$(BUILD)/plantuml.jar DITAA=$(BUILD)/ditaa.jar $(PANDOC) -L panda.lua --to=html5 --standalone --embed-resources --css=$(CSS) $< -o $@
+	doc=doc build=$(BUILD) PANDA_CACHE=$(BUILD)/cache PANDA_TARGET=$@ PLANTUML=$(BUILD)/plantuml.jar DITAA=$(BUILD)/ditaa.jar pandoc -L panda.lua --to=html5 --standalone --embed-resources --css=$(CSS) $< -o $@
 
 $(CSS):
 	@mkdir -p $(dir $@)
@@ -116,7 +155,7 @@ $(CSS):
 
 install-all: $(PREFIX)/bin/plantuml.jar
 
-PLANTUML_VERSION = 1.2023.0
+PLANTUML_VERSION = 1.2023.6
 PLANTUML_URL = https://github.com/plantuml/plantuml/releases/download/v$(PLANTUML_VERSION)/plantuml-$(PLANTUML_VERSION).jar
 
 $(BUILD)/plantuml.jar:
