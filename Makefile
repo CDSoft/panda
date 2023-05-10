@@ -20,7 +20,7 @@ PREFIX := $(firstword $(wildcard $(PREFIX) $(HOME)/.local))
 BUILD = .build
 
 ## Test and generate Panda documentation
-all: test doc
+all: compile test doc
 
 ###############################################################################
 # Help
@@ -87,17 +87,34 @@ distclean:
 	rm -rf $(BUILD)
 
 #############################################################################
+# Compilation
+#############################################################################
+
+.PHONY: compile
+
+compile: $(BUILD)/panda.lua
+compile: $(BUILD)/panda
+
+$(BUILD)/panda.lua: src/panda.lua
+	@mkdir -p $(dir $@)
+	luax -o $@ -t lua $<
+
+$(BUILD)/panda: src/panda
+	@mkdir -p $(dir $@)
+	cp $< $@
+
+#############################################################################
 # Installation
 #############################################################################
 
 .PHONY: install
 
 ## Install panda.lua and panda
-install:
+install: $(BUILD)/panda.lua $(BUILD)/panda
 	@test -n "$(PREFIX)" || (echo "No installation path found" && false)
 	@mkdir -p $(PREFIX)/bin
-	install panda.lua $(PREFIX)/bin
-	install panda $(PREFIX)/bin
+	install $(BUILD)/panda.lua $(PREFIX)/bin
+	install $(BUILD)/panda $(PREFIX)/bin
 
 .PHONY: install-all
 
@@ -120,9 +137,9 @@ test: $(BUILD)/test.md test/test_result.md
 	diff $(BUILD)/test.md test/test_result.md
 	# Well done
 
-$(BUILD)/test.md: panda panda.lua test/test.md test/test_include.md test/test_include.c $(BUILD)/plantuml.jar $(BUILD)/ditaa.jar
+$(BUILD)/test.md: $(BUILD)/panda $(BUILD)/panda.lua test/test.md test/test_include.md test/test_include.c $(BUILD)/plantuml.jar $(BUILD)/ditaa.jar
 	@mkdir -p $(BUILD) $(BUILD)/img
-	build=$(BUILD) PANDA_CACHE=$(BUILD)/cache PANDA_TARGET=$@ PLANTUML=$(BUILD)/plantuml.jar pandoc -L panda.lua --standalone test/test.md -o $(BUILD)/test.md
+	build=$(BUILD) PANDA_CACHE=$(BUILD)/cache PANDA_TARGET=$@ PLANTUML=$(BUILD)/plantuml.jar pandoc -L $(BUILD)/panda.lua --standalone test/test.md -o $(BUILD)/test.md
 
 .PHONY: diff
 
@@ -141,9 +158,9 @@ doc: $(BUILD)/panda.html
 
 CSS = $(BUILD)/cdelord.css
 
-$(BUILD)/panda.html: doc/panda.md doc/hello.dot $(CSS) panda panda.lua
+$(BUILD)/panda.html: doc/panda.md doc/hello.dot $(CSS) $(BUILD)/panda $(BUILD)/panda.lua
 	@mkdir -p $(BUILD) $(BUILD)/img
-	doc=doc build=$(BUILD) PANDA_CACHE=$(BUILD)/cache PANDA_TARGET=$@ PLANTUML=$(BUILD)/plantuml.jar DITAA=$(BUILD)/ditaa.jar pandoc -L panda.lua --to=html5 --standalone --embed-resources --css=$(CSS) $< -o $@
+	doc=doc build=$(BUILD) PANDA_CACHE=$(BUILD)/cache PANDA_TARGET=$@ PLANTUML=$(BUILD)/plantuml.jar DITAA=$(BUILD)/ditaa.jar pandoc -L $(BUILD)/panda.lua --to=html5 --standalone --embed-resources --css=$(CSS) $< -o $@
 
 $(CSS):
 	@mkdir -p $(dir $@)

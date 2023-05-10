@@ -20,7 +20,6 @@
 [lsvg]: http://cdelord.fr/lsvg/
 [UPP]: http://cdelord.fr/upp "Universal PreProcessor"
 [LuaX]: http://cdelord.fr/luax "Lua eXtended interpretor"
-[LuaX documentation]: http://cdelord.fr/luax/luax.lua.html
 
 About panda
 ===========
