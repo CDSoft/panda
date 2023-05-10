@@ -18,7 +18,7 @@
 [cdelord.fr]: http://cdelord.fr
 [gnuplot]: http://www.gnuplot.info/
 [lsvg]: http://cdelord.fr/lsvg/
-[UPP]: http://cdelord.fr/upp "Universal PreProcessor"
+[ypp]: http://cdelord.fr/ypp "Yet a PreProcessor"
 [LuaX]: http://cdelord.fr/luax "Lua eXtended interpretor"
 
 About panda
@@ -36,7 +36,7 @@ It provides several interesting features:
 
 Panda is heavily inspired by [abp](http:/cdelord.fr/abp) reimplemented as a [Pandoc Lua filter].
 
-If you need a more generic text preprocessor, [UPP] may be a better choice.
+If you need a more generic text preprocessor, [ypp] may be a better choice.
 
 Open source
 ===========

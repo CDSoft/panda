@@ -12,7 +12,7 @@ It provides several interesting features:
 
 Panda is heavily inspired by [abp](http:/cdelord.fr/abp) reimplemented as a Pandoc Lua filter.
 
-If you need a more generic text preprocessor, [UPP](http://cdelord.fr/upp) may be a better choice.
+If you need a more generic text preprocessor, [ypp](http://cdelord.fr/ypp) may be a better choice.
 
 # Installation
 
