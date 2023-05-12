@@ -137,9 +137,11 @@ test: $(BUILD)/test.md test/test_result.md
 	diff $(BUILD)/test.md test/test_result.md
 	# Well done
 
-$(BUILD)/test.md: $(BUILD)/panda $(BUILD)/panda.lua test/test.md test/test_include.md test/test_include.c $(BUILD)/plantuml.jar $(BUILD)/ditaa.jar
+$(BUILD)/test.md: $(BUILD)/panda $(BUILD)/panda.lua test/test.md $(BUILD)/plantuml.jar $(BUILD)/ditaa.jar
 	@mkdir -p $(BUILD) $(BUILD)/img
 	build=$(BUILD) PANDA_CACHE=$(BUILD)/cache PANDA_TARGET=$@ PLANTUML=$(BUILD)/plantuml.jar pandoc -L $(BUILD)/panda.lua --standalone test/test.md -o $(BUILD)/test.md
+
+-include $(BUILD)/*.d
 
 .PHONY: diff
 
@@ -154,12 +156,16 @@ diff: $(BUILD)/test.md test/test_result.md
 .PHONY: doc
 
 ## Generate Panda documentation
-doc: $(BUILD)/panda.html
+doc: $(BUILD)/panda.html README.md
 
 CSS = $(BUILD)/cdelord.css
 
-$(BUILD)/panda.html: doc/panda.md doc/hello.dot $(CSS) $(BUILD)/panda $(BUILD)/panda.lua
-	@mkdir -p $(BUILD) $(BUILD)/img
+README.md: doc/panda.md $(CSS) $(BUILD)/panda $(BUILD)/panda.lua
+	@mkdir -p $(BUILD) img
+	doc=doc build=$(BUILD) PANDA_CACHE=$(BUILD)/cache PANDA_TARGET=$@ PANDA_DEP_FILE=$(BUILD)/$@.d PLANTUML=$(BUILD)/plantuml.jar DITAA=$(BUILD)/ditaa.jar pandoc -L $(BUILD)/panda.lua --to=gfm $< -o $@
+
+$(BUILD)/panda.html: doc/panda.md $(CSS) $(BUILD)/panda $(BUILD)/panda.lua
+	@mkdir -p $(BUILD) img
 	doc=doc build=$(BUILD) PANDA_CACHE=$(BUILD)/cache PANDA_TARGET=$@ PLANTUML=$(BUILD)/plantuml.jar DITAA=$(BUILD)/ditaa.jar pandoc -L $(BUILD)/panda.lua --to=html5 --standalone --embed-resources --css=$(CSS) $< -o $@
 
 $(CSS):

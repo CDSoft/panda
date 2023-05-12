@@ -60,8 +60,6 @@ Installation
 
 `panda` and `panda.lua` can also be installed anywhere. Nothing else is required (except from [Pandoc] obviously).
 
-**Note**: `panda` can also be installed with [makex](https://github.com/CDSoft/makex).
-
 Usage
 =====
 
@@ -330,8 +328,7 @@ _build = "output_path"
 +=======================================+=================================================+
 | ~~~ markdown                          |                                                 |
 | ``` { render="{{_plantuml}}"          | ``` { render="{{plantuml}}"                     |
-|       img="img/panda_plantuml_demo"   |       img="{{build}}/img/panda_plantuml_demo"   |
-|       out="{{_build}}/img"            |       out="{{build}}/img"                       |
+|       img="img/panda_plantuml_demo"   |       img="img/panda_plantuml_demo"             |
 |       caption="Caption"               |       caption="Caption"                         |
 |       alt="Alternative description" } |       alt="Alternative description" }           |
 | @startuml                             | @startuml                                       |
@@ -408,8 +405,7 @@ _gnuplot = "{{gnuplot}}"
 +===========================================+=====================================================+
 | ~~~ markdown                              |                                                     |
 | ```{.dot render="{{_dot}}"                | ```{.dot render="{{dot}}"                           |
-|          img="img/panda_diagram_example"  |          img="{{build}}/img/panda_diagram_example"  |
-|          out="{{_build}}/img" }           |          out="{{build}}/img" }                      |
+|          img="img/panda_diagram_example" }|          img="img/panda_diagram_example" }          |
 | digraph {                                 | digraph {                                           |
 |     rankdir=LR;                           |     rankdir=LR;                                     |
 |     input -> pandoc -> output             |     input -> pandoc -> output                       |
@@ -422,8 +418,7 @@ _gnuplot = "{{gnuplot}}"
 +-------------------------------------------+-----------------------------------------------------+
 | ~~~ markdown                              |                                                     |
 | ```{ render="{{_gnuplot}}"                | ```{ render="{{gnuplot}}"                           |
-|      img="img/panda_gnuplot_example"      |      img="{{build}}/img/panda_gnuplot_example"      |
-|      out="{{_build}}/img" }               |      out="{{build}}/img" height=192 }               |
+|      img="img/panda_gnuplot_example" }    |      img="img/panda_gnuplot_example" }              |
 | set xrange [-pi:pi]                       | set xrange [-2*pi:2*pi]                             |
 | set yrange [-1.5:1.5]                     | set yrange [-1.5:1.5]                               |
 | plot sin(x) lw 4, cos(x) lw 4             | plot sin(x) lw 4, cos(x) lw 4                       |
@@ -452,8 +447,7 @@ _doc = "path"
 | and is rendered as:                       | and is rendered as:                       |
 |                                           |                                           |
 | ```{ render="{{_dot}}"                    | ```{ render="{{dot}}"                     |
-|      img="img/hello"                      |      img="{{build}}/img/hello"            |
-|      out="{{_build}}/img"                 |      out="{{build}}/img"                  |
+|      img="img/hello"                      |      img="img/hello"                      |
 |      include="{{_doc}}/hello.dot" }       |      include="{{doc}}/hello.dot" }        |
 | ```                                       | ```                                       |
 | ~~~                                       |                                           |
@@ -469,9 +463,9 @@ E.g.:
 +===========================================+===========================================+
 | ~~~ markdown                              |                                           |
 | ```{ render="{{_dot}}"                    | ```{ render="{{dot}}"                     |
-|      include="{{_doc}}/hello.dot" }       |      include="{{doc}}/hello.dot" }        |
-| ```                                       | ```                                       |
-| ~~~                                       |                                           |
+|      include="{{_doc}}/hello.dot" }       |      include="{{doc}}/hello.dot"          |
+| ```                                       |      img="img/hello2" }                   |
+| ~~~                                       | ```                                       |
 +-------------------------------------------+-------------------------------------------+
 
 Makefile dependencies
