@@ -97,7 +97,7 @@ compile: $(BUILD)/panda
 
 $(BUILD)/panda.lua: src/panda.lua
 	@mkdir -p $(dir $@)
-	luax -o $@ -t lua $<
+	luax -q -o $@ -t lua $<
 
 $(BUILD)/panda: src/panda
 	@mkdir -p $(dir $@)
