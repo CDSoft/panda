@@ -51,33 +51,7 @@ _G.output_file = PANDOC_STATE.output_file
 
 -- {{{ Trace
 local function trace(name, object)
-    local function dump(x, l)
-        l = l or ""
-        local l2 = l .. "    "
-        local s
-        if type(x) == "boolean" then
-            s = tostring(x)
-        elseif type(x) == "number" then
-            s = tostring(x)
-        elseif type(x) == "string" then
-            s = '"' .. tostring(x) .. '"'
-        elseif type(x) == "table" then
-            s = "{\n"
-            for i, xi in ipairs(x) do
-                s = s .. l2 .. "["..i.."] = " .. dump(xi, l2) .. ",\n"
-            end
-            for k, xk in F.pairs(x) do
-                if type(k) ~= "number" then
-                    s = s .. l2 .. k .. " = " .. dump(xk, l2) .. ",\n"
-                end
-            end
-            s = s .. l .. "}"
-        else
-            s = tostring(x)
-        end
-        return s
-    end
-    io.stderr:write(("%s: %s\n"):format(name, dump(object)))
+    io.stderr:write(("%s: %s\n"):format(name, F.show(object, {indent=4})))
 end
 -- }}}
 
