@@ -95,13 +95,26 @@ distclean:
 compile: $(BUILD)/panda.lua
 compile: $(BUILD)/panda
 
-$(BUILD)/panda.lua: src/panda.lua
+SOURCES = $(sort $(wildcard src/*.lua))
+SOURCES += $(BUILD)/src/_PANDA_VERSION.lua
+
+PANDA_VERSION := $(shell git describe --tags 2>/dev/null || echo 0.0)
+
+$(BUILD)/panda.lua: $(SOURCES)
 	@mkdir -p $(dir $@)
-	luax -q -o $@ -t lua $<
+	luax -q -o $@ -t lua $^
 
 $(BUILD)/panda: src/panda
 	@mkdir -p $(dir $@)
 	cp $< $@
+
+$(BUILD)/src/_PANDA_VERSION.lua: $(wildcard .git/refs/tags) $(wildcard .git/index)
+	@mkdir -p $(dir $@)
+	@(  set -eu;                                                \
+	    echo "--@LOAD";                                         \
+	    echo "return [[$(PANDA_VERSION)]]";                     \
+	) > $@.tmp
+	@mv $@.tmp $@
 
 #############################################################################
 # Installation
