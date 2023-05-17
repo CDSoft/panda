@@ -120,6 +120,7 @@ local function get_env_var()
     for k, v in pairs(system.environment()) do
         _G[k] = v
     end
+    _G.vars = F.mapt(tostring, PANDOC_WRITER_OPTIONS.variables)
 end
 
 local function read_vars_in_meta(meta)
@@ -140,13 +141,20 @@ local function read_vars_in_block(block)
     end
 end
 
+local function eval(expr)
+    -- first search for expr in _G
+    -- (some global variables, e.g. diagram render definitions, may have dots in their names)
+    if _G[expr] ~= nil then return utils.stringify(_G[expr]) end
+    -- evaluate expr in _G
+    local chunk = load("return "..expr, expr, "t", _G)
+    if not chunk then return end
+    local ok, val = pcall(chunk)
+    return (ok and val ~= nil) and utils.stringify(val) or nil
+end
+
 local function expand_vars(s)
-    s = s:gsub(var_pattern, function (var)
-        return var and _G[var]~=nil and utils.stringify(_G[var])
-    end)
-    s = s:gsub(var_pattern_esc, function (var)
-        return var and _G[var]~=nil and utils.stringify(_G[var])
-    end)
+    s = s:gsub(var_pattern, eval)
+    s = s:gsub(var_pattern_esc, eval)
     return s
 end
 
@@ -231,9 +239,9 @@ local deps = F{}
 
 local function add_dep(filename)
     deps[filename] = true
-    if _G["PANDA_TARGET"] then
-        local target = _G["PANDA_TARGET"]
-        local depfile = _G["PANDA_DEP_FILE"] or target..".d"
+    local target = vars.panda_target or _G["PANDA_TARGET"]
+    if target then
+        local depfile = vars.panda_dep_file or _G["PANDA_DEP_FILE"] or target..".d"
         assert(
             fs.write(depfile,
                 target, ": ", deps:keys():unwords(), "\n"),
@@ -514,7 +522,7 @@ local function render_diagram(cmd)
 end
 
 local function default_image_cache()
-    return _G["PANDA_CACHE"] or ".panda"
+    return vars.panda_cache or _G["PANDA_CACHE"] or ".panda"
 end
 
 local function diagram(block)

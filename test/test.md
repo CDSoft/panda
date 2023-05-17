@@ -158,7 +158,7 @@ print("a, b, c")
 
 # Diagrams
 
-```{render="{{plantuml}}" img="{{build}}/img/panda_plantuml_test" out="{{build}}/img" caption="Alice & Bob"}
+```{render="{{plantuml}}" img="{{vars.build}}/img/panda_plantuml_test" out="{{vars.build}}/img" caption="Alice & Bob"}
 @startuml
 Alice -> Bob: hello
 @enduml
@@ -170,7 +170,7 @@ Alice -> Bob: hello
 @enduml
 ```
 
-```{.lua render="{{lsvg}}" img="{{build}}/img/lsvg_test" out="{{build}}/img"}
+```{.lua render="{{lsvg}}" img="{{vars.build}}/img/lsvg_test" out="{{vars.build}}/img"}
 local w, h = 320, 240
 img {
     width = w,

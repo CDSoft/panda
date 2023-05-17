@@ -105,6 +105,8 @@ The initial environment contains:
 
 - the environment variables
 - the document metadata (title, author, date)
+- `vars` alias of `PANDOC_WRITER_OPTIONS.variables` to access pandoc
+  variables given on the command line
 
 Variable names are enclosed between double curly brackets.
 
@@ -267,7 +269,8 @@ name of the output image file (generated from the `img` field).
 
 The `img` field is optional. The default value is a name generated in
 the directory given by the environment variable `PANDA_CACHE` (`.panda`
-if `PANDA_CACHE` is not defined).
+if `PANDA_CACHE` is not defined). `PANDA_CACHE` can also be defined by
+the pandoc variable `panda_cache` (e.g. `pandoc -Vpanda_cache=...`).
 
 If `img` contains `%h`, it is replaced by a hash computed from the
 diagram source.
@@ -489,6 +492,10 @@ with the target name. `panda` will generate a file named
 The dependency filename can be redefined with the environment variable
 `PANDA_DEP_FILE` (e.g. to save the dependency file in a different
 directory).
+
+`PANDA_TARGET` and `PANDA_DEP_FILE` can also be defined by the pandoc
+variables `panda_target` and `panda_dep_file`
+(e.g. `pandoc -Vpanda_target=... -Vpanda_dep_file=...`).
 
 E.g.:
 
