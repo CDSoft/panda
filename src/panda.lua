@@ -177,7 +177,7 @@ local function expand_str(el)
             if j > i then items:insert(pandoc.Str(string.sub(el.text, i, j-1))) end
             -- j..k => variable name
             local var = string.sub(el.text, j+2, k-2)
-            local value = _G[var]
+            local value = eval(var)
             if value then
                 if type(value) == "string" then
                     value = utils.blocks_to_inlines(pandoc.read(value).blocks)
