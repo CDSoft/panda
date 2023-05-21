@@ -43,6 +43,7 @@ sumsq100 = sumsq(100)
 - baz = {{baz}}
 - email = {{email}}
 - email2 = [eMail](mailto:{{email2}})
+- build directory = {{vars.build}}
 
 ::: { foo = {{foo}} }
 :::
@@ -158,7 +159,7 @@ print("a, b, c")
 
 # Diagrams
 
-```{render="{{plantuml}}" img="{{vars.build}}/img/panda_plantuml_test" out="{{vars.build}}/img" caption="Alice & Bob"}
+```{render="{{plantuml}}" caption="Alice & Bob"}
 @startuml
 Alice -> Bob: hello
 @enduml
@@ -170,7 +171,7 @@ Alice -> Bob: hello
 @enduml
 ```
 
-```{.lua render="{{lsvg}}" img="{{vars.build}}/img/lsvg_test" out="{{vars.build}}/img"}
+```{.lua render="{{lsvg}}"}
 local w, h = 320, 240
 img {
     width = w,

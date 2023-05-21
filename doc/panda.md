@@ -132,13 +132,6 @@ Cheat sheet
 |                   |               |                           | of the code block, `%o` is the output file    |
 |                   |               |                           | name)                                         |
 +-------------------+---------------+---------------------------+-----------------------------------------------+
-| code block        |               | `img="image path"`        | URL of the image produced by `render`         |
-|                   |               |                           | (optional, the default value is a generated   |
-|                   |               |                           | name in the `./.panda` directory).            |
-+-------------------+---------------+---------------------------+-----------------------------------------------+
-| code block        |               | `out="image path"`        | path of the image produced by `render`        |
-|                   |               |                           | (optional, the default value is `img`)        |
-+-------------------+---------------+---------------------------+-----------------------------------------------+
 
 Commented blocks
 ================
@@ -297,8 +290,7 @@ Diagrams
 Code blocks containing diagrams are replaced with an image resulting from the diagram source code.
 
 The render command is the `render` field.
-The output image can be a hash computed from the diagram source code or the value of the `img` field.
-The optional `out` field overloads `img` to change the output directory when rendering the diagram.
+The output image name is a hash computed from the diagram source code.
 
 The description of the image is in the `caption` and `alt` fields.
 `caption` is the caption of the diagram. `alt` is the alternative description of the diagram.
@@ -306,16 +298,16 @@ The optional `target` field is a URL pointed by the image.
 
 In the `render` command, `%i` is replaced by the name of the input document
 (generated from the content of the code block) and
-`%o` by the name of the output image file (generated from the `img` field).
+`%o` by the name of the output image file.
 
-The `img` field is optional. The default value is a name generated in the directory given by the
-environment variable `PANDA_CACHE` (`.panda` if `PANDA_CACHE` is not defined).
-`PANDA_CACHE` can also be defined by the pandoc variable `panda_cache` (e.g. `pandoc -Vpanda_cache=...`).
+Images are generated in a directory given by:
 
-If `img` contains `%h`, it is replaced by a hash computed from the diagram source.
+- the environment variable `PANDA_IMG` if it is defined
+- the directory name of the output file if the Pandoc output is a file
+- the `img` directory in the current directory
 
 The file format (extension) must be in the `render` field,
-after the `%o` tag (e.g.: `%o.png`), not in the `img` field.
+after the `%o` tag (e.g.: `%o.png`).
 
 If the program requires a specific input file extension, it can be specified in the `render` field,
 after the `%i` tag (e.g.: `%i.xyz`).
@@ -330,7 +322,6 @@ _build = "output_path"
 +=======================================+=================================================+
 | ~~~ markdown                          |                                                 |
 | ``` { render="{{_plantuml}}"          | ``` { render="{{plantuml}}"                     |
-|       img="img/panda_plantuml_demo"   |       img="img/panda_plantuml_demo"             |
 |       caption="Caption"               |       caption="Caption"                         |
 |       alt="Alternative description" } |       alt="Alternative description" }           |
 | @startuml                             | @startuml                                       |
@@ -393,7 +384,6 @@ Notes:
 
     - For PDF (LaTeX) documents, the default format is PDF
     - For other documents, the default format is SVG
-    - The file extension is added to the `img` field
 
 E.g.:
 
@@ -406,8 +396,7 @@ _gnuplot = "{{gnuplot}}"
 | Source                                    | Result                                              |
 +===========================================+=====================================================+
 | ~~~ markdown                              |                                                     |
-| ```{.dot render="{{_dot}}"                | ```{.dot render="{{dot}}"                           |
-|          img="img/panda_diagram_example" }|          img="img/panda_diagram_example" }          |
+| ```{.dot render="{{_dot}}"}               | ```{.dot render="{{dot}}"}                          |
 | digraph {                                 | digraph {                                           |
 |     rankdir=LR;                           |     rankdir=LR;                                     |
 |     input -> pandoc -> output             |     input -> pandoc -> output                       |
@@ -419,8 +408,7 @@ _gnuplot = "{{gnuplot}}"
 | ~~~                                       |                                                     |
 +-------------------------------------------+-----------------------------------------------------+
 | ~~~ markdown                              |                                                     |
-| ```{ render="{{_gnuplot}}"                | ```{ render="{{gnuplot}}"                           |
-|      img="img/panda_gnuplot_example" }    |      img="img/panda_gnuplot_example" }              |
+| ```{ render="{{_gnuplot}}"}               | ```{ render="{{gnuplot}}"}                          |
 | set xrange [-pi:pi]                       | set xrange [-2*pi:2*pi]                             |
 | set yrange [-1.5:1.5]                     | set yrange [-1.5:1.5]                               |
 | plot sin(x) lw 4, cos(x) lw 4             | plot sin(x) lw 4, cos(x) lw 4                       |
@@ -449,25 +437,9 @@ _doc = "path"
 | and is rendered as:                       | and is rendered as:                       |
 |                                           |                                           |
 | ```{ render="{{_dot}}"                    | ```{ render="{{dot}}"                     |
-|      img="img/hello"                      |      img="img/hello"                      |
 |      include="{{_doc}}/hello.dot" }       |      include="{{vars.doc}}/hello.dot" }   |
 | ```                                       | ```                                       |
 | ~~~                                       |                                           |
-+-------------------------------------------+-------------------------------------------+
-
-The `img` and `out` fields are optional. This is especially useful in self-contained documents.
-The image name is generated from a hash value of the diagram.
-
-E.g.:
-
-+-------------------------------------------+-------------------------------------------+
-| Source                                    | Result                                    |
-+===========================================+===========================================+
-| ~~~ markdown                              |                                           |
-| ```{ render="{{_dot}}"                    | ```{ render="{{dot}}"                     |
-|      include="{{_doc}}/hello.dot" }       |      include="{{vars.doc}}/hello.dot"     |
-| ```                                       |      img="img/hello2" }                   |
-| ~~~                                       | ```                                       |
 +-------------------------------------------+-------------------------------------------+
 
 Makefile dependencies

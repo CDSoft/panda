@@ -521,34 +521,47 @@ local function render_diagram(cmd)
     end
 end
 
-local function default_image_cache()
-    return vars.panda_cache or _G["PANDA_CACHE"] or ".panda"
+local output_path   -- actual directory where images are saved
+local link_path     -- directory added to image filenames
+
+local function parse_output_path(path)
+    local prefix, link = path : match "^%[(.-)%](.*)"
+    if prefix then
+        output_path = fs.join(prefix, link)
+        link_path = link
+    else
+        output_path = path
+        link_path = path
+    end
+end
+
+local function default_image_output()
+    local env = os.getenv "PANDA_IMG"
+    parse_output_path(
+        (env and env ~= "" and env)
+        or (output_file and fs.join(fs.dirname(output_file), "img"))
+        or "img")
 end
 
 local function diagram(block)
     local render = get_attr(block, "render")
     if render then
+        assert(not get_attr(block, "img"), "the img field has been removed, use PANDA_IMG instead")
+        assert(not get_attr(block, "out"), "the out field has been removed, use PANDA_IMG instead")
         local contents = block.text
         local input_ext = get_input_ext(render)
         local ext = get_ext(render)
-        local img = get_attr(block, "img")
-        local output_path = get_attr(block, "out")
-        local target = get_attr(block, "target")
-        local hash_digest = pandoc.sha1(render..contents)
-        if not img then
-            local image_cache = default_image_cache()
-            mkdir(image_cache)
-            img = fs.join(image_cache, hash_digest)
-        else
-            img = img:gsub("%%h", hash_digest)
-        end
-        local out = expand_path(output_path and fs.join(output_path, basename(img)) or img)
+        local hash = pandoc.sha1(render..contents)
+        default_image_output()
+        fs.mkdirs(output_path)
+        local out = fs.join(output_path, hash)
+        local link = fs.join(link_path, fs.basename(out))
         local meta = out..ext..".meta"
         local meta_content = F.unlines {
-                "source: "..hash_digest,
+                "hash: "..hash,
                 "render: "..render,
-                "img: "..img,
                 "out: "..out,
+                "link: "..link,
                 "",
                 contents,
             }
@@ -556,6 +569,7 @@ local function diagram(block)
         local old_meta = fs.read(meta) or ""
         if not fs.is_file(out..ext) or meta_content ~= old_meta then
             system.with_temporary_directory("panda_diagram", function (tmpdir)
+                fs.mkdirs(fs.dirname(out))
                 local name = fs.join(tmpdir, "diagram")
                 local name_ext = name..input_ext
                 assert(fs.write(name_ext, contents), "Can not create "..name_ext)
@@ -569,8 +583,9 @@ local function diagram(block)
         local title = get_attr(block, "title") -- deprecated, use caption
         caption = caption or title or ""
         local alt = get_attr(block, "alt") or caption
-        local attrs = clean_attr({}, {"render", "img", "out", "target", "caption", "title", "alt"}, block.attr)
-        local image = pandoc.Image(alt, img..ext, caption, attrs)
+        local target = get_attr(block, "target")
+        local attrs = clean_attr({}, {"render", "target", "caption", "title", "alt"}, block.attr)
+        local image = pandoc.Image(alt, link..ext, caption, attrs)
         if target then
             return pandoc.Para{pandoc.Link(image, target, caption)}, false
         else

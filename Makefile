@@ -152,11 +152,10 @@ test: $(BUILD)/test.md test/test_result.md
 
 export PLANTUML := $(BUILD)/plantuml.jar
 export DITAA := $(BUILD)/ditaa.jar
-export PANDA_CACHE := $(BUILD)/cache
 
 $(BUILD)/test.md: $(BUILD)/panda $(BUILD)/panda.lua test/test.md $(BUILD)/plantuml.jar $(BUILD)/ditaa.jar Makefile
 	@mkdir -p $(BUILD) $(BUILD)/img
-	pandoc -L $(BUILD)/panda.lua -Vpanda_target=$@ -Vbuild=$(BUILD) --standalone test/test.md -o $(BUILD)/test.md
+	PANDA_IMG="[$(BUILD)]img" pandoc -L $(BUILD)/panda.lua -Vpanda_target=$@ -Vbuild=$(BUILD) --standalone test/test.md -o $(BUILD)/test.md
 
 -include $(BUILD)/*.d
 
@@ -178,12 +177,11 @@ doc: $(BUILD)/panda.html README.md
 CSS = $(BUILD)/cdelord.css
 
 README.md: doc/panda.md $(CSS) $(BUILD)/panda $(BUILD)/panda.lua
-	@mkdir -p $(BUILD) img
-	pandoc -L $(BUILD)/panda.lua -Vpanda_target=$@ -Vpanda_dep_file=$(BUILD)/$@.d -Vbuild=$(BUILD) -Vdoc=doc --to=gfm $< -o $@
+	pandoc -L $(BUILD)/panda.lua -Vpanda_target=$@ -Vpanda_dep_file=$(BUILD)/$@.d -Vdoc=doc --to=gfm $< -o $@
 
 $(BUILD)/panda.html: doc/panda.md $(CSS) $(BUILD)/panda $(BUILD)/panda.lua
-	@mkdir -p $(BUILD) img
-	pandoc -L $(BUILD)/panda.lua -Vpanda_target=$@ -Vbuild=$(BUILD) -Vdoc=doc --to=html5 --standalone --embed-resources --css=$(CSS) $< -o $@
+	@mkdir -p $(BUILD)
+	pandoc -L $(BUILD)/panda.lua -Vpanda_target=$@ -Vdoc=doc --to=html5 --standalone --embed-resources --css=$(CSS) $< -o $@
 
 $(CSS):
 	@mkdir -p $(dir $@)

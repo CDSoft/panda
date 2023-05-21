@@ -32,6 +32,7 @@ Output file: .build/test.md
 -   baz = {{baz}}
 -   email = [my email](me@example.com)
 -   email2 = [eMail](mailto:me2@example.com)
+-   build directory = .build
 
 ::: { foo = bar } :::
 
@@ -147,9 +148,10 @@ Pandoc is great!
 
 # Diagrams
 
-![Alice & Bob](.build/img/panda_plantuml_test.svg "Alice & Bob")
+![Alice &
+Bob](img/0ec62f1568ac33e20ec8d430ae77a9cbe6c9cd46.svg "Alice & Bob")
 
 [![Alternative
-description](.build/cache/0ec62f1568ac33e20ec8d430ae77a9cbe6c9cd46.svg "Alice & Bob")](http://example.com "Alice & Bob")
+description](img/0ec62f1568ac33e20ec8d430ae77a9cbe6c9cd46.svg "Alice & Bob")](http://example.com "Alice & Bob")
 
-![](.build/img/lsvg_test.svg){.lua}
+![](img/41add5d73006f7f8714db545284459f59df4b6ce.svg){.lua}

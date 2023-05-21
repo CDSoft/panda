@@ -81,8 +81,6 @@ A complete example is given as a Makefile in the doc directory.
 | code block, inline code |           | `toline=n` `to=n`                                       | includes a file up to line number `n`                                                                                                                                            |
 | code block, inline code |           | `cmd="shell command"` `icmd="shell command"`            | replaces the code block by the result of the shell command. With`icmd` the code block content is parsed by Pandoc and included in a Div block.                                   |
 | code block              |           | `render="command"`                                      | replaces the code block by a link to the image produced by the command (`%i` is the input file name, its content is the content of the code block, `%o` is the output file name) |
-| code block              |           | `img="image path"`                                      | URL of the image produced by `render` (optional, the default value is a generated name in the `./.panda` directory).                                                             |
-| code block              |           | `out="image path"`                                      | path of the image produced by `render` (optional, the default value is `img`)                                                                                                    |
 
 # Commented blocks
 
@@ -253,10 +251,8 @@ Note: `{.python cmd=python}` is equivalent to
 Code blocks containing diagrams are replaced with an image resulting
 from the diagram source code.
 
-The render command is the `render` field. The output image can be a hash
-computed from the diagram source code or the value of the `img` field.
-The optional `out` field overloads `img` to change the output directory
-when rendering the diagram.
+The render command is the `render` field. The output image name is a
+hash computed from the diagram source code.
 
 The description of the image is in the `caption` and `alt` fields.
 `caption` is the caption of the diagram. `alt` is the alternative
@@ -265,18 +261,16 @@ by the image.
 
 In the `render` command, `%i` is replaced by the name of the input
 document (generated from the content of the code block) and `%o` by the
-name of the output image file (generated from the `img` field).
+name of the output image file.
 
-The `img` field is optional. The default value is a name generated in
-the directory given by the environment variable `PANDA_CACHE` (`.panda`
-if `PANDA_CACHE` is not defined). `PANDA_CACHE` can also be defined by
-the pandoc variable `panda_cache` (e.g. `pandoc -Vpanda_cache=...`).
+Images are generated in a directory given by:
 
-If `img` contains `%h`, it is replaced by a hash computed from the
-diagram source.
+- the environment variable `PANDA_IMG` if it is defined
+- the directory name of the output file if the Pandoc output is a file
+- the `img` directory in the current directory
 
 The file format (extension) must be in the `render` field, after the
-`%o` tag (e.g.: `%o.png`), not in the `img` field.
+`%o` tag (e.g.: `%o.png`).
 
 If the program requires a specific input file extension, it can be
 specified in the `render` field, after the `%i` tag (e.g.: `%i.xyz`).
@@ -296,15 +290,14 @@ specified in the `render` field, after the `%i` tag (e.g.: `%i.xyz`).
 <tr class="odd">
 <td><div class="sourceCode" id="cb1"><pre
 class="sourceCode markdown"><code class="sourceCode markdown"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="in">``` { render=&quot;{{plantuml}}&quot;</span></span>
-<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="in">      img=&quot;img/panda_plantuml_demo&quot;</span></span>
-<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="in">      caption=&quot;Caption&quot;</span></span>
-<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="in">      alt=&quot;Alternative description&quot; }</span></span>
-<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="in">@startuml</span></span>
-<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="in">Alice -&gt; Bob: hello</span></span>
-<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="in">@enduml</span></span>
-<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span></code></pre></div></td>
-<td><p><img src="img/panda_plantuml_demo.svg" title="Caption"
-alt="Alternative description" /></p></td>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="in">      caption=&quot;Caption&quot;</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="in">      alt=&quot;Alternative description&quot; }</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="in">@startuml</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="in">Alice -&gt; Bob: hello</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="in">@enduml</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span></code></pre></div></td>
+<td><p><img src="./img/54877f2340a1e871f5848b8c646fe0b0eb5aed37.svg"
+title="Caption" alt="Alternative description" /></p></td>
 </tr>
 </tbody>
 </table>
@@ -367,7 +360,6 @@ Notes:
 
   - For PDF (LaTeX) documents, the default format is PDF
   - For other documents, the default format is SVG
-  - The file extension is added to the `img` field
 
 E.g.:
 
@@ -385,27 +377,27 @@ E.g.:
 <tbody>
 <tr class="odd">
 <td><div class="sourceCode" id="cb1"><pre
-class="sourceCode markdown"><code class="sourceCode markdown"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="in">```{.dot render=&quot;{{dot}}&quot;</span></span>
-<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="in">         img=&quot;img/panda_diagram_example&quot; }</span></span>
-<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="in">digraph {</span></span>
-<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="in">    rankdir=LR;</span></span>
-<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="in">    input -&gt; pandoc -&gt; output</span></span>
-<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="in">    pandoc -&gt; panda -&gt; {pandoc, diagrams}</span></span>
-<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="in">    { rank=same; pandoc, panda }</span></span>
-<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a><span class="in">    { rank=same; diagrams, output }</span></span>
-<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a><span class="in">}</span></span>
-<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span></code></pre></div></td>
-<td><p><img src="img/panda_diagram_example.svg" class="dot" /></p></td>
+class="sourceCode markdown"><code class="sourceCode markdown"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="in">```{.dot render=&quot;{{dot}}&quot;}</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="in">digraph {</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="in">    rankdir=LR;</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="in">    input -&gt; pandoc -&gt; output</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="in">    pandoc -&gt; panda -&gt; {pandoc, diagrams}</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="in">    { rank=same; pandoc, panda }</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="in">    { rank=same; diagrams, output }</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a><span class="in">}</span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span></code></pre></div></td>
+<td><p><img src="./img/fbc1d5fae695b3f059a6a177a655c3e6bd546640.svg"
+class="dot" /></p></td>
 </tr>
 <tr class="even">
 <td><div class="sourceCode" id="cb2"><pre
-class="sourceCode markdown"><code class="sourceCode markdown"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="in">```{ render=&quot;{{gnuplot}}&quot;</span></span>
-<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="in">     img=&quot;img/panda_gnuplot_example&quot; }</span></span>
-<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="in">set xrange [-pi:pi]</span></span>
-<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="in">set yrange [-1.5:1.5]</span></span>
-<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="in">plot sin(x) lw 4, cos(x) lw 4</span></span>
-<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span></code></pre></div></td>
-<td><p><img src="img/panda_gnuplot_example.svg" /></p></td>
+class="sourceCode markdown"><code class="sourceCode markdown"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="in">```{ render=&quot;{{gnuplot}}&quot;}</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="in">set xrange [-pi:pi]</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="in">set yrange [-1.5:1.5]</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="in">plot sin(x) lw 4, cos(x) lw 4</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span></code></pre></div></td>
+<td><p><img
+src="./img/90d43c81f0a7f80f09a70a936ad62d01cec9e83a.svg" /></p></td>
 </tr>
 </tbody>
 </table>
@@ -444,39 +436,11 @@ class="sourceCode dot"><code class="sourceCode dot"><span id="cb2-1"><a href="#c
 class="sourceCode markdown"><code class="sourceCode markdown"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="an">and is rendered as:</span></span>
 <span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="in">```{ render=&quot;{{dot}}&quot;</span></span>
-<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="in">     img=&quot;img/hello&quot;</span></span>
-<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a><span class="in">     include=&quot;path/hello.dot&quot; }</span></span>
-<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span></code></pre></div></td>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="in">     include=&quot;path/hello.dot&quot; }</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span></code></pre></div></td>
 <td><p>and is rendered as:</p>
-<p><img src="img/hello.svg" /></p></td>
-</tr>
-</tbody>
-</table>
-
-The `img` and `out` fields are optional. This is especially useful in
-self-contained documents. The image name is generated from a hash value
-of the diagram.
-
-E.g.:
-
-<table>
-<colgroup>
-<col style="width: 50%" />
-<col style="width: 50%" />
-</colgroup>
-<thead>
-<tr class="header">
-<th>Source</th>
-<th>Result</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td><div class="sourceCode" id="cb1"><pre
-class="sourceCode markdown"><code class="sourceCode markdown"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="in">```{ render=&quot;{{dot}}&quot;</span></span>
-<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="in">     include=&quot;path/hello.dot&quot; }</span></span>
-<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span></code></pre></div></td>
-<td><p><img src="img/hello2.svg" /></p></td>
+<p><img
+src="./img/d894659791dd71e52deebe6725a3c225275f4e46.svg" /></p></td>
 </tr>
 </tbody>
 </table>
