@@ -19,8 +19,8 @@
 PREFIX := $(firstword $(wildcard $(PREFIX) $(HOME)/.local))
 BUILD = .build
 
-## Test and generate Panda documentation
-all: compile test doc
+## Bundle panda into a single Lua script
+all: compile
 
 ###############################################################################
 # Help
@@ -92,6 +92,7 @@ distclean:
 
 .PHONY: compile
 
+## Bundle panda into a single Lua script
 compile: $(BUILD)/panda.lua
 compile: $(BUILD)/panda
 
