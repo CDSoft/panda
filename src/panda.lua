@@ -24,6 +24,12 @@ local pandoc = require "pandoc"
 local utils = pandoc.utils
 local system = pandoc.system
 
+F = require "F"
+crypt = require "crypt"
+fs = require "fs"
+sh = require "sh"
+sys = require "sys"
+
 local nullBlock, nullInline
 if PANDOC_API_VERSION >= {1, 23} then
     nullBlock = {}
