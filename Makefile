@@ -147,23 +147,40 @@ $(PREFIX)/bin/%.jar: $(BUILD)/%.jar
 .PHONY: test
 
 ## Run Panda tests
-test: $(BUILD)/test.md test/test_result.md
+test: $(BUILD)/test.md.ok
+test: $(BUILD)/test.md.d.ok
+
+$(BUILD)/test.md.ok: $(BUILD)/test.md test/test_result.md
 	diff $(BUILD)/test.md test/test_result.md
-	# Well done
+	@touch $@
+
+$(BUILD)/test.md.d.ok: $(BUILD)/test.md.d test/test.md.d
+	diff $(BUILD)/test.md.d test/test.md.d
+	@touch $@
 
 export PLANTUML := $(BUILD)/plantuml.jar
 export DITAA := $(BUILD)/ditaa.jar
 
+export LUA_PATH := test/?.lua
+
 $(BUILD)/test.md: $(BUILD)/panda $(BUILD)/panda.lua test/test.md $(BUILD)/plantuml.jar $(BUILD)/ditaa.jar Makefile
 	@mkdir -p $(BUILD) $(BUILD)/img
 	PANDA_IMG="[$(BUILD)]img" pandoc -L $(BUILD)/panda.lua -Vpanda_target=$@ -Vbuild=$(BUILD) --standalone test/test.md -o $(BUILD)/test.md
+
+$(BUILD)/test.md.d: $(BUILD)/test.md
 
 -include $(BUILD)/*.d
 
 .PHONY: diff
 
 ## Compare test results
-diff: $(BUILD)/test.md test/test_result.md
+diff: diff-md
+diff: diff-d
+
+diff-md: $(BUILD)/test.md test/test_result.md
+	meld $^
+
+diff-d: $(BUILD)/test.md.d test/test.md.d
 	meld $^
 
 #############################################################################
