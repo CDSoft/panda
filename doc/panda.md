@@ -312,6 +312,11 @@ after the `%o` tag (e.g.: `%o.png`).
 If the program requires a specific input file extension, it can be specified in the `render` field,
 after the `%i` tag (e.g.: `%i.xyz`).
 
+Optional fields can be given to set some options:
+
+- `name` defines the name of the image file.
+  This can help distributing documents with user friendly image names.
+
 ```meta
 _plantuml = "{{plantuml}}"
 _build = "output_path"

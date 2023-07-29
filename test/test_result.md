@@ -151,7 +151,12 @@ Pandoc is great!
 ![Alice &
 Bob](img/0ec62f1568ac33e20ec8d430ae77a9cbe6c9cd46.svg "Alice & Bob")
 
+![Alice & Bob](img/test-bob-and-alice.svg "Alice & Bob")
+
 [![Alternative
 description](img/0ec62f1568ac33e20ec8d430ae77a9cbe6c9cd46.svg "Alice & Bob")](http://example.com "Alice & Bob")
+
+[![Alternative
+description](img/test-bob-and-alice.svg "Alice & Bob")](http://example.com "Alice & Bob")
 
 ![](img/41add5d73006f7f8714db545284459f59df4b6ce.svg){.lua}

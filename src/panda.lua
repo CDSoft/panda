@@ -555,10 +555,11 @@ local function diagram(block)
         local contents = block.text
         local input_ext = get_input_ext(render)
         local ext = get_ext(render)
+        local output_name = get_attr(block, "name")
         local hash = pandoc.sha1(render..contents)
         default_image_output()
         fs.mkdirs(output_path)
-        local out = fs.join(output_path, hash)
+        local out = fs.join(output_path, output_name or hash)
         local link = fs.join(link_path, fs.basename(out))
         local meta = out..ext..".meta"
         local meta_content = F.unlines {
@@ -588,7 +589,7 @@ local function diagram(block)
         caption = caption or title or ""
         local alt = get_attr(block, "alt") or caption
         local target = get_attr(block, "target")
-        local attrs = clean_attr({}, {"render", "target", "caption", "title", "alt"}, block.attr)
+        local attrs = clean_attr({}, {"render", "name", "target", "caption", "title", "alt"}, block.attr)
         local image = pandoc.Image(alt, link..ext, caption, attrs)
         if target then
             return pandoc.Para{pandoc.Link(image, target, caption)}, false

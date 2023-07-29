@@ -275,6 +275,11 @@ The file format (extension) must be in the `render` field, after the
 If the program requires a specific input file extension, it can be
 specified in the `render` field, after the `%i` tag (e.g.: `%i.xyz`).
 
+Optional fields can be given to set some options:
+
+- `name` defines the name of the image file. This can help distributing
+  documents with user friendly image names.
+
 <table>
 <colgroup>
 <col style="width: 44%" />

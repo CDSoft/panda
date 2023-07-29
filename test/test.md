@@ -165,7 +165,19 @@ Alice -> Bob: hello
 @enduml
 ```
 
+```{render="{{plantuml}}" name="test-bob-and-alice" caption="Alice & Bob"}
+@startuml
+Alice -> Bob: hello
+@enduml
+```
+
 ```{render="{{plantuml}}" caption="Alice & Bob" alt="Alternative description" target="http://example.com"}
+@startuml
+Alice -> Bob: hello
+@enduml
+```
+
+```{render="{{plantuml}}" name="test-bob-and-alice" caption="Alice & Bob" alt="Alternative description" target="http://example.com"}
 @startuml
 Alice -> Bob: hello
 @enduml
