@@ -326,11 +326,11 @@ _build = "output_path"
 | Source                                | Result                                          |
 +=======================================+=================================================+
 | ~~~ markdown                          |                                                 |
-| ``` { render="{{_plantuml}}"          | ``` { render="{{plantuml}}"                     |
+| ``` { render="{{_plantuml}}"          | ``` { render="{{plantuml}}" name=alice_and_bob  |
 |       caption="Caption"               |       caption="Caption"                         |
 |       alt="Alternative description" } |       alt="Alternative description" }           |
 | @startuml                             | @startuml                                       |
-| Alice -> Bob: hello                   | Alice -> Bob: test                              |
+| Alice -> Bob: hello                   | Alice -> Bob: hello                             |
 | @enduml                               | @enduml                                         |
 | ```                                   | ```                                             |
 | ~~~                                   |                                                 |
@@ -401,7 +401,7 @@ _gnuplot = "{{gnuplot}}"
 | Source                                    | Result                                              |
 +===========================================+=====================================================+
 | ~~~ markdown                              |                                                     |
-| ```{.dot render="{{_dot}}"}               | ```{.dot render="{{dot}}"}                          |
+| ```{.dot render="{{_dot}}"}               | ```{.dot render="{{dot}}" name=panda}               |
 | digraph {                                 | digraph {                                           |
 |     rankdir=LR;                           |     rankdir=LR;                                     |
 |     input -> pandoc -> output             |     input -> pandoc -> output                       |
@@ -413,7 +413,7 @@ _gnuplot = "{{gnuplot}}"
 | ~~~                                       |                                                     |
 +-------------------------------------------+-----------------------------------------------------+
 | ~~~ markdown                              |                                                     |
-| ```{ render="{{_gnuplot}}"}               | ```{ render="{{gnuplot}}"}                          |
+| ```{ render="{{_gnuplot}}"}               | ```{ render="{{gnuplot}}" name=gnuplot}             |
 | set xrange [-pi:pi]                       | set xrange [-2*pi:2*pi]                             |
 | set yrange [-1.5:1.5]                     | set yrange [-1.5:1.5]                               |
 | plot sin(x) lw 4, cos(x) lw 4             | plot sin(x) lw 4, cos(x) lw 4                       |
@@ -441,7 +441,7 @@ _doc = "path"
 | ~~~ markdown                              |                                           |
 | and is rendered as:                       | and is rendered as:                       |
 |                                           |                                           |
-| ```{ render="{{_dot}}"                    | ```{ render="{{dot}}"                     |
+| ```{ render="{{_dot}}"                    | ```{ render="{{dot}}" name=hello          |
 |      include="{{_doc}}/hello.dot" }       |      include="{{vars.doc}}/hello.dot" }   |
 | ```                                       | ```                                       |
 | ~~~                                       |                                           |

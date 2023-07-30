@@ -301,8 +301,8 @@ class="sourceCode markdown"><code class="sourceCode markdown"><span id="cb1-1"><
 <span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="in">Alice -&gt; Bob: hello</span></span>
 <span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="in">@enduml</span></span>
 <span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span></code></pre></div></td>
-<td><p><img src="./img/54877f2340a1e871f5848b8c646fe0b0eb5aed37.svg"
-title="Caption" alt="Alternative description" /></p></td>
+<td><p><img src="./img/alice_and_bob.svg" title="Caption"
+alt="Alternative description" /></p></td>
 </tr>
 </tbody>
 </table>
@@ -391,8 +391,7 @@ class="sourceCode markdown"><code class="sourceCode markdown"><span id="cb1-1"><
 <span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="in">    { rank=same; diagrams, output }</span></span>
 <span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a><span class="in">}</span></span>
 <span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span></code></pre></div></td>
-<td><p><img src="./img/fbc1d5fae695b3f059a6a177a655c3e6bd546640.svg"
-class="dot" /></p></td>
+<td><p><img src="./img/panda.svg" class="dot" /></p></td>
 </tr>
 <tr class="even">
 <td><div class="sourceCode" id="cb2"><pre
@@ -401,8 +400,7 @@ class="sourceCode markdown"><code class="sourceCode markdown"><span id="cb2-1"><
 <span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="in">set yrange [-1.5:1.5]</span></span>
 <span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="in">plot sin(x) lw 4, cos(x) lw 4</span></span>
 <span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span></code></pre></div></td>
-<td><p><img
-src="./img/90d43c81f0a7f80f09a70a936ad62d01cec9e83a.svg" /></p></td>
+<td><p><img src="./img/gnuplot.svg" /></p></td>
 </tr>
 </tbody>
 </table>
@@ -444,8 +442,7 @@ class="sourceCode markdown"><code class="sourceCode markdown"><span id="cb3-1"><
 <span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="in">     include=&quot;path/hello.dot&quot; }</span></span>
 <span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span></code></pre></div></td>
 <td><p>and is rendered as:</p>
-<p><img
-src="./img/d894659791dd71e52deebe6725a3c225275f4e46.svg" /></p></td>
+<p><img src="./img/hello.svg" /></p></td>
 </tr>
 </tbody>
 </table>
