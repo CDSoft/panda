@@ -249,6 +249,7 @@ local function add_dep(filename)
     if target then
         local depfile = vars.panda_dep_file or _G["PANDA_DEP_FILE"] or target..".d"
         local files = (F.keys(deps)..F.values(package.modpath)):from_set(F.const(true)):keys()
+        fs.mkdirs(fs.dirname(depfile))
         assert(fs.write(depfile, target, ": ", files:unwords(), "\n"), "Can not create "..depfile)
     end
 end
