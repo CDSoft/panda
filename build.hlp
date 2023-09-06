@@ -1,0 +1,11 @@
+Panda
+
+Targets:
+  help       show this help message
+  compile    Bundle Panda into a single Lua script
+  all        Compile, test and generate documentation
+  test       Run Panda tests
+  doc        Generate Panda documentation
+  install    install Panda in $PREFIX or $HOME/.local
+  clean      clean generated files
+  mrproper   clean generated files and more

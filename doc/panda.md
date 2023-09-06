@@ -55,8 +55,9 @@ Installation
 ============
 
 1. Download the sources: `git clone https://github.com/CDSoft/panda`.
-2. Run `make test` to run tests.
-3. Run `make install` to install `panda` and `panda.lua` to `~/.local/bin` (see `PREFIX` in `Makefile`).
+2. Run `ninja test` to run tests.
+3. Run `ninja install` to install `panda` and `panda.lua` to `~/.local/bin`
+   or `PREFIX=prefix ninja install` to install `panda` and `panda.lua` to `prefix/bin`
 
 `panda` and `panda.lua` can also be installed anywhere. Nothing else is required (except from [Pandoc] obviously).
 
