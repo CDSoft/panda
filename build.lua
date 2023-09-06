@@ -45,7 +45,6 @@ local sources = F.flatten {
 
 build "$builddir/src/_PANDA_VERSION.lua" {
     command = {
-        "mkdir -p $builddir/src;",
         "(",
         "set -eu;",
         'echo "--@LOAD";',

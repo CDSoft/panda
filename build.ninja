@@ -30,10 +30,10 @@ ditaa_url = https://github.com/stathissideris/ditaa/releases/download/v$ditaa_ve
 # Compilation
 ######################################################################
 
-rule _builddir_src__PANDA_VERSION.lua-1fef8902e2a038d4
-  command = mkdir -p $builddir/src; ( set -eu; echo "--@LOAD"; echo "return [[$$(git describe --tags 2>/dev/null)]]"; ) > $out.tmp && mv $out.tmp $out
+rule _builddir_src__PANDA_VERSION.lua-3e98d561b230c077
+  command = ( set -eu; echo "--@LOAD"; echo "return [[$$(git describe --tags 2>/dev/null)]]"; ) > $out.tmp && mv $out.tmp $out
 
-build $builddir/src/_PANDA_VERSION.lua: _builddir_src__PANDA_VERSION.lua-1fef8902e2a038d4 | .git/refs/tags .git/index
+build $builddir/src/_PANDA_VERSION.lua: _builddir_src__PANDA_VERSION.lua-3e98d561b230c077 | .git/refs/tags .git/index
 
 rule _builddir_bin_panda.lua-517940aa80686a86
   command = luax -q -o $out -t lua $in
