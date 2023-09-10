@@ -116,7 +116,7 @@ default compile
 # Installation
 ######################################################################
 
-prefix = $$HOME/.local
+prefix = ~/.local
 
 rule install-bin-8c306acee33bbde8
   description = INSTALL $in to bin
@@ -157,8 +157,8 @@ build mrproper: phony clean mrproper-_builddir
 # Help
 ######################################################################
 
-rule help
-  description = $in
-  command = cat $in
+rule help-884fac157b0968d3
+  description = help
+  command = echo "Panda"; echo ""; echo "Targets:"; echo "  help       show this help message"; echo "  compile    Bundle Panda into a single Lua script"; echo "  all        Compile, test and generate documentation"; echo "  test       Run Panda tests"; echo "  doc        Generate Panda documentation"; echo "  install    install Panda in PREFIX or ~/.local"; echo "  clean      clean generated files"; echo "  mrproper   clean generated files and more";
 
-build help: help build.hlp
+build help: help-884fac157b0968d3
