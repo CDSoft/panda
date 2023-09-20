@@ -55,48 +55,48 @@ build "$builddir/src/_PANDA_VERSION.lua" {
     implicit_in = { ".git/refs/tags", ".git/index" }
 }
 
-install "bin" {
-
+local bins = {
     build "$builddir/bin/panda.lua" { sources,
         command = "luax -q -o $out -t lua $in",
     },
-
     build "$builddir/bin/panda" { "src/panda",
         command = "cp $in $out",
     },
-
 }
 
 ---------------------------------------------------------------------
 section "Tests"
 ---------------------------------------------------------------------
 
-rule "diff" { command = "diff $in && touch $out" }
+rule "diff" { command = "diff $in > $out || (cat $out && false)" }
 
-build "$builddir/test/test.md.ok" { "diff", "$builddir/test/test.md", "test/test_result.md" }
-build "$builddir/test/test.md.d.ok" { "diff", "$builddir/test/test.md.d", "test/test.md.d" }
-
-build "$builddir/test/test.md" { "test/test.md",
-    command = {
-        "export PLANTUML=$builddir/plantuml.jar;",
-        "export DITAA=$builddir/ditaa.jar;",
-        "export LUA_PATH=test/?.lua;",
-        "export PANDA_IMG=$builddir/img;",
-        "pandoc",
-            "-L $builddir/bin/panda.lua",
-            "-Vpanda_target=$out",
-            "-Vbuild=$builddir",
-            "--standalone",
-            "$in -o $out",
-    },
-    implicit_in = {
-        "$builddir/plantuml.jar",
-        "$builddir/ditaa.jar",
-        "$builddir/bin/panda.lua",
-    },
-    implicit_out = {
-        "$builddir/test/test.md.d",
-    },
+local tests = {
+    build "$builddir/test/test.md" { "test/test.md",
+        command = {
+            "export PLANTUML=$builddir/plantuml.jar;",
+            "export DITAA=$builddir/ditaa.jar;",
+            "export LUA_PATH=test/?.lua;",
+            "export PANDA_IMG=$builddir/img;",
+            "pandoc",
+                "-L $builddir/bin/panda.lua",
+                "-Vpanda_target=$out",
+                "-Vbuild=$builddir",
+                "--standalone",
+                "$in -o $out",
+        },
+        implicit_in = {
+            "$builddir/plantuml.jar",
+            "$builddir/ditaa.jar",
+            "$builddir/bin/panda.lua",
+        },
+        implicit_out = {
+            "$builddir/test/test.md.d",
+        },
+        validations = {
+            build "$builddir/test/test.md.diff" { "diff", "$builddir/test/test.md", "test/test_result.md" },
+            build "$builddir/test/test.md.d.diff" { "diff", "$builddir/test/test.md.d", "test/test.md.d" },
+        },
+    }
 }
 
 ---------------------------------------------------------------------
@@ -125,49 +125,53 @@ section "Documentation"
 
 var "css" "$builddir/doc/cdelord.css"
 
-build "README.md" { "doc/panda.md",
-    command = {
-        "export PLANTUML=$builddir/plantuml.jar;",
-        "export DITAA=$builddir/ditaa.jar;",
-        "pandoc",
-            "-L", "$builddir/bin/panda.lua",
-            "-Vpanda_target=$out",
-            "-Vpanda_dep_file=$builddir/doc/$out.d",
-            "-Vdoc=doc",
-            "--to=gfm",
-            "$in -o $out",
-    },
-    depfile = "$builddir/doc/$out.d",
-    implicit_in =
-    {
-        "$builddir/bin/panda.lua",
-        "$builddir/plantuml.jar",
-        "$builddir/ditaa.jar",
-    },
-}
+local docs = {
 
-build "$builddir/doc/panda.html" { "doc/panda.md",
-    command = {
-        "export PLANTUML=$builddir/plantuml.jar;",
-        "export DITAA=$builddir/ditaa.jar;",
-        "pandoc",
-            "-L", "$builddir/bin/panda.lua",
-            "-Vpanda_target=$out",
-            "-Vpanda_dep_file=$out.d",
-            "-Vdoc=doc",
-            "--to=html5",
-            "--standalone --embed-resources",
-            "--css=$css",
-            "$in -o $out",
+    build "README.md" { "doc/panda.md",
+        command = {
+            "export PLANTUML=$builddir/plantuml.jar;",
+            "export DITAA=$builddir/ditaa.jar;",
+            "pandoc",
+                "-L", "$builddir/bin/panda.lua",
+                "-Vpanda_target=$out",
+                "-Vpanda_dep_file=$builddir/doc/$out.d",
+                "-Vdoc=doc",
+                "--to=gfm",
+                "$in -o $out",
+        },
+        depfile = "$builddir/doc/$out.d",
+        implicit_in =
+        {
+            "$builddir/bin/panda.lua",
+            "$builddir/plantuml.jar",
+            "$builddir/ditaa.jar",
+        },
     },
-    depfile = "$out.d",
-    implicit_in =
-    {
-        "$builddir/bin/panda.lua",
-        "$builddir/plantuml.jar",
-        "$builddir/ditaa.jar",
-        "$css",
+
+    build "$builddir/doc/panda.html" { "doc/panda.md",
+        command = {
+            "export PLANTUML=$builddir/plantuml.jar;",
+            "export DITAA=$builddir/ditaa.jar;",
+            "pandoc",
+                "-L", "$builddir/bin/panda.lua",
+                "-Vpanda_target=$out",
+                "-Vpanda_dep_file=$out.d",
+                "-Vdoc=doc",
+                "--to=html5",
+                "--standalone --embed-resources",
+                "--css=$css",
+                "$in -o $out",
+        },
+        depfile = "$out.d",
+        implicit_in =
+        {
+            "$builddir/bin/panda.lua",
+            "$builddir/plantuml.jar",
+            "$builddir/ditaa.jar",
+            "$css",
+        },
     },
+
 }
 
 build "$css" {
@@ -179,24 +183,16 @@ section "Shortcuts"
 ---------------------------------------------------------------------
 
 help "compile" "Bundle $name into a single Lua script"
-phony "compile" {
-    "$builddir/bin/panda.lua",
-    "$builddir/bin/panda",
-}
+phony "compile" (bins)
+install "bin" (bins)
 
 help "all" "Compile, test and generate documentation"
 phony "all" { "compile", "test", "doc" }
 
 help "test" "Run $name tests"
-phony "test" {
-    "$builddir/test/test.md.ok",
-    "$builddir/test/test.md.d.ok",
-}
+phony "test" (tests)
 
 help "doc" "Generate $name documentation"
-phony "doc" {
-    "README.md",
-    "$builddir/doc/panda.html",
-}
+phony "doc" (docs)
 
 default "compile"

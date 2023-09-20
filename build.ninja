@@ -50,15 +50,15 @@ build $builddir/bin/panda: _builddir_bin_panda-0a18b6438f041911 src/panda
 ######################################################################
 
 rule diff
-  command = diff $in && touch $out
+  command = diff $in > $out || (cat $out && false)
 
-build $builddir/test/test.md.ok: diff $builddir/test/test.md test/test_result.md
-build $builddir/test/test.md.d.ok: diff $builddir/test/test.md.d test/test.md.d
+build $builddir/test/test.md.diff: diff $builddir/test/test.md test/test_result.md
+build $builddir/test/test.md.d.diff: diff $builddir/test/test.md.d test/test.md.d
 
-rule _builddir_test_test.md-cd93e7ae4fac56fe
+rule _builddir_test_test.md-f556e02b5520c16d
   command = export PLANTUML=$builddir/plantuml.jar; export DITAA=$builddir/ditaa.jar; export LUA_PATH=test/?.lua; export PANDA_IMG=$builddir/img; pandoc -L $builddir/bin/panda.lua -Vpanda_target=$out -Vbuild=$builddir --standalone $in -o $out
 
-build $builddir/test/test.md | $builddir/test/test.md.d: _builddir_test_test.md-cd93e7ae4fac56fe test/test.md | $builddir/plantuml.jar $builddir/ditaa.jar $builddir/bin/panda.lua
+build $builddir/test/test.md | $builddir/test/test.md.d: _builddir_test_test.md-f556e02b5520c16d test/test.md | $builddir/plantuml.jar $builddir/ditaa.jar $builddir/bin/panda.lua |@ $builddir/test/test.md.diff $builddir/test/test.md.d.diff
 
 ######################################################################
 # PlantUML
@@ -107,7 +107,7 @@ build $css: _css-954549a5b93b6b31
 
 build compile: phony $builddir/bin/panda.lua $builddir/bin/panda
 build all: phony compile test doc
-build test: phony $builddir/test/test.md.ok $builddir/test/test.md.d.ok
+build test: phony $builddir/test/test.md
 build doc: phony README.md $builddir/doc/panda.html
 
 default compile
