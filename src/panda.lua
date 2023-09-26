@@ -245,6 +245,9 @@ local deps = F{}
 
 local function add_dep(filename)
     deps[filename] = true
+end
+
+local function write_dependency_file()
     local target = vars.panda_target or _G["PANDA_TARGET"]
     if target then
         local depfile = vars.panda_dep_file or _G["PANDA_DEP_FILE"] or target..".d"
@@ -652,6 +655,9 @@ filters = {
 
     -- Diagrams
     { CodeBlock = diagram },
+
+    -- Write dependency file
+    { Pandoc = write_dependency_file },
 }
 
 --@MAIN (this script is actually the main script of a Lua library)

@@ -30,20 +30,20 @@ ditaa_url = https://github.com/stathissideris/ditaa/releases/download/v$ditaa_ve
 # Compilation
 ######################################################################
 
-rule _builddir_src__PANDA_VERSION.lua-3e98d561b230c077
+rule _builddir_src__PANDA_VERSION.lua
   command = ( set -eu; echo "--@LOAD"; echo "return [[$$(git describe --tags 2>/dev/null)]]"; ) > $out.tmp && mv $out.tmp $out
 
-build $builddir/src/_PANDA_VERSION.lua: _builddir_src__PANDA_VERSION.lua-3e98d561b230c077 | .git/refs/tags .git/index
+build $builddir/src/_PANDA_VERSION.lua: _builddir_src__PANDA_VERSION.lua | .git/refs/tags .git/index
 
-rule _builddir_bin_panda.lua-517940aa80686a86
+rule _builddir_bin_panda.lua
   command = luax -q -o $out -t lua $in
 
-build $builddir/bin/panda.lua: _builddir_bin_panda.lua-517940aa80686a86 src/panda.lua $builddir/src/_PANDA_VERSION.lua
+build $builddir/bin/panda.lua: _builddir_bin_panda.lua src/panda.lua $builddir/src/_PANDA_VERSION.lua
 
-rule _builddir_bin_panda-0a18b6438f041911
+rule _builddir_bin_panda
   command = cp $in $out
 
-build $builddir/bin/panda: _builddir_bin_panda-0a18b6438f041911 src/panda
+build $builddir/bin/panda: _builddir_bin_panda src/panda
 
 ######################################################################
 # Tests
@@ -55,28 +55,28 @@ rule diff
 build $builddir/test/test.md.diff: diff $builddir/test/test.md test/test_result.md
 build $builddir/test/test.md.d.diff: diff $builddir/test/test.md.d test/test.md.d
 
-rule _builddir_test_test.md-f556e02b5520c16d
+rule _builddir_test_test.md
   command = export PLANTUML=$builddir/plantuml.jar; export DITAA=$builddir/ditaa.jar; export LUA_PATH=test/?.lua; export PANDA_IMG=$builddir/img; pandoc -L $builddir/bin/panda.lua -Vpanda_target=$out -Vbuild=$builddir --standalone $in -o $out
 
-build $builddir/test/test.md | $builddir/test/test.md.d: _builddir_test_test.md-f556e02b5520c16d test/test.md | $builddir/plantuml.jar $builddir/ditaa.jar $builddir/bin/panda.lua |@ $builddir/test/test.md.diff $builddir/test/test.md.d.diff
+build $builddir/test/test.md | $builddir/test/test.md.d: _builddir_test_test.md test/test.md | $builddir/plantuml.jar $builddir/ditaa.jar $builddir/bin/panda.lua |@ $builddir/test/test.md.diff $builddir/test/test.md.d.diff
 
 ######################################################################
 # PlantUML
 ######################################################################
 
-rule _builddir_plantuml.jar-fdcac645453b6855
+rule _builddir_plantuml.jar
   command = test -f $out || wget $plantuml_url -O $out
 
-build $builddir/plantuml.jar: _builddir_plantuml.jar-fdcac645453b6855
+build $builddir/plantuml.jar: _builddir_plantuml.jar
 
 ######################################################################
 # Ditaa
 ######################################################################
 
-rule _builddir_ditaa.jar-43b3967d64e4980b
+rule _builddir_ditaa.jar
   command = test -f $out || wget $ditaa_url -O $out
 
-build $builddir/ditaa.jar: _builddir_ditaa.jar-43b3967d64e4980b
+build $builddir/ditaa.jar: _builddir_ditaa.jar
 
 ######################################################################
 # Documentation
@@ -84,22 +84,22 @@ build $builddir/ditaa.jar: _builddir_ditaa.jar-43b3967d64e4980b
 
 css = $builddir/doc/cdelord.css
 
-rule README.md-4f337b1280db1df8
+rule README.md
   command = export PLANTUML=$builddir/plantuml.jar; export DITAA=$builddir/ditaa.jar; pandoc -L $builddir/bin/panda.lua -Vpanda_target=$out -Vpanda_dep_file=$builddir/doc/$out.d -Vdoc=doc --to=gfm $in -o $out
   depfile = $builddir/doc/$out.d
 
-build README.md: README.md-4f337b1280db1df8 doc/panda.md | $builddir/bin/panda.lua $builddir/plantuml.jar $builddir/ditaa.jar
+build README.md: README.md doc/panda.md | $builddir/bin/panda.lua $builddir/plantuml.jar $builddir/ditaa.jar
 
-rule _builddir_doc_panda.html-06e267f3798d2cb7
+rule _builddir_doc_panda.html
   command = export PLANTUML=$builddir/plantuml.jar; export DITAA=$builddir/ditaa.jar; pandoc -L $builddir/bin/panda.lua -Vpanda_target=$out -Vpanda_dep_file=$out.d -Vdoc=doc --to=html5 --standalone --embed-resources --css=$css $in -o $out
   depfile = $out.d
 
-build $builddir/doc/panda.html: _builddir_doc_panda.html-06e267f3798d2cb7 doc/panda.md | $builddir/bin/panda.lua $builddir/plantuml.jar $builddir/ditaa.jar $css
+build $builddir/doc/panda.html: _builddir_doc_panda.html doc/panda.md | $builddir/bin/panda.lua $builddir/plantuml.jar $builddir/ditaa.jar $css
 
-rule _css-954549a5b93b6b31
+rule _css
   command = test -f $out || wget http://cdelord.fr/cdelord.css -O $out
 
-build $css: _css-954549a5b93b6b31
+build $css: _css
 
 ######################################################################
 # Shortcuts
@@ -118,47 +118,47 @@ default compile
 
 prefix = ~/.local
 
-rule install-bin-8c306acee33bbde8
+rule install-bin
   description = INSTALL $in to bin
   command = install -v -D -t $${PREFIX:-$prefix}/bin $in
 
-build install-bin: install-bin-8c306acee33bbde8 $builddir/bin/panda.lua $builddir/bin/panda
+build install-bin: install-bin $builddir/bin/panda.lua $builddir/bin/panda
 build install: phony install-bin
 
 ######################################################################
 # Clean
 ######################################################################
 
-rule clean-_builddir_src-55d0d20990356300
+rule clean-_builddir_src
   description = CLEAN $builddir/src
   command = rm -rf $builddir/src
 
-build clean-_builddir_src: clean-_builddir_src-55d0d20990356300
+build clean-_builddir_src: clean-_builddir_src
 
-rule clean-_builddir_bin-ebf717ac5fa427f7
+rule clean-_builddir_bin
   description = CLEAN $builddir/bin
   command = rm -rf $builddir/bin
 
-build clean-_builddir_bin: clean-_builddir_bin-ebf717ac5fa427f7
+build clean-_builddir_bin: clean-_builddir_bin
 build clean: phony clean-_builddir_src clean-_builddir_bin
 
 ######################################################################
 # Clean (mrproper)
 ######################################################################
 
-rule mrproper-_builddir-a2cef48e3f5dabec
+rule mrproper-_builddir
   description = CLEAN $builddir
   command = rm -rf $builddir/*
 
-build mrproper-_builddir: mrproper-_builddir-a2cef48e3f5dabec
+build mrproper-_builddir: mrproper-_builddir
 build mrproper: phony clean mrproper-_builddir
 
 ######################################################################
 # Help
 ######################################################################
 
-rule help-884fac157b0968d3
+rule help
   description = help
   command = echo "Panda"; echo ""; echo "Targets:"; echo "  help       show this help message"; echo "  compile    Bundle Panda into a single Lua script"; echo "  all        Compile, test and generate documentation"; echo "  test       Run Panda tests"; echo "  doc        Generate Panda documentation"; echo "  install    install Panda in PREFIX or ~/.local"; echo "  clean      clean generated files"; echo "  mrproper   clean generated files and more";
 
-build help: help-884fac157b0968d3
+build help: help
