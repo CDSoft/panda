@@ -96,18 +96,6 @@ local function expand_path(path)
     end
 end
 
-local function basename(name)
-    return pandoc.path.filename(name)
-end
-
-local function dirname(name)
-    return pandoc.path.directory(name)
-end
-
-local function mkdir(path)
-    return pandoc.system.make_directory(path, true)
-end
-
 -- }}}
 
 -- {{{ Forward declarations
@@ -252,7 +240,7 @@ local function write_dependency_file()
     if target then
         local depfile = vars.panda_dep_file or _G["PANDA_DEP_FILE"] or target..".d"
         local files = (F.keys(deps)..F.values(package.modpath)):from_set(F.const(true)):keys()
-        fs.mkdirs(fs.dirname(depfile))
+        fs.mkdirs(depfile:dirname())
         assert(fs.write(depfile, target, ": ", files:unwords(), "\n"), "Can not create "..depfile)
     end
 end
@@ -441,7 +429,7 @@ end
 
 local function run_script(cmd, content)
     return system.with_temporary_directory("panda_script", function (tmpdir)
-        local name = fs.join(tmpdir, "script")
+        local name = tmpdir / "script"
         local ext = script_ext(cmd)
         fs.write(name..ext, content)
         local output = sh.read(make_script_cmd(cmd, name, ext))
@@ -477,7 +465,7 @@ end
 
 local function set_diagram_env()
 
-    local path = dirname(PANDOC_SCRIPT_FILE)
+    local path = PANDOC_SCRIPT_FILE:dirname()
     if not _G["PLANTUML"] then _G["PLANTUML"] = path.."/plantuml.jar" end
     if not _G["DITAA"] then _G["DITAA"] = path.."/ditaa.jar" end
 
@@ -535,7 +523,7 @@ local link_path     -- directory added to image filenames
 local function parse_output_path(path)
     local prefix, link = path : match "^%[(.-)%](.*)"
     if prefix then
-        output_path = fs.join(prefix, link)
+        output_path = prefix / link
         link_path = link
     else
         output_path = path
@@ -547,7 +535,7 @@ local function default_image_output()
     local env = os.getenv "PANDA_IMG"
     parse_output_path(
         (env and env ~= "" and env)
-        or (output_file and fs.join(fs.dirname(output_file), "img"))
+        or (output_file and output_file:dirname()/"img")
         or "img")
 end
 
@@ -563,8 +551,8 @@ local function diagram(block)
         local hash = pandoc.sha1(render..contents)
         default_image_output()
         fs.mkdirs(output_path)
-        local out = fs.join(output_path, output_name or hash)
-        local link = fs.join(link_path, fs.basename(out))
+        local out = output_path/(output_name or hash)
+        local link = link_path/out:basename(out)
         local meta = out..ext..".meta"
         local meta_content = F.unlines {
                 "hash: "..hash,
@@ -578,8 +566,8 @@ local function diagram(block)
         local old_meta = fs.read(meta) or ""
         if not fs.is_file(out..ext) or meta_content ~= old_meta then
             system.with_temporary_directory("panda_diagram", function (tmpdir)
-                fs.mkdirs(fs.dirname(out))
-                local name = fs.join(tmpdir, "diagram")
+                fs.mkdirs(out:dirname())
+                local name = tmpdir/"diagram"
                 local name_ext = name..input_ext
                 assert(fs.write(name_ext, contents), "Can not create "..name_ext)
                 assert(fs.write(meta, meta_content), "Can not create "..meta)
