@@ -28,7 +28,7 @@ clean.mrproper "$builddir"
 clean "$builddir/src"
 clean "$builddir/bin"
 
-var "plantuml_version" "1.2023.10"
+var "plantuml_version" "1.2023.11"
 var "plantuml_url" "https://github.com/plantuml/plantuml/releases/download/v$plantuml_version/plantuml-$plantuml_version.jar"
 
 var "ditaa_version" "0.11.0"
@@ -44,14 +44,7 @@ local sources = F.flatten {
 }
 
 build "$builddir/src/_PANDA_VERSION.lua" {
-    command = {
-        "(",
-        "set -eu;",
-        'echo "--@LOAD";',
-        'echo "return [[$$(git describe --tags 2>/dev/null)]]";',
-        ") > $out.tmp",
-        "&& mv $out.tmp $out",
-    },
+    command = [=[echo "return [[$$(git describe --tags)]] --@LOAD" > $out]=],
     implicit_in = { ".git/refs/tags", ".git/index" }
 }
 
@@ -104,9 +97,7 @@ section "PlantUML"
 ---------------------------------------------------------------------
 
 build "$builddir/plantuml.jar" {
-    command = {
-        "test -f $out || wget $plantuml_url -O $out",
-    },
+    command = "wget $plantuml_url -O $out",
 }
 
 ---------------------------------------------------------------------
@@ -114,9 +105,7 @@ section "Ditaa"
 ---------------------------------------------------------------------
 
 build "$builddir/ditaa.jar" {
-    command = {
-        "test -f $out || wget $ditaa_url -O $out",
-    },
+    command = "wget $ditaa_url -O $out",
 }
 
 ---------------------------------------------------------------------
@@ -134,7 +123,7 @@ local docs = {
             "pandoc",
                 "-L", "$builddir/bin/panda.lua",
                 "-Vpanda_target=$out",
-                "-Vpanda_dep_file=$builddir/doc/$out.d",
+                "-Vpanda_dep_file=$depfile",
                 "-Vdoc=doc",
                 "--to=gfm",
                 "$in -o $out",
@@ -155,7 +144,7 @@ local docs = {
             "pandoc",
                 "-L", "$builddir/bin/panda.lua",
                 "-Vpanda_target=$out",
-                "-Vpanda_dep_file=$out.d",
+                "-Vpanda_dep_file=$depfile",
                 "-Vdoc=doc",
                 "--to=html5",
                 "--standalone --embed-resources",
@@ -175,7 +164,7 @@ local docs = {
 }
 
 build "$css" {
-    command = "test -f $out || wget http://cdelord.fr/cdelord.css -O $out",
+    command = "wget http://cdelord.fr/cdelord.css -O $out",
 }
 
 ---------------------------------------------------------------------

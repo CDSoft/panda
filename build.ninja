@@ -21,7 +21,7 @@
 ######################################################################
 
 builddir = .build
-plantuml_version = 1.2023.10
+plantuml_version = 1.2023.11
 plantuml_url = https://github.com/plantuml/plantuml/releases/download/v$plantuml_version/plantuml-$plantuml_version.jar
 ditaa_version = 0.11.0
 ditaa_url = https://github.com/stathissideris/ditaa/releases/download/v$ditaa_version/ditaa-${ditaa_version}-standalone.jar
@@ -31,7 +31,7 @@ ditaa_url = https://github.com/stathissideris/ditaa/releases/download/v$ditaa_ve
 ######################################################################
 
 rule _builddir_src__PANDA_VERSION.lua
-  command = ( set -eu; echo "--@LOAD"; echo "return [[$$(git describe --tags 2>/dev/null)]]"; ) > $out.tmp && mv $out.tmp $out
+  command = echo "return [[$$(git describe --tags)]] --@LOAD" > $out
 
 build $builddir/src/_PANDA_VERSION.lua: _builddir_src__PANDA_VERSION.lua | .git/refs/tags .git/index
 
@@ -65,7 +65,7 @@ build $builddir/test/test.md | $builddir/test/test.md.d: _builddir_test_test.md 
 ######################################################################
 
 rule _builddir_plantuml.jar
-  command = test -f $out || wget $plantuml_url -O $out
+  command = wget $plantuml_url -O $out
 
 build $builddir/plantuml.jar: _builddir_plantuml.jar
 
@@ -74,7 +74,7 @@ build $builddir/plantuml.jar: _builddir_plantuml.jar
 ######################################################################
 
 rule _builddir_ditaa.jar
-  command = test -f $out || wget $ditaa_url -O $out
+  command = wget $ditaa_url -O $out
 
 build $builddir/ditaa.jar: _builddir_ditaa.jar
 
@@ -85,19 +85,19 @@ build $builddir/ditaa.jar: _builddir_ditaa.jar
 css = $builddir/doc/cdelord.css
 
 rule README.md
-  command = export PLANTUML=$builddir/plantuml.jar; export DITAA=$builddir/ditaa.jar; pandoc -L $builddir/bin/panda.lua -Vpanda_target=$out -Vpanda_dep_file=$builddir/doc/$out.d -Vdoc=doc --to=gfm $in -o $out
+  command = export PLANTUML=$builddir/plantuml.jar; export DITAA=$builddir/ditaa.jar; pandoc -L $builddir/bin/panda.lua -Vpanda_target=$out -Vpanda_dep_file=$depfile -Vdoc=doc --to=gfm $in -o $out
   depfile = $builddir/doc/$out.d
 
 build README.md: README.md doc/panda.md | $builddir/bin/panda.lua $builddir/plantuml.jar $builddir/ditaa.jar
 
 rule _builddir_doc_panda.html
-  command = export PLANTUML=$builddir/plantuml.jar; export DITAA=$builddir/ditaa.jar; pandoc -L $builddir/bin/panda.lua -Vpanda_target=$out -Vpanda_dep_file=$out.d -Vdoc=doc --to=html5 --standalone --embed-resources --css=$css $in -o $out
+  command = export PLANTUML=$builddir/plantuml.jar; export DITAA=$builddir/ditaa.jar; pandoc -L $builddir/bin/panda.lua -Vpanda_target=$out -Vpanda_dep_file=$depfile -Vdoc=doc --to=html5 --standalone --embed-resources --css=$css $in -o $out
   depfile = $out.d
 
 build $builddir/doc/panda.html: _builddir_doc_panda.html doc/panda.md | $builddir/bin/panda.lua $builddir/plantuml.jar $builddir/ditaa.jar $css
 
 rule _css
-  command = test -f $out || wget http://cdelord.fr/cdelord.css -O $out
+  command = wget http://cdelord.fr/cdelord.css -O $out
 
 build $css: _css
 
