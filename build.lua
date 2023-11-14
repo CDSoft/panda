@@ -18,8 +18,6 @@ For further information about Panda you can visit
 http://cdelord.fr/panda
 ]]
 
-local F = require "F"
-
 help.name "Panda"
 help.description "$name"
 
@@ -38,33 +36,44 @@ var "ditaa_url" "https://github.com/stathissideris/ditaa/releases/download/v$dit
 section "Compilation"
 ---------------------------------------------------------------------
 
-local sources = F.flatten {
+local sources = {
     ls "src/*.lua",
     "$builddir/src/_PANDA_VERSION.lua",
 }
 
+rule "luax" {
+    description = "LUAX $out",
+    command = "luax -q $args -o $out $in" ,
+}
+
+rule "cp" {
+    description = "CP $out",
+    command = "cp $in $out",
+}
+
 build "$builddir/src/_PANDA_VERSION.lua" {
+    description = "VERSION $out",
     command = [=[echo "return [[$$(git describe --tags)]] --@LOAD" > $out]=],
     implicit_in = { ".git/refs/tags", ".git/index" }
 }
 
 local bins = {
-    build "$builddir/bin/panda.lua" { sources,
-        command = "luax -q -o $out -t lua $in",
-    },
-    build "$builddir/bin/panda" { "src/panda",
-        command = "cp $in $out",
-    },
+    build "$builddir/bin/panda.lua" { "luax", sources, args="-t lua" },
+    build "$builddir/bin/panda"     { "cp", "src/panda" },
 }
 
 ---------------------------------------------------------------------
 section "Tests"
 ---------------------------------------------------------------------
 
-rule "diff" { command = "diff $in > $out || (cat $out && false)" }
+rule "diff" {
+    description = "DIFF $in",
+    command = "diff $in > $out || (cat $out && false)",
+}
 
 local tests = {
     build "$builddir/test/test.md" { "test/test.md",
+        description = "PANDOC $in",
         command = {
             "export PLANTUML=$builddir/plantuml.jar;",
             "export DITAA=$builddir/ditaa.jar;",
@@ -86,7 +95,7 @@ local tests = {
             "$builddir/test/test.md.d",
         },
         validations = {
-            build "$builddir/test/test.md.diff" { "diff", "$builddir/test/test.md", "test/test_result.md" },
+            build "$builddir/test/test.md.diff"   { "diff", "$builddir/test/test.md",   "test/test_result.md" },
             build "$builddir/test/test.md.d.diff" { "diff", "$builddir/test/test.md.d", "test/test.md.d" },
         },
     }
@@ -97,6 +106,7 @@ section "PlantUML"
 ---------------------------------------------------------------------
 
 build "$builddir/plantuml.jar" {
+    description = "WGET $out",
     command = "wget $plantuml_url -O $out",
 }
 
@@ -105,6 +115,7 @@ section "Ditaa"
 ---------------------------------------------------------------------
 
 build "$builddir/ditaa.jar" {
+    description = "WGET $out",
     command = "wget $ditaa_url -O $out",
 }
 
@@ -117,6 +128,7 @@ var "css" "$builddir/doc/cdelord.css"
 local docs = {
 
     build "README.md" { "doc/panda.md",
+        description = "PANDOC $out",
         command = {
             "export PLANTUML=$builddir/plantuml.jar;",
             "export DITAA=$builddir/ditaa.jar;",
@@ -138,6 +150,7 @@ local docs = {
     },
 
     build "$builddir/doc/panda.html" { "doc/panda.md",
+        description = "PANDOC $out",
         command = {
             "export PLANTUML=$builddir/plantuml.jar;",
             "export DITAA=$builddir/ditaa.jar;",
@@ -164,6 +177,7 @@ local docs = {
 }
 
 build "$css" {
+    description = "WGET $out",
     command = "wget http://cdelord.fr/cdelord.css -O $out",
 }
 
