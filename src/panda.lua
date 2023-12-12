@@ -493,7 +493,7 @@ local function set_diagram_env()
         return cmd:gsub("%%svg", ext=="svg" and "--svg" or "")
     end)
     engines("gnuplot", "svg png pdf", "%exe -e 'set terminal %ext' -e 'set output \"%o\"' -c %i")
-    engines("lsvg", "svg png pdf", "%exe %i.lua %o")
+    engines("lsvg", "svg png pdf", "%exe %i.lua -o %o")
 end
 
 local function get_input_ext(s)
