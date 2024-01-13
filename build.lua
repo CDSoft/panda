@@ -26,7 +26,7 @@ clean.mrproper "$builddir"
 clean "$builddir/src"
 clean "$builddir/bin"
 
-var "plantuml_version" "1.2023.11"
+var "plantuml_version" "1.2023.13"
 var "plantuml_url" "https://github.com/plantuml/plantuml/releases/download/v$plantuml_version/plantuml-$plantuml_version.jar"
 
 var "ditaa_version" "0.11.0"

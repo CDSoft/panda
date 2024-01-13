@@ -343,10 +343,10 @@ Some render commands are predefined:
 |                                                | `gnuplot.svg`       | `gnuplot -e 'set terminal svg' -e 'set output "%o.svg"' -c %i`           |
 |                                                | `gnuplot.png`       | `gnuplot -e 'set terminal png' -e 'set output "%o.png"' -c %i`           |
 |                                                | `gnuplot.pdf`       | `gnuplot -e 'set terminal pdf' -e 'set output "%o.pdf"' -c %i`           |
-| [lsvg](http://cdelord.fr/lsvg/)                | `lsvg`              | `lsvg %i.lua %o.svg`                                                     |
-|                                                | `lsvg.svg`          | `lsvg %i.lua %o.svg`                                                     |
-|                                                | `lsvg.png`          | `lsvg %i.lua %o.png`                                                     |
-|                                                | `lsvg.pdf`          | `lsvg %i.lua %o.pdf`                                                     |
+| [lsvg](http://cdelord.fr/lsvg/)                | `lsvg`              | `lsvg %i.lua -o %o.svg`                                                  |
+|                                                | `lsvg.svg`          | `lsvg %i.lua -o %o.svg`                                                  |
+|                                                | `lsvg.png`          | `lsvg %i.lua -o %o.png`                                                  |
+|                                                | `lsvg.pdf`          | `lsvg %i.lua -o %o.pdf`                                                  |
 
 Notes:
 
