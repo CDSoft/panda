@@ -18,6 +18,8 @@ For further information about Panda you can visit
 http://cdelord.fr/panda
 ]]
 
+local F = require "F"
+
 help.name "Panda"
 help.description "$name"
 
@@ -94,10 +96,12 @@ local tests = {
         implicit_out = {
             "$builddir/test/test.md.d",
         },
-        validations = {
-            build "$builddir/test/test.md.diff"   { "diff", "$builddir/test/test.md",   "test/test_result.md" },
-            build "$builddir/test/test.md.d.diff" { "diff", "$builddir/test/test.md.d", "test/test.md.d" },
-        },
+        validations = F{
+            { "$builddir/test/test.md",   "test/test_result.md" },
+            { "$builddir/test/test.md.d", "test/test.md.d" },
+        } : map(function(files)
+            return build(files[1]..".diff") { "diff", files }
+        end),
     }
 }
 
