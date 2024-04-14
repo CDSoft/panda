@@ -238,8 +238,9 @@ end
 local function write_dependency_file()
     local target = vars.panda_target or _G["PANDA_TARGET"]
     if target then
+        local import = require "import"
         local depfile = vars.panda_dep_file or _G["PANDA_DEP_FILE"] or target..".d"
-        local files = (F.keys(deps)..F.values(package.modpath)):from_set(F.const(true)):keys()
+        local files = (F.keys(deps)..F.values(package.modpath)..import.files):from_set(F.const(true)):keys()
         fs.mkdirs(depfile:dirname())
         assert(fs.write(depfile, target, ": ", files:unwords(), "\n"), "Can not create "..depfile)
     end
