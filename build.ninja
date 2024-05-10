@@ -32,9 +32,9 @@ ditaa_url = https://github.com/stathissideris/ditaa/releases/download/v$ditaa_ve
 # Compilation
 ######################################################################
 
-rule luax
+rule luaxc
   description = LUAX $out
-  command = luax -q $args -o $out $in
+  command = luax compile $arg -q -o $out $in
 
 rule cp
   description = CP $out
@@ -45,8 +45,8 @@ rule _builddir_src__PANDA_VERSION.lua
   command = echo "return [[$$(git describe --tags)]] --@LOAD" > $out
 
 build $builddir/src/_PANDA_VERSION.lua: _builddir_src__PANDA_VERSION.lua | .git/refs/tags .git/index
-build $builddir/bin/panda.lua: luax src/panda.lua $builddir/src/_PANDA_VERSION.lua
-  args = -t lua
+build $builddir/bin/panda.lua: luaxc src/panda.lua $builddir/src/_PANDA_VERSION.lua
+  arg = -t lua
 build $builddir/bin/panda: cp src/panda
 
 ######################################################################
@@ -170,7 +170,17 @@ build mrproper: phony clean mrproper-_builddir
 
 rule help
   description = help
-  command = echo "Panda"; echo ""; echo "Targets:"; echo "  help       show this help message"; echo "  compile    Bundle Panda into a single Lua script"; echo "  all        Compile, test and generate documentation"; echo "  test       Run Panda tests"; echo "  doc        Generate Panda documentation"; echo "  install    install Panda in PREFIX or ~/.local"; echo "  clean      clean generated files"; echo "  mrproper   clean generated files and more";
+  command = echo "Panda"; $
+            echo ""; $
+            echo "Targets:"; $
+            echo "  help       show this help message"; $
+            echo "  compile    Bundle Panda into a single Lua script"; $
+            echo "  all        Compile, test and generate documentation"; $
+            echo "  test       Run Panda tests"; $
+            echo "  doc        Generate Panda documentation"; $
+            echo "  install    install Panda in PREFIX or ~/.local"; $
+            echo "  clean      clean generated files"; $
+            echo "  mrproper   clean generated files and more"
 
 build help: help
 

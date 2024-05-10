@@ -43,9 +43,9 @@ local sources = {
     "$builddir/src/_PANDA_VERSION.lua",
 }
 
-rule "luax" {
+rule "luaxc" {
     description = "LUAX $out",
-    command = "luax -q $args -o $out $in" ,
+    command = "luax compile $arg -q -o $out $in" ,
 }
 
 rule "cp" {
@@ -60,7 +60,7 @@ build "$builddir/src/_PANDA_VERSION.lua" {
 }
 
 local bins = {
-    build "$builddir/bin/panda.lua" { "luax", sources, args="-t lua" },
+    build "$builddir/bin/panda.lua" { "luaxc", sources, arg="-t lua" },
     build "$builddir/bin/panda"     { "cp", "src/panda" },
 }
 
