@@ -238,9 +238,8 @@ end
 local function write_dependency_file()
     local target = vars.panda_target or _G["PANDA_TARGET"]
     if target then
-        local import = require "import"
         local depfile = vars.panda_dep_file or _G["PANDA_DEP_FILE"] or target..".d"
-        local files = (F.keys(deps)..F.values(package.modpath)..import.files):from_set(F.const(true)):keys()
+        local files = (F.keys(deps)..F.values(package.modpath)):from_set(F.const(true)):keys()
         fs.mkdirs(depfile:dirname())
         assert(fs.write(depfile, target, ": ", files:unwords(), "\n"), "Can not create "..depfile)
     end
@@ -323,10 +322,11 @@ local function parse_and_shift(text, input_format, shift)
 end
 
 local supported_formats = {
-    "biblatex", "bibtex", "commonmark", "commonmark_x", "creole", "csljson", "csv", "docbook", "docx", "dokuwiki",
-    "endnotexml", "epub", "fb2", "gfm", "haddock", "html", "ipynb", "jats", "jira", "json", "latex", "man", "markdown",
-    "markdown_github", "markdown_mmd", "markdown_phpextra", "markdown_strict", "mediawiki", "muse", "native", "odt",
-    "opml", "org", "ris", "rst", "rtf", "t2t", "textile", "tikiwiki", "tsv", "twiki", "vimwiki",
+    "biblatex", "bibtex", "bits", "commonmark", "commonmark_x", "creole", "csljson", "csv", "djot", "docbook", "docx",
+    "dokuwiki", "endnotexml", "epub", "fb2", "gfm", "haddock", "html", "ipynb", "jats", "jira", "json", "latex", "man",
+    "markdown", "markdown_github", "markdown_mmd", "markdown_phpextra", "markdown_strict", "mediawiki", "muse",
+    "native", "odt", "opml", "org", "ris", "rst", "rtf", "t2t", "textile", "tikiwiki", "tsv", "twiki", "typst",
+    "vimwiki",
 }
 
 local function infer_input_format(block)

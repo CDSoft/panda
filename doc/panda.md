@@ -1,6 +1,6 @@
 % Panda - Pandoc add-ons (Lua filters for Pandoc)
 % Christophe Delord - <http://cdelord.fr/panda>
-% 26th march 2023
+% 9th July 2024
 
 [panda]: http://cdelord.fr/panda "Pandoc add-ons (Lua filters for Pandoc)"
 [GraphViz]: http://graphviz.org/

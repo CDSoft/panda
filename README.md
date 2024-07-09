@@ -71,21 +71,21 @@ A complete example is given as a Makefile in the doc directory.
 
 # Cheat sheet
 
-| Syntactic item          | Class     | Attributes                                              | Description                                                                                                                                                                      |
-|-------------------------|-----------|---------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| any string              |           |                                                         | `{{var}}` is replaced by the value of `var` if it is defined (variables can be environment variables or Lua variables)                                                           |
-| any block               | `comment` |                                                         | commented block                                                                                                                                                                  |
-| any block               |           | `include=file`                                          | replaces the div block with the content of `file` (rendered according to its format)                                                                                             |
-| div block               |           | `doc=file` `from=start_pattern` `to=end_pattern`        | replaces the div block with text blocks from `file` (rendered according to its format). Blocks are separated by the patterns `from` and `to` (`@@@` is the default separator).   |
-| div block, code block   |           | `shift=n`                                               | adds `n` to header levels in an imported div block                                                                                                                               |
-| div block, code block   |           | `pattern="Lua string pattern"` `format="output format"` | applies a Lua string pattern to the content of the file. The emitted text is `format`. `format` may contain captures from `pattern`.                                             |
-| code block              | `meta`    |                                                         | definitions for the string expansion (Lua script), defined in the code block                                                                                                     |
-| any block, any inline   | `if`      | `name=val`                                              | block emitted only if `name`’s value is `val`                                                                                                                                    |
-| code block, inline code |           | `include=file`                                          | replaces the code block content with the content of `file`                                                                                                                       |
-| code block, inline code |           | `fromline=n` `from=n`                                   | includes a file from line number `n`                                                                                                                                             |
-| code block, inline code |           | `toline=n` `to=n`                                       | includes a file up to line number `n`                                                                                                                                            |
-| code block, inline code |           | `cmd="shell command"` `icmd="shell command"`            | replaces the code block by the result of the shell command. With`icmd` the code block content is parsed by Pandoc and included in a Div block.                                   |
-| code block              |           | `render="command"`                                      | replaces the code block by a link to the image produced by the command (`%i` is the input file name, its content is the content of the code block, `%o` is the output file name) |
+| Syntactic item | Class | Attributes | Description |
+|----|----|----|----|
+| any string |  |  | `{{var}}` is replaced by the value of `var` if it is defined (variables can be environment variables or Lua variables) |
+| any block | `comment` |  | commented block |
+| any block |  | `include=file` | replaces the div block with the content of `file` (rendered according to its format) |
+| div block |  | `doc=file` `from=start_pattern` `to=end_pattern` | replaces the div block with text blocks from `file` (rendered according to its format). Blocks are separated by the patterns `from` and `to` (`@@@` is the default separator). |
+| div block, code block |  | `shift=n` | adds `n` to header levels in an imported div block |
+| div block, code block |  | `pattern="Lua string pattern"` `format="output format"` | applies a Lua string pattern to the content of the file. The emitted text is `format`. `format` may contain captures from `pattern`. |
+| code block | `meta` |  | definitions for the string expansion (Lua script), defined in the code block |
+| any block, any inline | `if` | `name=val` | block emitted only if `name`’s value is `val` |
+| code block, inline code |  | `include=file` | replaces the code block content with the content of `file` |
+| code block, inline code |  | `fromline=n` `from=n` | includes a file from line number `n` |
+| code block, inline code |  | `toline=n` `to=n` | includes a file up to line number `n` |
+| code block, inline code |  | `cmd="shell command"` `icmd="shell command"` | replaces the code block by the result of the shell command. With`icmd` the code block content is parsed by Pandoc and included in a Div block. |
+| code block |  | `render="command"` | replaces the code block by a link to the image produced by the command (`%i` is the input file name, its content is the content of the code block, `%o` is the output file name) |
 
 # Commented blocks
 
@@ -226,13 +226,13 @@ require specific file extensions (e.g. `%s.fs` for F#).
 <col style="width: 50%" />
 </colgroup>
 <thead>
-<tr class="header">
+<tr>
 <th>Source</th>
 <th>Result</th>
 </tr>
 </thead>
 <tbody>
-<tr class="odd">
+<tr>
 <td><div class="sourceCode" id="cb1"><pre
 class="sourceCode markdown"><code class="sourceCode markdown"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="in">```{.python cmd=python}</span></span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="in">print(&quot;Hello from Python!&quot;)</span></span>
@@ -240,7 +240,7 @@ class="sourceCode markdown"><code class="sourceCode markdown"><span id="cb1-1"><
 <td><div class="sourceCode" id="cb2"><pre
 class="sourceCode python"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>Hello <span class="im">from</span> Python<span class="op">!</span></span></code></pre></div></td>
 </tr>
-<tr class="even">
+<tr>
 <td><div class="sourceCode" id="cb3"><pre
 class="sourceCode markdown"><code class="sourceCode markdown"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>Lua says <span class="in">`print &quot;Hello from Lua!&quot;`</span>{icmd=lua}</span></code></pre></div></td>
 <td>Lua says Hello from Lua!</td>
@@ -291,13 +291,13 @@ Optional fields can be given to set some options:
 <col style="width: 55%" />
 </colgroup>
 <thead>
-<tr class="header">
+<tr>
 <th>Source</th>
 <th>Result</th>
 </tr>
 </thead>
 <tbody>
-<tr class="odd">
+<tr>
 <td><div class="sourceCode" id="cb1"><pre
 class="sourceCode markdown"><code class="sourceCode markdown"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="in">``` { render=&quot;{{plantuml}}&quot;</span></span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="in">      caption=&quot;Caption&quot;</span></span>
@@ -314,39 +314,39 @@ alt="Alternative description" /></p></td>
 
 Some render commands are predefined:
 
-| Diagram                                        | Predefined variable | Render command                                                           |
-|:-----------------------------------------------|:--------------------|:-------------------------------------------------------------------------|
-| [GraphViz](http://graphviz.org/)               | `dot`               | `dot -Tsvg -o %o.svg %i`                                                 |
-|                                                | `dot.svg`           | `dot -Tsvg -o %o.svg %i`                                                 |
-|                                                | `dot.png`           | `dot -Tpng -o %o.png %i`                                                 |
-|                                                | `dot.pdf`           | `dot -Tpdf -o %o.pdf %i`                                                 |
-| [PlantUML](http://plantuml.sourceforge.net/)   | `plantuml`          | `java -jar .build/plantuml.jar -pipe -charset UTF-8 -tsvg < %i > %o.svg` |
-|                                                | `plantuml.svg`      | `java -jar .build/plantuml.jar -pipe -charset UTF-8 -tsvg < %i > %o.svg` |
-|                                                | `plantuml.png`      | `java -jar .build/plantuml.jar -pipe -charset UTF-8 -tpng < %i > %o.png` |
-|                                                | `plantuml.pdf`      | `java -jar .build/plantuml.jar -pipe -charset UTF-8 -tpdf < %i > %o.pdf` |
-| [Asymptote](http://asymptote.sourceforge.net/) | `asy`               | `asy -f svg -o %o.svg %i`                                                |
-|                                                | `asy.svg`           | `asy -f svg -o %o.svg %i`                                                |
-|                                                | `asy.png`           | `asy -f png -o %o.png %i`                                                |
-|                                                | `asy.pdf`           | `asy -f pdf -o %o.pdf %i`                                                |
-| [blockdiag](http://blockdiag.com/)             | `blockdiag`         | `blockdiag -a -Tsvg -o %o.svg %i`                                        |
-|                                                | `blockdiag.svg`     | `blockdiag -a -Tsvg -o %o.svg %i`                                        |
-|                                                | `blockdiag.png`     | `blockdiag -a -Tpng -o %o.png %i`                                        |
-|                                                | `blockdiag.pdf`     | `blockdiag -a -Tpdf -o %o.pdf %i`                                        |
-| [mermaid](https://mermaidjs.github.io/)        | `mmdc`              | `mmdc --pdfFit -i %i -o %o.svg`                                          |
-|                                                | `mmdc.svg`          | `mmdc --pdfFit -i %i -o %o.svg`                                          |
-|                                                | `mmdc.png`          | `mmdc --pdfFit -i %i -o %o.png`                                          |
-|                                                | `mmdc.pdf`          | `mmdc --pdfFit -i %i -o %o.pdf`                                          |
-| [ditaa](http://ditaa.sourceforge.net/)         | `ditaa`             | `java -jar .build/ditaa.jar --svg -o -e UTF-8 %i %o.svg`                 |
-|                                                | `ditaa.svg`         | `java -jar .build/ditaa.jar --svg -o -e UTF-8 %i %o.svg`                 |
-|                                                | `ditaa.png`         | `java -jar .build/ditaa.jar  -o -e UTF-8 %i %o.png`                      |
-| [gnuplot](http://www.gnuplot.info/)            | `gnuplot`           | `gnuplot -e 'set terminal svg' -e 'set output "%o.svg"' -c %i`           |
-|                                                | `gnuplot.svg`       | `gnuplot -e 'set terminal svg' -e 'set output "%o.svg"' -c %i`           |
-|                                                | `gnuplot.png`       | `gnuplot -e 'set terminal png' -e 'set output "%o.png"' -c %i`           |
-|                                                | `gnuplot.pdf`       | `gnuplot -e 'set terminal pdf' -e 'set output "%o.pdf"' -c %i`           |
-| [lsvg](http://cdelord.fr/lsvg/)                | `lsvg`              | `lsvg %i.lua -o %o.svg`                                                  |
-|                                                | `lsvg.svg`          | `lsvg %i.lua -o %o.svg`                                                  |
-|                                                | `lsvg.png`          | `lsvg %i.lua -o %o.png`                                                  |
-|                                                | `lsvg.pdf`          | `lsvg %i.lua -o %o.pdf`                                                  |
+| Diagram | Predefined variable | Render command |
+|:---|:---|:---|
+| [GraphViz](http://graphviz.org/) | `dot` | `dot -Tsvg -o %o.svg %i` |
+|  | `dot.svg` | `dot -Tsvg -o %o.svg %i` |
+|  | `dot.png` | `dot -Tpng -o %o.png %i` |
+|  | `dot.pdf` | `dot -Tpdf -o %o.pdf %i` |
+| [PlantUML](http://plantuml.sourceforge.net/) | `plantuml` | `java -jar .build/plantuml.jar -pipe -charset UTF-8 -tsvg < %i > %o.svg` |
+|  | `plantuml.svg` | `java -jar .build/plantuml.jar -pipe -charset UTF-8 -tsvg < %i > %o.svg` |
+|  | `plantuml.png` | `java -jar .build/plantuml.jar -pipe -charset UTF-8 -tpng < %i > %o.png` |
+|  | `plantuml.pdf` | `java -jar .build/plantuml.jar -pipe -charset UTF-8 -tpdf < %i > %o.pdf` |
+| [Asymptote](http://asymptote.sourceforge.net/) | `asy` | `asy -f svg -o %o.svg %i` |
+|  | `asy.svg` | `asy -f svg -o %o.svg %i` |
+|  | `asy.png` | `asy -f png -o %o.png %i` |
+|  | `asy.pdf` | `asy -f pdf -o %o.pdf %i` |
+| [blockdiag](http://blockdiag.com/) | `blockdiag` | `blockdiag -a -Tsvg -o %o.svg %i` |
+|  | `blockdiag.svg` | `blockdiag -a -Tsvg -o %o.svg %i` |
+|  | `blockdiag.png` | `blockdiag -a -Tpng -o %o.png %i` |
+|  | `blockdiag.pdf` | `blockdiag -a -Tpdf -o %o.pdf %i` |
+| [mermaid](https://mermaidjs.github.io/) | `mmdc` | `mmdc --pdfFit -i %i -o %o.svg` |
+|  | `mmdc.svg` | `mmdc --pdfFit -i %i -o %o.svg` |
+|  | `mmdc.png` | `mmdc --pdfFit -i %i -o %o.png` |
+|  | `mmdc.pdf` | `mmdc --pdfFit -i %i -o %o.pdf` |
+| [ditaa](http://ditaa.sourceforge.net/) | `ditaa` | `java -jar .build/ditaa.jar --svg -o -e UTF-8 %i %o.svg` |
+|  | `ditaa.svg` | `java -jar .build/ditaa.jar --svg -o -e UTF-8 %i %o.svg` |
+|  | `ditaa.png` | `java -jar .build/ditaa.jar  -o -e UTF-8 %i %o.png` |
+| [gnuplot](http://www.gnuplot.info/) | `gnuplot` | `gnuplot -e 'set terminal svg' -e 'set output "%o.svg"' -c %i` |
+|  | `gnuplot.svg` | `gnuplot -e 'set terminal svg' -e 'set output "%o.svg"' -c %i` |
+|  | `gnuplot.png` | `gnuplot -e 'set terminal png' -e 'set output "%o.png"' -c %i` |
+|  | `gnuplot.pdf` | `gnuplot -e 'set terminal pdf' -e 'set output "%o.pdf"' -c %i` |
+| [lsvg](http://cdelord.fr/lsvg/) | `lsvg` | `lsvg %i.lua -o %o.svg` |
+|  | `lsvg.svg` | `lsvg %i.lua -o %o.svg` |
+|  | `lsvg.png` | `lsvg %i.lua -o %o.png` |
+|  | `lsvg.pdf` | `lsvg %i.lua -o %o.pdf` |
 
 Notes:
 
@@ -379,13 +379,13 @@ E.g.:
 <col style="width: 55%" />
 </colgroup>
 <thead>
-<tr class="header">
+<tr>
 <th>Source</th>
 <th>Result</th>
 </tr>
 </thead>
 <tbody>
-<tr class="odd">
+<tr>
 <td><div class="sourceCode" id="cb1"><pre
 class="sourceCode markdown"><code class="sourceCode markdown"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="in">```{.dot render=&quot;{{dot}}&quot;}</span></span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="in">digraph {</span></span>
@@ -398,7 +398,7 @@ class="sourceCode markdown"><code class="sourceCode markdown"><span id="cb1-1"><
 <span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span></code></pre></div></td>
 <td><p><img src="./img/panda.svg" class="dot" /></p></td>
 </tr>
-<tr class="even">
+<tr>
 <td><div class="sourceCode" id="cb2"><pre
 class="sourceCode markdown"><code class="sourceCode markdown"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="in">```{ render=&quot;{{gnuplot}}&quot;}</span></span>
 <span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="in">set xrange [-pi:pi]</span></span>
@@ -419,13 +419,13 @@ file, included and rendered by `panda`.
 <col style="width: 50%" />
 </colgroup>
 <thead>
-<tr class="header">
+<tr>
 <th>Source</th>
 <th>Result</th>
 </tr>
 </thead>
 <tbody>
-<tr class="odd">
+<tr>
 <td><div class="sourceCode" id="cb1"><pre
 class="sourceCode markdown"><code class="sourceCode markdown"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>The file <span class="in">`hello.dot`</span> contains:</span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a></span>
@@ -439,7 +439,7 @@ class="sourceCode dot"><code class="sourceCode dot"><span id="cb2-1"><a href="#c
 <span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="co">    </span><span class="va">Hello</span><span class="co"> </span><span class="ot">-&gt;</span><span class="co"> </span><span class="va">World</span><span class="ot">;</span></span>
 <span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="ot">}</span></span></code></pre></div></td>
 </tr>
-<tr class="even">
+<tr>
 <td><div class="sourceCode" id="cb3"><pre
 class="sourceCode markdown"><code class="sourceCode markdown"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="an">and is rendered as:</span></span>
 <span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a></span>
