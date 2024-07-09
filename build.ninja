@@ -32,21 +32,22 @@ ditaa_url = https://github.com/stathissideris/ditaa/releases/download/v$ditaa_ve
 # Compilation
 ######################################################################
 
-rule luaxc
-  description = LUAX $out
-  command = luax compile $arg -q -o $out $in
-
-rule cp
-  description = CP $out
-  command = cp $in $out
-
 rule _builddir_src__PANDA_VERSION.lua
   description = VERSION $out
   command = echo "return [[$$(git describe --tags)]] --@LOAD" > $out
 
 build $builddir/src/_PANDA_VERSION.lua: _builddir_src__PANDA_VERSION.lua | .git/refs/tags .git/index
-build $builddir/bin/panda.lua: luaxc src/panda.lua $builddir/src/_PANDA_VERSION.lua
-  arg = -t lua
+
+rule luax-lua
+  description = luax-lua $out
+  command = luax compile -t lua $in -o $out -q
+
+build $builddir/bin/panda.lua: luax-lua src/panda.lua $builddir/src/_PANDA_VERSION.lua
+
+rule cp
+  description = cp $out
+  command = cp -d --preserve=mode $in $out
+
 build $builddir/bin/panda: cp src/panda
 
 ######################################################################

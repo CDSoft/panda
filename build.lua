@@ -43,25 +43,17 @@ local sources = {
     "$builddir/src/_PANDA_VERSION.lua",
 }
 
-rule "luaxc" {
-    description = "LUAX $out",
-    command = "luax compile $arg -q -o $out $in" ,
-}
-
-rule "cp" {
-    description = "CP $out",
-    command = "cp $in $out",
-}
-
 build "$builddir/src/_PANDA_VERSION.lua" {
     description = "VERSION $out",
     command = [=[echo "return [[$$(git describe --tags)]] --@LOAD" > $out]=],
     implicit_in = { ".git/refs/tags", ".git/index" }
 }
 
+build.luax.lua:add "flags" "-q"
+
 local bins = {
-    build "$builddir/bin/panda.lua" { "luaxc", sources, arg="-t lua" },
-    build "$builddir/bin/panda"     { "cp", "src/panda" },
+    build.luax.lua "$builddir/bin/panda.lua" { sources },
+    build.cp       "$builddir/bin/panda"     { "src/panda" },
 }
 
 ---------------------------------------------------------------------
