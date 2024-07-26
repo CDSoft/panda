@@ -48,7 +48,7 @@ is an Open source software. Anybody can contribute on
 required (except from [Pandoc](http://pandoc.org/) obviously).
 
 Note that panda can also be installed with
-[cdelord.fr/hey](http://cdelord.fr/hey). This repository contains panda
+[cdelord.fr/pub](http://cdelord.fr/pub). This repository contains panda
 as well as some other softwares more or less related to LuaX.
 
 # Usage
