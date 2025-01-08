@@ -15,7 +15,7 @@ You should have received a copy of the GNU General Public License
 along with Panda.  If not, see <https://www.gnu.org/licenses/>.
 
 For further information about Panda you can visit
-http://cdelord.fr/panda
+https://github.com/cdsoft/panda
 ]]
 
 local F = require "F"
@@ -124,7 +124,7 @@ build "$builddir/ditaa.jar" {
 section "Documentation"
 ---------------------------------------------------------------------
 
-var "css" "$builddir/doc/cdelord.css"
+var "css" "$builddir/doc/cdsoft.css"
 
 local docs = {
 
@@ -179,7 +179,7 @@ local docs = {
 
 build "$css" {
     description = "WGET $out",
-    command = "wget http://cdelord.fr/cdelord.css -O $out",
+    command = "wget https://raw.githubusercontent.com/CDSoft/CDSoft.github.io/refs/heads/master/cdsoft.css -O $out",
 }
 
 ---------------------------------------------------------------------

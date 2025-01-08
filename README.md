@@ -16,16 +16,17 @@ It provides several interesting features:
   [blockdiag](http://blockdiag.com/),
   [mermaid](https://mermaidjs.github.io/)…)
 
-Panda is heavily inspired by [abp](http:/cdelord.fr/abp) reimplemented
-as a [Pandoc Lua filter](http://pandoc.org/lua-filters.html).
+Panda is heavily inspired by [abp](https://github.com/cdsoft/abp)
+reimplemented as a [Pandoc Lua
+filter](http://pandoc.org/lua-filters.html).
 
 If you need a more generic text preprocessor,
-[ypp](http://cdelord.fr/ypp "Yet a PreProcessor") may be a better
-choice.
+[ypp](https://github.com/cdsoft/ypp "Yet a PreProcessor") may be a
+better choice.
 
 # Open source
 
-[Panda](http://cdelord.fr/panda "Pandoc add-ons (Lua filters for Pandoc)")
+[Panda](https://github.com/cdsoft/panda "Pandoc add-ons (Lua filters for Pandoc)")
 is an Open source software. Anybody can contribute on
 [GitHub](https://github.com/CDSoft/panda) to:
 
@@ -134,8 +135,8 @@ foo is defined in `foo.lua` and is {{foo}}.
 
 `meta` code blocks contain Lua code executed by the Pandoc Lua
 interpretor. Panda also contains the
-[LuaX](http://cdelord.fr/luax "Lua eXtended interpretor") modules
-reimplemented in Lua. More details are available in the \[Luax
+[LuaX](https://github.com/cdsoft/luax "Lua eXtended interpretor")
+modules reimplemented in Lua. More details are available in the \[Luax
 documentation\].
 
 # Conditional blocks
@@ -344,7 +345,7 @@ Some render commands are predefined:
 |  | `gnuplot.svg` | `gnuplot -e 'set terminal svg' -e 'set output "%o.svg"' -c %i` |
 |  | `gnuplot.png` | `gnuplot -e 'set terminal png' -e 'set output "%o.png"' -c %i` |
 |  | `gnuplot.pdf` | `gnuplot -e 'set terminal pdf' -e 'set output "%o.pdf"' -c %i` |
-| [lsvg](http://cdelord.fr/lsvg/) | `lsvg` | `lsvg %i.lua -o %o.svg` |
+| [lsvg](https://github.com/cdsoft/lsvg/) | `lsvg` | `lsvg %i.lua -o %o.svg` |
 |  | `lsvg.svg` | `lsvg %i.lua -o %o.svg` |
 |  | `lsvg.png` | `lsvg %i.lua -o %o.png` |
 |  | `lsvg.pdf` | `lsvg %i.lua -o %o.pdf` |
@@ -496,9 +497,9 @@ This will produce a file named `index.html.d` containing
     along with Panda.  If not, see <https://www.gnu.org/licenses/>.
 
     For further information about Panda you can visit
-    http://cdelord.fr/panda
+    https://github.com/cdsoft/panda
 
 # Feedback
 
 Your feedback and contributions are welcome. You can contact me at
-[cdelord.fr](http://cdelord.fr).
+[CDSoft](https://CDSoft.github.io).

@@ -1,8 +1,8 @@
 % Panda - Pandoc add-ons (Lua filters for Pandoc)
-% Christophe Delord - <http://cdelord.fr/panda>
+% Christophe Delord - <https://github.com/cdsoft/panda>
 % 9th July 2024
 
-[panda]: http://cdelord.fr/panda "Pandoc add-ons (Lua filters for Pandoc)"
+[panda]: https://github.com/cdsoft/panda "Pandoc add-ons (Lua filters for Pandoc)"
 [GraphViz]: http://graphviz.org/
 [PlantUML]: http://plantuml.sourceforge.net/
 [ditaa]: http://ditaa.sourceforge.net/
@@ -15,11 +15,11 @@
 [Python]: https://www.python.org/
 [Lua]: http://www.lua.org/
 [GitHub]: https://github.com/CDSoft/panda
-[cdelord.fr]: http://cdelord.fr
+[CDSoft]: https://CDSoft.github.io
 [gnuplot]: http://www.gnuplot.info/
-[lsvg]: http://cdelord.fr/lsvg/
-[ypp]: http://cdelord.fr/ypp "Yet a PreProcessor"
-[LuaX]: http://cdelord.fr/luax "Lua eXtended interpretor"
+[lsvg]: https://github.com/cdsoft/lsvg/
+[ypp]: https://github.com/cdsoft/ypp "Yet a PreProcessor"
+[LuaX]: https://github.com/cdsoft/luax "Lua eXtended interpretor"
 
 About panda
 ===========
@@ -34,7 +34,7 @@ It provides several interesting features:
 - script execution (e.g. to include the result of a command)
 - diagrams ([Graphviz], [PlantUML], [ditaa], [Asymptote], [blockdiag], [mermaid]...)
 
-Panda is heavily inspired by [abp](http:/cdelord.fr/abp) reimplemented as a [Pandoc Lua filter].
+Panda is heavily inspired by [abp](https://github.com/cdsoft/abp) reimplemented as a [Pandoc Lua filter].
 
 If you need a more generic text preprocessor, [ypp] may be a better choice.
 
@@ -493,10 +493,10 @@ Licenses
     along with Panda.  If not, see <https://www.gnu.org/licenses/>.
 
     For further information about Panda you can visit
-    http://cdelord.fr/panda
+    https://github.com/cdsoft/panda
 
 Feedback
 ========
 
 Your feedback and contributions are welcome.
-You can contact me at [cdelord.fr].
+You can contact me at [CDSoft].

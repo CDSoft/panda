@@ -16,6 +16,6 @@
 # along with Panda.  If not, see <https://www.gnu.org/licenses/>.
 #
 # For further information about Panda you can visit
-# http://cdelord.fr/panda
+# https://github.com/cdsoft/panda
 
 pandoc -L "$(dirname "$0")"/panda.lua "$@"
