@@ -65,9 +65,6 @@ Installation
 
 `panda` and `panda.lua` can also be installed anywhere. Nothing else is required (except from [Pandoc] obviously).
 
-Note that panda can also be installed with [cdelord.fr/pub](http://cdelord.fr/pub).
-This repository contains panda as well as some other softwares more or less related to LuaX.
-
 Usage
 =====
 

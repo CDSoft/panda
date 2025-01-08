@@ -56,6 +56,11 @@ local bins = {
     build.cp       "$builddir/bin/panda"     { "src/panda" },
 }
 
+require "build-release" {
+    name = "panda",
+    sources = bins,
+}
+
 ---------------------------------------------------------------------
 section "Tests"
 ---------------------------------------------------------------------
