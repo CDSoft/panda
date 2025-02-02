@@ -31,7 +31,7 @@ var "release" "$builddir/release"
 
 rule "release-tar" {
     description = "tar $out",
-    command = "tar -caf $out $in --transform='s#$prefix#$dest#'",
+    command = "tar -caf $out $in --transform='s#$prefix#$dest#' --sort=name",
 }
 
 return function(t)
