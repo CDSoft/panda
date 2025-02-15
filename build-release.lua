@@ -31,7 +31,7 @@ var "release" "$builddir/release"
 
 rule "release-tar" {
     description = "tar $out",
-    command = "tar -caf $out $in --transform='s#$prefix#$dest#' --sort=name",
+    command = "tar -caf $out $prefix --transform='s#$prefix#$dest#' --sort=name",
 }
 
 return function(t)
@@ -45,10 +45,10 @@ return function(t)
         local name = F{ t.name, version } : flatten() : str "-"
         return build("$release"/version/name..".tar.gz") { "release-tar",
             F.flatten(t.sources) : map(function(src)
-                return build.cp("$release/.build"/src:basename()) { src }
+                return build.cp("$release/.build/bin"/src:basename()) { src }
             end),
             prefix = "$release/.build",
-            dest = name/"bin",
+            dest = name,
         }
     end
 
