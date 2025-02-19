@@ -19,6 +19,7 @@ https://github.com/cdsoft/panda
 ]]
 
 local F = require "F"
+local sh = require "sh"
 
 help.name "Panda"
 help.description "$name"
@@ -38,15 +39,15 @@ var "ditaa_url" "https://github.com/stathissideris/ditaa/releases/download/v$dit
 section "Compilation"
 ---------------------------------------------------------------------
 
+var "git_version" { sh "git describe --tags" }
+generator { implicit_in = ".git/refs/tags" }
+
 local sources = {
     ls "src/*.lua",
-    "$builddir/src/_PANDA_VERSION.lua",
-}
-
-build "$builddir/src/_PANDA_VERSION.lua" {
-    description = "VERSION $out",
-    command = [=[echo "return [[$$(git describe --tags)]] --@LOAD" > $out]=],
-    implicit_in = { ".git/refs/tags", ".git/index" }
+    build "$builddir/src/_PANDA_VERSION.lua" {
+        description = "VERSION $out",
+        command = [=[echo "return [[$git_version]] --@LOAD" > $out]=],
+    },
 }
 
 build.luax.lua:add "flags" "-q"
@@ -56,9 +57,14 @@ local bins = {
     build.cp       "$builddir/bin/panda"     { "src/panda" },
 }
 
-require "build-release" {
-    name = "panda",
-    sources = bins,
+phony "release" {
+    build.tar "$builddir/release/${git_version}/panda-${git_version}.tar.gz" {
+        base = "$builddir/release/.build",
+        name = "panda-${git_version}",
+        F.flatten(bins) : map(function(script)
+            return build.cp("$builddir/release/.build/panda-${git_version}/bin"/script:basename()) { script }
+        end),
+    },
 }
 
 ---------------------------------------------------------------------
