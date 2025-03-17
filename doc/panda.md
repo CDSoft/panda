@@ -20,6 +20,8 @@
 [lsvg]: https://github.com/cdsoft/lsvg/
 [ypp]: https://github.com/cdsoft/ypp "Yet a PreProcessor"
 [LuaX]: https://github.com/cdsoft/luax "Lua eXtended interpretor"
+[Bang]: https://github.com/cdsoft/bang "Ninja file generator"
+[Ninja]: https://ninja-build.org
 
 About panda
 ===========
@@ -79,9 +81,12 @@ or [Liberapay](https://liberapay.com/LuaX/donate).
 Installation
 ============
 
+Installing Panda from sources requires [Ninja], [LuaX] and [Bang].
+
 1. Download the sources: `git clone https://github.com/CDSoft/panda`.
-2. Run `ninja test` to run tests.
-3. Run `ninja install` to install `panda` and `panda.lua` to `~/.local/bin`
+2. Run `bang` to generate `build.ninja`.
+3. Run `ninja test` to run tests.
+4. Run `ninja install` to install `panda` and `panda.lua` to `~/.local/bin`
    or `PREFIX=prefix ninja install` to install `panda` and `panda.lua` to `prefix/bin`
 
 `panda` and `panda.lua` can also be installed anywhere. Nothing else is required (except from [Pandoc] obviously).

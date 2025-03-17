@@ -65,9 +65,14 @@ please consider donating via
 
 # Installation
 
+Installing Panda from sources requires [Ninja](https://ninja-build.org),
+[LuaX](https://github.com/cdsoft/luax "Lua eXtended interpretor") and
+[Bang](https://github.com/cdsoft/bang "Ninja file generator").
+
 1.  Download the sources: `git clone https://github.com/CDSoft/panda`.
-2.  Run `ninja test` to run tests.
-3.  Run `ninja install` to install `panda` and `panda.lua` to
+2.  Run `bang` to generate `build.ninja`.
+3.  Run `ninja test` to run tests.
+4.  Run `ninja install` to install `panda` and `panda.lua` to
     `~/.local/bin` or `PREFIX=prefix ninja install` to install `panda`
     and `panda.lua` to `prefix/bin`
 
