@@ -193,3 +193,7 @@ img {
     Text "lsvg" { x=w/2, y=h/2, dy="0.25em", fill="red" },
 }
 ```
+
+```{render="{{asy}}" name="dot"}
+dot(0);
+```

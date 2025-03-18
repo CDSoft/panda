@@ -510,6 +510,12 @@ local function make_diagram_cmd(src, img, render)
 end
 
 local function render_diagram(cmd)
+    if cmd:match "^asy " then
+        -- for asymptote, the -o option is the output name without its extension
+        cmd = cmd:gsub("(-o )(%S+)", function(opt, name)
+            return opt..name:splitext()
+        end)
+    end
     local p = assert(io.popen(cmd))
     local output = p:read("a")
     local ok, _, err = p:close()

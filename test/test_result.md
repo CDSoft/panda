@@ -22,17 +22,17 @@ Output file: .build/test/test.md
 -- sumsq100 = 338350
 ```
 
--   title = "Test document for panda"
--   string_metadata = a string (a string) a string, a string.
--   boolean_metadata_true = true
--   boolean_metadata_false = false
--   number_metadata = 42
--   foo = bar (bar) bar, bar.
--   bar = The title is: Test document for panda
--   baz = {{baz}}
--   email = [my email](me@example.com)
--   email2 = [eMail](mailto:me2@example.com)
--   build directory = .build
+- title = "Test document for panda"
+- string_metadata = a string (a string) a string, a string.
+- boolean_metadata_true = true
+- boolean_metadata_false = false
+- number_metadata = 42
+- foo = bar (bar) bar, bar.
+- bar = The title is: Test document for panda
+- baz = {{baz}}
+- email = [my email](me@example.com)
+- email2 = [eMail](mailto:me2@example.com)
+- build directory = .build
 
 ::: { foo = bar } :::
 
@@ -160,3 +160,5 @@ description](.build/img/0ec62f1568ac33e20ec8d430ae77a9cbe6c9cd46.svg "Alice & Bo
 description](.build/img/test-bob-and-alice.svg "Alice & Bob")](http://example.com "Alice & Bob")
 
 ![](.build/img/9660f55f4f866c1e04f58eb9f9b88a3605d65d96.svg){.lua}
+
+![](.build/img/dot.svg)
