@@ -1,8 +1,8 @@
 % Panda - Pandoc add-ons (Lua filters for Pandoc)
-% Christophe Delord - <https://github.com/cdsoft/panda>
+% Christophe Delord - <https://codeberg.org/cdsoft/panda>
 % 9th July 2024
 
-[panda]: https://github.com/cdsoft/panda "Pandoc add-ons (Lua filters for Pandoc)"
+[panda]: https://codeberg.org/cdsoft/panda "Pandoc add-ons (Lua filters for Pandoc)"
 [GraphViz]: http://graphviz.org/
 [PlantUML]: http://plantuml.sourceforge.net/
 [ditaa]: http://ditaa.sourceforge.net/
@@ -14,13 +14,13 @@
 [Pandoc Lua filter]: http://pandoc.org/lua-filters.html
 [Python]: https://www.python.org/
 [Lua]: http://www.lua.org/
-[GitHub]: https://github.com/CDSoft/panda
-[CDSoft]: https://CDSoft.github.io
+[Codeberg]: https://codeberg.org/cdsoft/panda
+[CDSoft]: https://cdsoft.codeberg.page
 [gnuplot]: http://www.gnuplot.info/
-[lsvg]: https://github.com/cdsoft/lsvg/
-[ypp]: https://github.com/cdsoft/ypp "Yet a PreProcessor"
-[LuaX]: https://github.com/cdsoft/luax "Lua eXtended interpretor"
-[Bang]: https://github.com/cdsoft/bang "Ninja file generator"
+[lsvg]: https://codeberg.org/cdsoft/lsvg/
+[ypp]: https://codeberg.org/cdsoft/ypp "Yet a PreProcessor"
+[LuaX]: https://codeberg.org/cdsoft/luax "Lua eXtended interpretor"
+[Bang]: https://codeberg.org/cdsoft/bang "Ninja file generator"
 [Ninja]: https://ninja-build.org
 
 About panda
@@ -36,7 +36,7 @@ It provides several interesting features:
 - script execution (e.g. to include the result of a command)
 - diagrams ([Graphviz], [PlantUML], [ditaa], [Asymptote], [blockdiag], [mermaid]...)
 
-Panda is heavily inspired by [abp](https://github.com/cdsoft/abp) reimplemented as a [Pandoc Lua filter].
+Panda is heavily inspired by [abp](https://codeberg.org/cdsoft/abp) reimplemented as a [Pandoc Lua filter].
 
 If you need a more generic text preprocessor, [ypp] may be a better choice.
 
@@ -58,7 +58,6 @@ These prices are per month and per tools (see [`PRICING`](PRICING)).
 
 <a href='https://liberapay.com/LuaX/donate' target='_blank'><img height='36' style='border:0px;height:36px;' src='https://liberapay.com/assets/widgets/donate.svg' border='0' alt='Donate using Liberapay' /></a>
 <a href='https://ko-fi.com/K3K11CD108' target='_blank'><img height='36' style='border:0px;height:36px;' src='https://storage.ko-fi.com/cdn/kofi6.png?v=6' border='0' alt='Buy Me a Coffee at ko-fi.com' /></a>
-<a href='https://github.com/sponsors/CDSoft' target='_blank'><img height='36' style='border:0px;height:36px;' src='https://img.shields.io/static/v1?label=Sponsor&message=%E2%9D%A4&logo=GitHub&color=%23fe8e86' border='0' alt='Donate using Github' /></a>
 
 Feel free to promote Panda!
 
@@ -66,7 +65,7 @@ Open source
 ===========
 
 [Panda] is an Open source software.
-Anybody can contribute on [GitHub] to:
+Anybody can contribute on [Codeberg] to:
 
 - suggest or add new features
 - report or fix bugs
@@ -75,16 +74,12 @@ Anybody can contribute on [GitHub] to:
 - find new usages
 - ...
 
-If you like Panda (or LuaX) and are willing to support its development,
-please consider donating via [Github](https://github.com/sponsors/CDSoft?o=esc)
-or [Liberapay](https://liberapay.com/LuaX/donate).
-
 Installation
 ============
 
 Installing Panda from sources requires [Ninja], [LuaX] and [Bang].
 
-1. Download the sources: `git clone https://github.com/CDSoft/panda`.
+1. Download the sources: `git clone https://codeberg.org/cdsoft/panda`.
 2. Run `bang` to generate `build.ninja`.
 3. Run `ninja test` to run tests.
 4. Run `ninja install` to install `panda` and `panda.lua` to `~/.local/bin`
@@ -520,7 +515,7 @@ Licenses
     along with Panda.  If not, see <https://www.gnu.org/licenses/>.
 
     For further information about Panda you can visit
-    https://github.com/cdsoft/panda
+    https://codeberg.org/cdsoft/panda
 
 Feedback
 ========

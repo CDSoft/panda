@@ -17,7 +17,7 @@
     along with Panda.  If not, see <https://www.gnu.org/licenses/>.
 
     For further information about Panda you can visit
-    https://github.com/cdsoft/panda
+    https://codeberg.org/cdsoft/panda
 --]]
 
 local pandoc = require "pandoc"

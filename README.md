@@ -16,12 +16,12 @@ It provides several interesting features:
   [blockdiag](http://blockdiag.com/),
   [mermaid](https://mermaidjs.github.io/)…)
 
-Panda is heavily inspired by [abp](https://github.com/cdsoft/abp)
+Panda is heavily inspired by [abp](https://codeberg.org/cdsoft/abp)
 reimplemented as a [Pandoc Lua
 filter](http://pandoc.org/lua-filters.html).
 
 If you need a more generic text preprocessor,
-[ypp](https://github.com/cdsoft/ypp "Yet a PreProcessor") may be a
+[ypp](https://codeberg.org/cdsoft/ypp "Yet a PreProcessor") may be a
 better choice.
 
 ## Pricing
@@ -42,15 +42,14 @@ These prices are per month and per tools (see [`PRICING`](PRICING)).
 
 <a href='https://liberapay.com/LuaX/donate' target='_blank'><img height='36' style='border:0px;height:36px;' src='https://liberapay.com/assets/widgets/donate.svg' border='0' alt='Donate using Liberapay' /></a>
 <a href='https://ko-fi.com/K3K11CD108' target='_blank'><img height='36' style='border:0px;height:36px;' src='https://storage.ko-fi.com/cdn/kofi6.png?v=6' border='0' alt='Buy Me a Coffee at ko-fi.com' /></a>
-<a href='https://github.com/sponsors/CDSoft' target='_blank'><img height='36' style='border:0px;height:36px;' src='https://img.shields.io/static/v1?label=Sponsor&message=%E2%9D%A4&logo=GitHub&color=%23fe8e86' border='0' alt='Donate using Github' /></a>
 
 Feel free to promote Panda!
 
 # Open source
 
-[Panda](https://github.com/cdsoft/panda "Pandoc add-ons (Lua filters for Pandoc)")
+[Panda](https://codeberg.org/cdsoft/panda "Pandoc add-ons (Lua filters for Pandoc)")
 is an Open source software. Anybody can contribute on
-[GitHub](https://github.com/CDSoft/panda) to:
+[Codeberg](https://codeberg.org/cdsoft/panda) to:
 
 - suggest or add new features
 - report or fix bugs
@@ -59,18 +58,13 @@ is an Open source software. Anybody can contribute on
 - find new usages
 - …
 
-If you like Panda (or LuaX) and are willing to support its development,
-please consider donating via
-[Github](https://github.com/sponsors/CDSoft?o=esc) or
-[Liberapay](https://liberapay.com/LuaX/donate).
-
 # Installation
 
 Installing Panda from sources requires [Ninja](https://ninja-build.org),
-[LuaX](https://github.com/cdsoft/luax "Lua eXtended interpretor") and
-[Bang](https://github.com/cdsoft/bang "Ninja file generator").
+[LuaX](https://codeberg.org/cdsoft/luax "Lua eXtended interpretor") and
+[Bang](https://codeberg.org/cdsoft/bang "Ninja file generator").
 
-1.  Download the sources: `git clone https://github.com/CDSoft/panda`.
+1.  Download the sources: `git clone https://codeberg.org/cdsoft/panda`.
 2.  Run `bang` to generate `build.ninja`.
 3.  Run `ninja test` to run tests.
 4.  Run `ninja install` to install `panda` and `panda.lua` to
@@ -162,7 +156,7 @@ foo is defined in `foo.lua` and is {{foo}}.
 
 `meta` code blocks contain Lua code executed by the Pandoc Lua
 interpretor. Panda also contains the
-[LuaX](https://github.com/cdsoft/luax "Lua eXtended interpretor")
+[LuaX](https://codeberg.org/cdsoft/luax "Lua eXtended interpretor")
 modules reimplemented in Lua. More details are available in the \[Luax
 documentation\].
 
@@ -372,7 +366,7 @@ Some render commands are predefined:
 |  | `gnuplot.svg` | `gnuplot -e 'set terminal svg' -e 'set output "%o.svg"' -c %i` |
 |  | `gnuplot.png` | `gnuplot -e 'set terminal png' -e 'set output "%o.png"' -c %i` |
 |  | `gnuplot.pdf` | `gnuplot -e 'set terminal pdf' -e 'set output "%o.pdf"' -c %i` |
-| [lsvg](https://github.com/cdsoft/lsvg/) | `lsvg` | `lsvg %i.lua -o %o.svg` |
+| [lsvg](https://codeberg.org/cdsoft/lsvg/) | `lsvg` | `lsvg %i.lua -o %o.svg` |
 |  | `lsvg.svg` | `lsvg %i.lua -o %o.svg` |
 |  | `lsvg.png` | `lsvg %i.lua -o %o.png` |
 |  | `lsvg.pdf` | `lsvg %i.lua -o %o.pdf` |
@@ -524,9 +518,9 @@ This will produce a file named `index.html.d` containing
     along with Panda.  If not, see <https://www.gnu.org/licenses/>.
 
     For further information about Panda you can visit
-    https://github.com/cdsoft/panda
+    https://codeberg.org/cdsoft/panda
 
 # Feedback
 
 Your feedback and contributions are welcome. You can contact me at
-[CDSoft](https://CDSoft.github.io).
+[CDSoft](https://cdsoft.codeberg.page).

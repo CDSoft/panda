@@ -15,7 +15,7 @@ You should have received a copy of the GNU General Public License
 along with Panda.  If not, see <https://www.gnu.org/licenses/>.
 
 For further information about Panda you can visit
-https://github.com/cdsoft/panda
+https://codeberg.org/cdsoft/panda
 ]]
 
 local F = require "F"
@@ -185,7 +185,7 @@ local docs = {
 
 build "$css" {
     description = "WGET $out",
-    command = "wget https://raw.githubusercontent.com/CDSoft/CDSoft.github.io/refs/heads/master/cdsoft.css -O $out",
+    command = "wget https://codeberg.org/cdsoft/pages/raw/branch/master/cdsoft.css -O $out",
 }
 
 ---------------------------------------------------------------------
