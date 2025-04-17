@@ -19,7 +19,8 @@ https://codeberg.org/cdsoft/panda
 ]]
 
 local F = require "F"
-local sh = require "sh"
+
+version "0.6.5"
 
 help.name "Panda"
 help.description "$name"
@@ -29,7 +30,7 @@ clean.mrproper "$builddir"
 clean "$builddir/src"
 clean "$builddir/bin"
 
-var "plantuml_version" "1.2024.6"
+var "plantuml_version" "1.2025.2"
 var "plantuml_url" "https://github.com/plantuml/plantuml/releases/download/v$plantuml_version/plantuml-$plantuml_version.jar"
 
 var "ditaa_version" "0.11.0"
@@ -39,14 +40,11 @@ var "ditaa_url" "https://github.com/stathissideris/ditaa/releases/download/v$dit
 section "Compilation"
 ---------------------------------------------------------------------
 
-var "git_version" { sh "git describe --tags" }
-generator { implicit_in = ".git/refs/tags" }
-
 local sources = {
     ls "src/*.lua",
     build "$builddir/src/_PANDA_VERSION.lua" {
         description = "VERSION $out",
-        command = [=[echo "return [[$git_version]] --@LOAD" > $out]=],
+        command = [=[echo "return [[$version]] --@LOAD" > $out]=],
     },
 }
 
@@ -58,11 +56,11 @@ local bins = {
 }
 
 phony "release" {
-    build.tar "$builddir/release/${git_version}/panda-${git_version}.tar.gz" {
+    build.tar "$builddir/release/${version}/panda-${version}.tar.gz" {
         base = "$builddir/release/.build",
-        name = "panda-${git_version}",
+        name = "panda-${version}",
         F.flatten(bins) : map(function(script)
-            return build.cp("$builddir/release/.build/panda-${git_version}/bin"/script:basename()) { script }
+            return build.cp("$builddir/release/.build/panda-${version}/bin"/script:basename()) { script }
         end),
     },
 }
