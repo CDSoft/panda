@@ -40,6 +40,14 @@ Panda is heavily inspired by [abp](https://codeberg.org/cdsoft/abp) reimplemente
 
 If you need a more generic text preprocessor, [ypp] may be a better choice.
 
+## Releases
+
+It is strongly recommended to build Panda from source,
+as this is the only reliable way to install the exact version you need.
+
+However, if you do require precompiled binaries,
+this page offers a selection for various platforms: <https://cdelord.fr/pub>.
+
 ## Pricing
 
 Panda is a free and open source software.

@@ -20,12 +20,11 @@ https://codeberg.org/cdsoft/panda
 
 local F = require "F"
 
-version "0.6.5"
+version "0.6.6"
 
 help.name "Panda"
 help.description "$name"
 
-var "builddir" ".build"
 clean.mrproper "$builddir"
 clean "$builddir/src"
 clean "$builddir/bin"
@@ -42,10 +41,7 @@ section "Compilation"
 
 local sources = {
     ls "src/*.lua",
-    build "$builddir/src/_PANDA_VERSION.lua" {
-        description = "VERSION $out",
-        command = [=[echo "return [[$version]] --@LOAD" > $out]=],
-    },
+    file "$builddir/src/_PANDA_VERSION.lua" { vars%[=[return [[$version]] --@LOAD]=] },
 }
 
 build.luax.lua:add "flags" "-q"

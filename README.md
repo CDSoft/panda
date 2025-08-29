@@ -24,6 +24,14 @@ If you need a more generic text preprocessor,
 [ypp](https://codeberg.org/cdsoft/ypp "Yet a PreProcessor") may be a
 better choice.
 
+## Releases
+
+It is strongly recommended to build Panda from source, as this is the
+only reliable way to install the exact version you need.
+
+However, if you do require precompiled binaries, this page offers a
+selection for various platforms: <https://cdelord.fr/pub>.
+
 ## Pricing
 
 Panda is a free and open source software. But it has a cost. It takes
