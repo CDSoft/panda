@@ -46,29 +46,21 @@ Output file: .build/test/test.md
 
 ## Condition
 
-<div>
-
+::: {}
 foo is bar
+:::
 
-</div>
-
-<div>
-
+::: {}
 `number_medatata` is 42
+:::
 
-</div>
-
-<div>
-
+::: {}
 `boolean_metadata_false` is false
+:::
 
-</div>
-
-<div>
-
+::: {}
 `string_metadata` is `"a string"`
-
-</div>
+:::
 
 Also works for inline spans. foo is bar and `string_metadata` is
 `"a string"`

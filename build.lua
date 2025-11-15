@@ -20,7 +20,7 @@ https://codeberg.org/cdsoft/panda
 
 local F = require "F"
 
-version "0.6.6"
+version "0.6.7"
 
 help.name "Panda"
 help.description "$name"
@@ -29,7 +29,7 @@ clean.mrproper "$builddir"
 clean "$builddir/src"
 clean "$builddir/bin"
 
-var "plantuml_version" "1.2025.2"
+var "plantuml_version" "1.2025.10"
 var "plantuml_url" "https://github.com/plantuml/plantuml/releases/download/v$plantuml_version/plantuml-$plantuml_version.jar"
 
 var "ditaa_version" "0.11.0"
@@ -124,8 +124,6 @@ build "$builddir/ditaa.jar" {
 section "Documentation"
 ---------------------------------------------------------------------
 
-var "css" "$builddir/doc/cdsoft.css"
-
 local docs = {
 
     build "README.md" { "doc/panda.md",
@@ -150,36 +148,6 @@ local docs = {
         },
     },
 
-    build "$builddir/doc/panda.html" { "doc/panda.md",
-        description = "PANDOC $out",
-        command = {
-            "export PLANTUML=$builddir/plantuml.jar;",
-            "export DITAA=$builddir/ditaa.jar;",
-            "pandoc",
-                "-L", "$builddir/bin/panda.lua",
-                "-Vpanda_target=$out",
-                "-Vpanda_dep_file=$depfile",
-                "-Vdoc=doc",
-                "--to=html5",
-                "--standalone --embed-resources",
-                "--css=$css",
-                "$in -o $out",
-        },
-        depfile = "$out.d",
-        implicit_in =
-        {
-            "$builddir/bin/panda.lua",
-            "$builddir/plantuml.jar",
-            "$builddir/ditaa.jar",
-            "$css",
-        },
-    },
-
-}
-
-build "$css" {
-    description = "WGET $out",
-    command = "wget https://codeberg.org/cdsoft/pages/raw/branch/master/cdsoft.css -O $out",
 }
 
 ---------------------------------------------------------------------
