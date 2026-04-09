@@ -20,7 +20,7 @@ https://codeberg.org/cdsoft/panda
 
 local F = require "F"
 
-version "0.6.8"
+version "0.7"
 
 help.name "Panda"
 help.description "$name"
@@ -29,7 +29,7 @@ clean.mrproper "$builddir"
 clean "$builddir/src"
 clean "$builddir/bin"
 
-var "plantuml_version" "1.2025.10"
+var "plantuml_version" "1.2026.2"
 var "plantuml_url" "https://github.com/plantuml/plantuml/releases/download/v$plantuml_version/plantuml-$plantuml_version.jar"
 
 var "ditaa_version" "0.11.0"
@@ -47,8 +47,8 @@ local sources = {
 build.luax.lua:add "flags" "-q"
 
 local bins = {
-    build.luax.lua "$builddir/bin/panda.lua" { sources },
-    build.cp       "$builddir/bin/panda"     { "src/panda" },
+    build.luax.lua "bin/panda.lua" { sources },
+    "bin/panda",
 }
 
 phony "release" {
@@ -79,7 +79,7 @@ local tests = {
             "export LUA_PATH=test/?.lua;",
             "export PANDA_IMG=$builddir/img;",
             "pandoc",
-                "-L $builddir/bin/panda.lua",
+                "-L bin/panda.lua",
                 "-Vpanda_target=$out",
                 "-Vbuild=$builddir",
                 "--standalone",
@@ -88,7 +88,7 @@ local tests = {
         implicit_in = {
             "$builddir/plantuml.jar",
             "$builddir/ditaa.jar",
-            "$builddir/bin/panda.lua",
+            "bin/panda.lua",
         },
         implicit_out = {
             "$builddir/test/test.md.d",
@@ -107,8 +107,8 @@ section "PlantUML"
 ---------------------------------------------------------------------
 
 build "$builddir/plantuml.jar" {
-    description = "WGET $out",
-    command = "wget $plantuml_url -O $out",
+    description = "Download $out",
+    command = "curl -sSL $plantuml_url -o $out",
 }
 
 ---------------------------------------------------------------------
@@ -116,8 +116,8 @@ section "Ditaa"
 ---------------------------------------------------------------------
 
 build "$builddir/ditaa.jar" {
-    description = "WGET $out",
-    command = "wget $ditaa_url -O $out",
+    description = "Download $out",
+    command = "curl -sSL $ditaa_url -o $out",
 }
 
 ---------------------------------------------------------------------
@@ -132,7 +132,7 @@ local docs = {
             "export PLANTUML=$builddir/plantuml.jar;",
             "export DITAA=$builddir/ditaa.jar;",
             "pandoc",
-                "-L", "$builddir/bin/panda.lua",
+                "-L", "bin/panda.lua",
                 "-Vpanda_target=$out",
                 "-Vpanda_dep_file=$depfile",
                 "-Vdoc=doc",
@@ -142,7 +142,7 @@ local docs = {
         depfile = "$builddir/doc/$out.d",
         implicit_in =
         {
-            "$builddir/bin/panda.lua",
+            "bin/panda.lua",
             "$builddir/plantuml.jar",
             "$builddir/ditaa.jar",
         },

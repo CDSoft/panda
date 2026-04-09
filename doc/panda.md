@@ -48,6 +48,8 @@ as this is the only reliable way to install the exact version you need.
 However, if you do require precompiled binaries,
 this page offers a selection for various platforms: <https://cdelord.fr/pub>.
 
+Note that the `bin` directory contains a prebuilt `panda.lua` script that can be used by Pandoc with no dependency.
+
 ## Pricing
 
 Panda is a free and open source software.
@@ -102,8 +104,6 @@ or
 ``` sh
 $ panda ...
 ```
-
-A complete example is given as a Makefile in the doc directory.
 
 Cheat sheet
 ===========
