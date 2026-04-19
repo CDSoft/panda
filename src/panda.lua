@@ -20,6 +20,8 @@
     https://codeberg.org/cdsoft/panda
 --]]
 
+-- @MAIN @LIB
+
 local pandoc = require "pandoc"
 local utils = pandoc.utils
 local system = pandoc.system
@@ -655,5 +657,4 @@ filters = {
     { Pandoc = write_dependency_file },
 }
 
---@MAIN (this script is actually the main script of a Lua library)
 return filters

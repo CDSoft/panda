@@ -3,10 +3,10 @@
 -- Generated with LuaX
 -- Copyright (C) 2021-2026 codeberg.org/cdsoft/luax, Christophe Delord
 
-_LUAX_VERSION = "LuaX 10.1"
+_LUAX_VERSION = "LuaX 10.1.2"
 
 local function lib(path, src) return assert(load(src, '@$panda:'..path)) end
-package.preload["F"] = lib("lib/luax/F.lua", [==[--[[
+package.preload["F"] = lib("luax/F.lua", [==[--[[
 This file is part of luax.
 
 luax is free software: you can redistribute it and/or modify
@@ -4856,9 +4856,7 @@ return setmetatable(F, {
     end,
 })
 ]==])
-package.preload["_LUAX_VERSION"] = lib("lib/luax/_LUAX_VERSION.lua", [[return 'LuaX 10.0' --@LOAD
-]])
-package.preload["argparse"] = lib("lib/luax/argparse.lua", [==[-- The MIT License (MIT)
+package.preload["argparse"] = lib("luax/argparse.lua", [==[-- The MIT License (MIT)
 
 -- Copyright (c) 2013 - 2018 Peter Melnichenko
 --                      2019 Paul Ouellette
@@ -6955,7 +6953,7 @@ end})
 
 return argparse
 ]==])
-package.preload["cbor"] = lib("lib/luax/cbor.lua", [[-- Concise Binary Object Representation (CBOR)
+package.preload["cbor"] = lib("luax/cbor.lua", [[-- Concise Binary Object Representation (CBOR)
 -- RFC 7049
 
 local function softreq(pkg, field)
@@ -7547,7 +7545,7 @@ return {
 };
 --@LIB
 ]])
-package.preload["complex"] = lib("lib/luax/complex.lua", [=[--[[
+package.preload["complex"] = lib("luax/complex.lua", [=[--[[
 This file is part of luax.
 
 luax is free software: you can redistribute it and/or modify
@@ -7792,7 +7790,7 @@ end
 
 return complex
 ]=])
-package.preload["crypt"] = lib("lib/luax/crypt.lua", [=[--[[
+package.preload["crypt"] = lib("luax/crypt.lua", [=[--[[
 This file is part of luax.
 
 luax is free software: you can redistribute it and/or modify
@@ -8359,7 +8357,7 @@ string.crc64        = crypt.crc64
 
 return crypt
 ]=])
-package.preload["curl"] = lib("lib/luax/curl.lua", [=[--[[
+package.preload["curl"] = lib("luax/curl.lua", [=[--[[
 This file is part of luax.
 
 luax is free software: you can redistribute it and/or modify
@@ -8393,9 +8391,16 @@ curl must be installed separately.
 
 @@@]]
 
-local M = {}
+local curl = {
+    http = {},
+}
 
+local F = require "F"
 local sh = require "sh"
+
+--[[------------------------------------------------------------------------@@@
+## curl command line
+@@@]]
 
 local errs = {
     [  0] = "Success. The operation completed successfully according to the instructions.",
@@ -8490,20 +8495,6 @@ local errs = {
     [127] = "curl: command not found",
 }
 
-local default_curl_options = {
-    "--silent",
-    "--show-error",
-    "--location", -- follow redirections
-}
-
-local function curl(...)
-    local res, _, err = sh("curl", ...)
-    if not res then return nil, errs[tonumber(err)] or "curl: unknown error", err end
-    return res
-end
-
-M.request = curl
-
 --[[@@@
 ```lua
 curl.request(...)
@@ -8513,6 +8504,15 @@ curl.request(...)
 > In case of error, `curl` returns `nil`, an error message and an error code
 > (see [curl man page](https://curl.se/docs/manpage.html)).
 
+@@@]]
+
+function curl.request(...)
+    local res, _, err = sh("curl", ...)
+    if not res then return nil, errs[tonumber(err)] or "curl: unknown error", err end
+    return res
+end
+
+--[[@@@
 ```lua
 curl(...)
 ```
@@ -8524,11 +8524,237 @@ curl(...)
 
 @@@]]
 
-return setmetatable(M, {
-    __call = function(_, ...) return curl(default_curl_options, ...) end,
-})
+local default_curl_options = {
+    "--silent",
+    "--show-error",
+    "--location", -- follow redirections
+}
+
+setmetatable(curl, { __call = function(_, ...) return curl.request(default_curl_options, ...) end })
+
+--[[------------------------------------------------------------------------@@@
+## curl HTTP requests
+
+`curl.http` is meant to be a simple replacement of LuaSocket/LuaSec and OpenSSL.
+It can issue HTTP(S) requests using `curl`.
+
+@@@]]
+
+local DEFAULT_USER_AGENT = "LuaX/"..require"luax-version".version
+local global_user_agent = DEFAULT_USER_AGENT
+
+--[[@@@
+```lua
+curl.http.set_user_agent([user_agent])
+```
+> Define the default User-Agent header used by HTTP requests.
+> If no `user_agent` is given, the default value is used (`LuaX/X.Y`).
+@@@]]
+function curl.http.set_user_agent(ua)
+    global_user_agent = ua or DEFAULT_USER_AGENT
+end
+
+--[[@@@
+```lua
+curl.http.request(method, url, [options])
+```
+> Issue a generic HTTP(S) request, using the method `method` to the target URL `url`.
+> `options` is an optional table:
+>
+> - `options.headers`: header table (key names are normalized: `_` is replaced by `-` and words are capitalized)
+> - `options.body`: body of the request (e.g. for `POST` requests)
+> - `options.output_file`: filename where the response data is saved
+> - `options.user_agent`: user agent specific to this request
+>
+> It returns a table with the following fields:
+>
+> - `ok`: `true` if the requests is successful (i.e. the status is `2XX`)
+> - `status`: HTTP status code
+> - `status_msg`: HTTP status message (if any)
+> - `headers`: response header table with normalized keys (`-` replaced with `_`, all lower case)
+>
+> In case of errorn it returns `nil` and an error message.
+@@@]]
+
+local function http_ok(code) return code >= 200 and code < 300 end
+
+local function q(s)
+    s = ("%q"):format(s) -- escape special chars
+    s = s:gsub("%$", "\\$") -- escape $ to avoid unwanted interpolations
+    return s
+end
+
+function curl.http.request(method, url, options)
+    options = options or {}
+    local headers = options.headers or {}
+    local body = options.body
+    local output_file = options.output_file
+    local user_agent = options.user_agent or global_user_agent
+
+    headers = F.mapk2a(function(k, v)
+        return {k : gsub("_", "-") : split "%-" : map(string.cap) : str "-", v}
+    end, headers) : map2t(F.unpack)
+
+    headers["User-Agent"] = headers["User-Agent"] or user_agent
+
+    local response, error_message = curl.request {
+        "--location", "--silent", "--show-headers",
+        "--request", method:upper(), url,
+        F.mapk2a(function(k, v)
+            return { "--header", q(('%s: %s'):format(k, v)) }
+        end, headers),
+        body and { "--data", q(body) } or {},
+    }
+    if not response then return nil, error_message end
+
+    local status_line, headers_str, response_body = response:match("^(.-)\r\n(.-)\r\n\r\n(.*)$")
+    if not status_line then return nil, "curl: Unexpected reply format" end
+
+    local _, status_code, status_msg = status_line:split(" ", 2):unpack() -- HTTP/X.Y 200 msg...
+    status_code = tonumber(status_code)
+
+    local response_headers = {}
+    for line in headers_str:gmatch("([^\r\n]+)") do
+        local k, v = line : split(":", 1) : map(string.trim) : unpack()
+        if k and v then
+            k = k : gsub("%-", "_") : lower()
+            response_headers[k] = v
+        end
+    end
+    response_headers.content_length = tonumber(response_headers.content_length)
+
+    local ok = http_ok(status_code)
+
+    if output_file and ok then
+        local write_ok, errmsg = fs.write_bin(output_file, response_body)
+        if not write_ok then return nil, errmsg end
+    end
+
+    return {
+        ok = ok,
+        status = status_code,
+        status_msg = #status_msg > 0 and status_msg or status_code,
+        headers = response_headers,
+        body = response_body
+    }
+end
+
+--[[@@@
+```lua
+curl.http.get(url, [options])
+```
+> Issue a `GET` requests using `http.request`.
+@@@]]
+function curl.http.get(url, options)
+    return curl.http.request("GET", url, options)
+end
+
+--[[@@@
+```lua
+curl.http.head(url, [options])
+```
+> Issue a `HEAD` requests using `http.request`.
+@@@]]
+function curl.http.head(url, options)
+    return curl.http.request("HEAD", url, options)
+end
+
+--[[@@@
+```lua
+curl.http.post(url, body, [options])
+```
+> Issue a `POST` requests using `http.request`.
+@@@]]
+function curl.http.post(url, body, options)
+    return curl.http.request("POST", url, F.merge{options or {}, {body=body}})
+end
+
+--[[@@@
+```lua
+curl.http.put(url, body, [options])
+```
+> Issue a `PUT` requests using `http.request`.
+@@@]]
+function curl.http.put(url, body, options)
+    return curl.http.request("PUT", url, F.merge{options or {}, {body=body}})
+end
+
+--[[@@@
+```lua
+curl.http.delete(url, [options])
+```
+> Issue a `DELETE` requests using `http.request`.
+@@@]]
+function curl.http.delete(url, options)
+    return curl.http.request("DELETE", url, options)
+end
+
+--[[@@@
+```lua
+curl.http.connect(url, [options])
+```
+> Issue a `CONNECT` requests using `http.request`.
+@@@]]
+function curl.http.connect(url, options)
+    return curl.http.request("CONNECT", url, options)
+end
+
+--[[@@@
+```lua
+http.options(url, [options])
+```
+> Issue a `OPTIONS` requests using `http.request`.
+@@@]]
+function curl.http.options(url, options)
+    return curl.http.request("OPTIONS", url, options)
+end
+
+--[[@@@
+```lua
+curl.http.trace(url, [options])
+```
+> Issue a `TRACE` requests using `http.request`.
+@@@]]
+function curl.http.trace(url, options)
+    return curl.http.request("TRACE", url, options)
+end
+
+--[[@@@
+```lua
+curl.http.patch(url, body, [options])
+```
+> Issue a `PATCH` requests using `http.request`.
+@@@]]
+function curl.http.patch(url, body, options)
+    return curl.http.request("PATCH", url, F.merge{options or {}, {body=body}})
+end
+
+--[[@@@
+```lua
+curl.http.download(url, output_file, [options])
+```
+> Issue a `GET` requests using `http.request` and store the response into `output_file`.
+> It returns `true` if the download is successful.
+@@@]]
+function curl.http.download(url, output_file, options)
+    local response, err = curl.http.request("GET", url, F.merge{options or {}, {output_file=output_file}})
+    if not response then return nil, err end
+    if not http_ok(response.status) then return nil, response.status_msg end
+    return true
+end
+
+--[[@@@
+```lua
+curl(...)
+```
+> Shortcut to `curl.request(...)`.
+@@@]]
+
+setmetatable(curl.http, { __call = function(self, ...) return self.request(...) end })
+
+return curl
 ]=])
-package.preload["fs"] = lib("lib/luax/fs.lua", [=[--[[
+package.preload["fs"] = lib("luax/fs.lua", [=[--[[
 This file is part of luax.
 
 luax is free software: you can redistribute it and/or modify
@@ -9222,256 +9448,7 @@ getmetatable("").__div  = fs.join
 
 return fs
 ]=])
-package.preload["http"] = lib("lib/luax/http.lua", [=[--[[
-This file is part of luax.
-
-luax is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-luax is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with luax.  If not, see <https://www.gnu.org/licenses/>.
-
-For further information about luax you can visit
-https://codeberg.org/cdsoft/luax
---]]
-
---@LIB
-
---[[------------------------------------------------------------------------@@@
-# Simple HTTP(S) module based on curl
-
-```lua
-local http = require "http"
-```
-
-`http` is meant to be a simple replacement of LuaSocket and OpenSSL.
-It can issue HTTP(S) requests using `curl`.
-curl must be installed separately.
-
-@@@]]
-
-local http = {}
-
-local DEFAULT_USER_AGENT = "LuaX/"..require"luax-version".version
-local global_user_agent = DEFAULT_USER_AGENT
-
-local F = require "F"
-local curl = require "curl"
-
---[[@@@
-```lua
-http.set_user_agent([user_agent])
-```
-> Define the default User-Agent header used by HTTP requests.
-> If no `user_agent` is given, the default value is used (`LuaX/X.Y`).
-@@@]]
-function http.set_user_agent(ua)
-    global_user_agent = ua or DEFAULT_USER_AGENT
-end
-
---[[@@@
-```lua
-http.request(method, url, [options])
-```
-> Issue a generic HTTP(S) request, using the method `method` to the target URL `url`.
-> `options` is an optional table:
->
-> - `options.headers`: header table (key names are normalized: `_` is replaced by `-` and words are capitalized)
-> - `options.body`: body of the request (e.g. for `POST` requests)
-> - `options.output_file`: filename where the response data is saved
-> - `options.user_agent`: user agent specific to this request
->
-> It returns a table with the following fields:
->
-> - `ok`: `true` if the requests is successful (i.e. the status is `2XX`)
-> - `status`: HTTP status code
-> - `status_msg`: HTTP status message (if any)
-> - `headers`: response header table with normalized keys (`-` replaced with `_`, all lower case)
->
-> In case of errorn it returns `nil` and an error message.
-@@@]]
-
-local function http_ok(code) return code >= 200 and code < 300 end
-
-local function q(s)
-    s = ("%q"):format(s) -- escape special chars
-    s = s:gsub("%$", "\\$") -- escape $ to avoid unwanted interpolations
-    return s
-end
-
-function http.request(method, url, options)
-    options = options or {}
-    local headers = options.headers or {}
-    local body = options.body
-    local output_file = options.output_file
-    local user_agent = options.user_agent or global_user_agent
-
-    headers = F.mapk2a(function(k, v)
-        return {k : gsub("_", "-") : split "%-" : map(string.cap) : str "-", v}
-    end, headers) : map2t(F.unpack)
-
-    headers["User-Agent"] = headers["User-Agent"] or user_agent
-
-    local response, error_message = curl.request {
-        "--location", "--silent", "--show-headers",
-        "--request", method:upper(), url,
-        F.mapk2a(function(k, v)
-            return { "--header", q(('%s: %s'):format(k, v)) }
-        end, headers),
-        body and { "--data", q(body) } or {},
-    }
-    if not response then return nil, error_message end
-
-    local status_line, headers_str, response_body = response:match("^(.-)\r\n(.-)\r\n\r\n(.*)$")
-    if not status_line then return nil, "curl: Unexpected reply format" end
-
-    local _, status_code, status_msg = status_line:split(" ", 2):unpack() -- HTTP/X.Y 200 msg...
-    status_code = tonumber(status_code)
-
-    local response_headers = {}
-    for line in headers_str:gmatch("([^\r\n]+)") do
-        local k, v = line : split(":", 1) : map(string.trim) : unpack()
-        if k and v then
-            k = k : gsub("%-", "_") : lower()
-            response_headers[k] = v
-        end
-    end
-    response_headers.content_length = tonumber(response_headers.content_length)
-
-    local ok = http_ok(status_code)
-
-    if output_file and ok then
-        local write_ok, errmsg = fs.write_bin(output_file, response_body)
-        if not write_ok then return nil, errmsg end
-    end
-
-    return {
-        ok = ok,
-        status = status_code,
-        status_msg = #status_msg > 0 and status_msg or status_code,
-        headers = response_headers,
-        body = response_body
-    }
-end
-
---[[@@@
-```lua
-http.get(url, [options])
-```
-> Issue a `GET` requests using `http.request`.
-@@@]]
-function http.get(url, options)
-    return http.request("GET", url, options)
-end
-
---[[@@@
-```lua
-http.head(url, [options])
-```
-> Issue a `HEAD` requests using `http.request`.
-@@@]]
-function http.head(url, options)
-    return http.request("HEAD", url, options)
-end
-
---[[@@@
-```lua
-http.post(url, body, [options])
-```
-> Issue a `POST` requests using `http.request`.
-@@@]]
-function http.post(url, body, options)
-    return http.request("POST", url, F.merge{options or {}, {body=body}})
-end
-
---[[@@@
-```lua
-http.put(url, body, [options])
-```
-> Issue a `PUT` requests using `http.request`.
-@@@]]
-function http.put(url, body, options)
-    return http.request("PUT", url, F.merge{options or {}, {body=body}})
-end
-
---[[@@@
-```lua
-http.delete(url, [options])
-```
-> Issue a `DELETE` requests using `http.request`.
-@@@]]
-function http.delete(url, options)
-    return http.request("DELETE", url, options)
-end
-
---[[@@@
-```lua
-http.connect(url, [options])
-```
-> Issue a `CONNECT` requests using `http.request`.
-@@@]]
-function http.connect(url, options)
-    return http.request("CONNECT", url, options)
-end
-
---[[@@@
-```lua
-http.options(url, [options])
-```
-> Issue a `OPTIONS` requests using `http.request`.
-@@@]]
-function http.options(url, options)
-    return http.request("OPTIONS", url, options)
-end
-
---[[@@@
-```lua
-http.trace(url, [options])
-```
-> Issue a `TRACE` requests using `http.request`.
-@@@]]
-function http.trace(url, options)
-    return http.request("TRACE", url, options)
-end
-
---[[@@@
-```lua
-http.patch(url, body, [options])
-```
-> Issue a `PATCH` requests using `http.request`.
-@@@]]
-function http.patch(url, body, options)
-    return http.request("PATCH", url, F.merge{options or {}, {body=body}})
-end
-
---[[@@@
-```lua
-http.download(url, output_file, [options])
-```
-> Issue a `GET` requests using `http.request` and store the response into `output_file`.
-> It returns `true` if the download is successful.
-@@@]]
-function http.download(url, output_file, options)
-    local response, err = http.request("GET", url, F.merge{options or {}, {output_file=output_file}})
-    if not response then return nil, err end
-    if not http_ok(response.status) then return nil, response.status_msg end
-    return true
-end
-
-return setmetatable(http, {
-    __call = function(self, method, url, options)
-        return self.request(method, url, options)
-    end,
-})
-]=])
-package.preload["imath"] = lib("lib/luax/imath.lua", [=[--[[
+package.preload["imath"] = lib("luax/imath.lua", [=[--[[
 This file is part of luax.
 
 luax is free software: you can redistribute it and/or modify
@@ -9932,7 +9909,7 @@ end
 
 return imath
 ]=])
-package.preload["import"] = lib("lib/luax/import.lua", [=[--[[
+package.preload["import"] = lib("luax/import.lua", [=[--[[
 This file is part of luax.
 
 luax is free software: you can redistribute it and/or modify
@@ -9979,7 +9956,7 @@ return function(fname, env)
     return mod
 end
 ]=])
-package.preload["json"] = lib("lib/luax/json.lua", [===[-- Module options:
+package.preload["json"] = lib("luax/json.lua", [===[-- Module options:
 local always_use_lpeg = false
 local register_global_module_table = false
 local global_module_name = 'json'
@@ -10733,7 +10710,7 @@ end
 return json
 
 ]===])
-package.preload["linenoise"] = lib("lib/luax/linenoise.lua", [=[--[[
+package.preload["linenoise"] = lib("luax/linenoise.lua", [=[--[[
 This file is part of luax.
 
 luax is free software: you can redistribute it and/or modify
@@ -10772,7 +10749,7 @@ end
 
 return linenoise
 ]=])
-package.preload["luax-debug"] = lib("lib/luax/luax-debug.lua", [==[--[[
+package.preload["luax-debug"] = lib("luax/luax-debug.lua", [==[--[[
 This file is part of luax.
 
 luax is free software: you can redistribute it and/or modify
@@ -10842,7 +10819,7 @@ end
 
 return debug
 ]==])
-package.preload["luax-package"] = lib("lib/luax/luax-package.lua", [==[--[[
+package.preload["luax-package"] = lib("luax/luax-package.lua", [==[--[[
 This file is part of luax.
 
 luax is free software: you can redistribute it and/or modify
@@ -10940,7 +10917,7 @@ end
 
 return package
 ]==])
-package.preload["luax-targets"] = lib("lib/luax/luax-targets.lua", [=[--[[
+package.preload["luax-targets"] = lib("luax/luax-targets.lua", [=[--[[
 This file is part of luax.
 
 luax is free software: you can redistribute it and/or modify
@@ -10990,7 +10967,7 @@ return F{
     {name="windows-aarch64",    machine="ARM64",   kernel="Windows_NT", os="windows", arch="aarch64", libc="gnu",   exe=".exe", so=".dll"  },
 }
 ]=])
-package.preload["luax-version"] = lib("lib/luax/luax-version.lua", [[local version = "10.1"
+package.preload["luax-version"] = lib("luax/luax-version.lua", [[local version = "10.1.2"
 local year = 2026
 local url = "codeberg.org/cdsoft/luax"
 local author = "Christophe Delord"
@@ -11006,7 +10983,157 @@ return setmetatable({
     __tostring = function() return "LuaX "..version end,
 })
 ]])
-package.preload["mathx"] = lib("lib/luax/mathx.lua", [=[--[[
+package.preload["lz4"] = lib("luax/lz4.lua", [=[--[[
+This file is part of luax.
+
+luax is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+luax is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with luax.  If not, see <https://www.gnu.org/licenses/>.
+
+For further information about luax you can visit
+https://codeberg.org/cdsoft/luax
+--]]
+
+-- Load lz4.lua to add new methods to strings
+--@LOAD=_
+
+local has_lz4, lz4 = pcall(require, "_lz4")
+
+if not has_lz4 then
+
+    lz4 = {}
+
+    local fs = require "fs"
+    local sh = require "sh"
+
+    function lz4.lz4(s, level)
+        return fs.with_tmpfile(function(tmp)
+            local n = #s
+            assert(sh.write(
+                "lz4 -q -z",
+                n <=   64*1024 and "-B4"
+                or n <=  256*1024 and "-B5"
+                or n <= 1024*1024 and "-B6"
+                or                    "-B7",
+                "-"..(level or 9),
+                "-BD --frame-crc -f -", tmp)(s))
+            return assert(fs.read_bin(tmp))
+        end)
+    end
+
+    function lz4.unlz4(s)
+        return fs.with_tmpfile(function(tmp)
+            assert(sh.write("lz4 -q -d -f -", tmp)(s))
+            return assert(fs.read_bin(tmp))
+        end)
+    end
+
+end
+
+--[[------------------------------------------------------------------------@@@
+## String methods
+
+The `lz4` functions are also available as `string` methods:
+@@@]]
+
+--[[@@@
+```lua
+s:lz4()         == lz4.lz4(s)
+s:unlz4()       == lz4.unlz4(s)
+```
+@@@]]
+
+string.lz4      = lz4.lz4
+string.unlz4    = lz4.unlz4
+
+return lz4
+]=])
+package.preload["lzip"] = lib("luax/lzip.lua", [=[--[[
+This file is part of luax.
+
+luax is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+luax is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with luax.  If not, see <https://www.gnu.org/licenses/>.
+
+For further information about luax you can visit
+https://codeberg.org/cdsoft/luax
+--]]
+
+-- Load lzip.lua to add new methods to strings
+--@LOAD=_
+
+local has_lzip, lzip = pcall(require, "_lzip")
+
+if not has_lzip then
+
+    lzip = {}
+
+    local fs = require "fs"
+    local sh = require "sh"
+
+    function lzip.lzip(s, level)
+        return fs.with_tmpdir(function(tmp)
+            local input = tmp/"data"
+            local output = tmp/"data.lz"
+            assert(fs.write_bin(input, s))
+            assert(sh.run(
+                "lzip -q",
+                "-"..(level or 6),
+                input,
+                "-o", output))
+            return assert(fs.read_bin(output))
+        end)
+    end
+
+    function lzip.unlzip(s)
+        return fs.with_tmpdir(function(tmp)
+            local input = tmp/"data.lz"
+            local output = tmp/"data"
+            assert(fs.write_bin(input, s))
+            assert(sh.run("lzip -q -d", input, "-o", output))
+            return assert(fs.read_bin(output))
+        end)
+    end
+
+end
+
+--[[------------------------------------------------------------------------@@@
+## String methods
+
+The `lzip` functions are also available as `string` methods:
+@@@]]
+
+--[[@@@
+```lua
+s:lzip()        == lzip.lzip(s)
+s:unlzip()      == lzip.unlzip(s)
+```
+@@@]]
+
+string.lzip     = lzip.lzip
+string.unlzip   = lzip.unlzip
+
+return lzip
+]=])
+package.preload["mathx"] = lib("luax/mathx.lua", [=[--[[
 This file is part of luax.
 
 luax is free software: you can redistribute it and/or modify
@@ -11143,7 +11270,7 @@ mathx.pi = math.pi
 
 return mathx
 ]=])
-package.preload["ps"] = lib("lib/luax/ps.lua", [=[--[[
+package.preload["ps"] = lib("luax/ps.lua", [=[--[[
 This file is part of luax.
 
 luax is free software: you can redistribute it and/or modify
@@ -11199,7 +11326,7 @@ end
 
 return ps
 ]=])
-package.preload["qmath"] = lib("lib/luax/qmath.lua", [=[--[[
+package.preload["qmath"] = lib("luax/qmath.lua", [=[--[[
 This file is part of luax.
 
 luax is free software: you can redistribute it and/or modify
@@ -11362,7 +11489,7 @@ end
 
 return qmath
 ]=])
-package.preload["readline"] = lib("lib/luax/readline.lua", [=[--[[
+package.preload["readline"] = lib("luax/readline.lua", [=[--[[
 This file is part of luax.
 
 luax is free software: you can redistribute it and/or modify
@@ -11401,7 +11528,7 @@ end
 
 return readline
 ]=])
-package.preload["serpent"] = lib("lib/luax/serpent.lua", [=[local n, v = "serpent", "0.303" -- (C) 2012-18 Paul Kulchenko; MIT License
+package.preload["serpent"] = lib("luax/serpent.lua", [=[local n, v = "serpent", "0.303" -- (C) 2012-18 Paul Kulchenko; MIT License
 local c, d = "Paul Kulchenko", "Lua serializer and pretty printer"
 local snum = {[tostring(1/0)]='1/0 --[[math.huge]]',[tostring(-1/0)]='-1/0 --[[-math.huge]]',[tostring(0/0)]='0/0'}
 local badtype = {thread = true, userdata = true, cdata = true}
@@ -11554,7 +11681,7 @@ return { _NAME = n, _COPYRIGHT = c, _DESCRIPTION = d, _VERSION = v, serialize = 
   block = function(a, opts) return s(a, merge({indent = '  ', sortkeys = true, comment = true}, opts)) end }
 --@LIB
 ]=])
-package.preload["sh"] = lib("lib/luax/sh.lua", [=[--[[
+package.preload["sh"] = lib("luax/sh.lua", [=[--[[
 This file is part of luax.
 
 luax is free software: you can redistribute it and/or modify
@@ -11683,7 +11810,7 @@ setmetatable(sh, {
 
 return sh
 ]=])
-package.preload["strict"] = lib("lib/luax/strict.lua", [=[--[[
+package.preload["strict"] = lib("luax/strict.lua", [=[--[[
 This file is part of luax.
 
 luax is free software: you can redistribute it and/or modify
@@ -11763,7 +11890,7 @@ mt.__index = function (t, n)
   return rawget(t, n)
 end
 ]=])
-package.preload["sys"] = lib("lib/luax/sys.lua", [=[--[[
+package.preload["sys"] = lib("luax/sys.lua", [=[--[[
 This file is part of luax.
 
 luax is free software: you can redistribute it and/or modify
@@ -11834,7 +11961,7 @@ end
 
 return sys
 ]=])
-package.preload["tar"] = lib("lib/luax/tar.lua", [=[--[[
+package.preload["tar"] = lib("luax/tar.lua", [=[--[[
 This file is part of luax.
 
 luax is free software: you can redistribute it and/or modify
@@ -12275,7 +12402,7 @@ end
 
 return tar
 ]=])
-package.preload["term"] = lib("lib/luax/term.lua", [=[--[[
+package.preload["term"] = lib("luax/term.lua", [=[--[[
 This file is part of luax.
 
 luax is free software: you can redistribute it and/or modify
@@ -12563,7 +12690,7 @@ end
 
 return term
 ]=])
-package.preload["toml"] = lib("lib/luax/toml.lua", [=[
+package.preload["toml"] = lib("luax/toml.lua", [=[
 
 
 
@@ -14105,7 +14232,7 @@ end
 
 return tinytoml
 ]=])
-package.preload["tomlx"] = lib("lib/luax/tomlx.lua", [=[--[[
+package.preload["tomlx"] = lib("luax/tomlx.lua", [=[--[[
 This file is part of luax.
 
 luax is free software: you can redistribute it and/or modify
@@ -14296,13 +14423,14 @@ end
 
 return tomlx
 ]=])
-package.preload["_PANDA_VERSION"] = lib(".build/src/_PANDA_VERSION.lua", [=[return [[0.8]] --@LOAD]=])
+package.preload["_PANDA_VERSION"] = lib(".build/src/_PANDA_VERSION.lua", [=[return [[0.9]] --@LOAD]=])
 require "F"
-_ENV["_LUAX_VERSION"] = require "_LUAX_VERSION"
 require "crypt"
 require "fs"
 require "luax-debug"
 require "luax-package"
+require "lz4"
+require "lzip"
 _ENV["_PANDA_VERSION"] = require "_PANDA_VERSION"
 return lib("src/panda.lua", [=[-- vim: set ts=4 sw=4 foldmethod=marker :
 
@@ -14325,6 +14453,8 @@ return lib("src/panda.lua", [=[-- vim: set ts=4 sw=4 foldmethod=marker :
     For further information about Panda you can visit
     https://codeberg.org/cdsoft/panda
 --]]
+
+-- @MAIN @LIB
 
 local pandoc = require "pandoc"
 local utils = pandoc.utils
@@ -14961,7 +15091,6 @@ filters = {
     { Pandoc = write_dependency_file },
 }
 
---@MAIN (this script is actually the main script of a Lua library)
 return filters
 ]=])()
 

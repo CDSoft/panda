@@ -20,14 +20,10 @@ https://codeberg.org/cdsoft/panda
 
 local F = require "F"
 
-version "0.8"
+version "0.9"
 
 help.name "Panda"
 help.description "$name"
-
-clean.mrproper "$builddir"
-clean "$builddir/src"
-clean "$builddir/bin"
 
 var "plantuml_version" "1.2026.2"
 var "plantuml_url" "https://github.com/plantuml/plantuml/releases/download/v$plantuml_version/plantuml-$plantuml_version.jar"
@@ -47,8 +43,10 @@ local sources = {
 build.luax.lua:add "flags" "-q"
 
 local bins = {
-    build.luax.lua "bin/panda.lua" { sources },
     "bin/panda",
+}
+local libs = {
+    build.luax.lua "lib/panda.lua" { sources },
 }
 
 phony "release" {
@@ -57,6 +55,9 @@ phony "release" {
         name = "panda-${version}",
         F.flatten(bins) : map(function(script)
             return build.cp("$builddir/release/.build/panda-${version}/bin"/script:basename()) { script }
+        end),
+        F.flatten(libs) : map(function(script)
+            return build.cp("$builddir/release/.build/panda-${version}/lib"/script:basename()) { script }
         end),
     },
 }
@@ -79,7 +80,7 @@ local tests = {
             "export LUA_PATH=test/?.lua;",
             "export PANDA_IMG=$builddir/img;",
             "pandoc",
-                "-L bin/panda.lua",
+                "-L lib/panda.lua",
                 "-Vpanda_target=$out",
                 "-Vbuild=$builddir",
                 "--standalone",
@@ -88,7 +89,7 @@ local tests = {
         implicit_in = {
             "$builddir/plantuml.jar",
             "$builddir/ditaa.jar",
-            "bin/panda.lua",
+            "lib/panda.lua",
         },
         implicit_out = {
             "$builddir/test/test.md.d",
@@ -132,7 +133,7 @@ local docs = {
             "export PLANTUML=$builddir/plantuml.jar;",
             "export DITAA=$builddir/ditaa.jar;",
             "pandoc",
-                "-L", "bin/panda.lua",
+                "-L", "lib/panda.lua",
                 "-Vpanda_target=$out",
                 "-Vpanda_dep_file=$depfile",
                 "-Vdoc=doc",
@@ -142,7 +143,7 @@ local docs = {
         depfile = "$builddir/doc/$out.d",
         implicit_in =
         {
-            "bin/panda.lua",
+            "lib/panda.lua",
             "$builddir/plantuml.jar",
             "$builddir/ditaa.jar",
         },
@@ -157,6 +158,7 @@ section "Shortcuts"
 help "compile" "Bundle $name into a single Lua script"
 phony "compile" (bins)
 install "bin" (bins)
+install "lib" (libs)
 
 help "all" "Compile, test and generate documentation"
 phony "all" { "compile", "test", "doc" }

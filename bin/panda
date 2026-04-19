@@ -18,4 +18,17 @@
 # For further information about Panda you can visit
 # https://codeberg.org/cdsoft/panda
 
-pandoc -L "$(dirname "$0")"/panda.lua "$@"
+BASE="$(realpath "$(dirname "$0")")"
+PANDA1=$(dirname "$BASE")/lib/panda.lua
+PANDA2="$BASE"/panda.lua
+
+if [ -f "$PANDA1" ]; then
+    pandoc -L "$PANDA1" "$@"
+
+elif [ -f "$PANDA2" ]; then
+    pandoc -L "$PANDA2" "$@"
+
+else
+    echo "panda.lua: not found" >&2
+    exit 1
+fi
