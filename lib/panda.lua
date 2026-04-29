@@ -3,7 +3,7 @@
 -- Generated with LuaX
 -- Copyright (C) 2021-2026 codeberg.org/cdsoft/luax, Christophe Delord
 
-_LUAX_VERSION = "LuaX 10.1.2"
+_LUAX_VERSION = "LuaX 10.3"
 
 local function lib(path, src) return assert(load(src, '@$panda:'..path)) end
 package.preload["F"] = lib("luax/F.lua", [==[--[[
@@ -4697,18 +4697,18 @@ This function validates the content of a table agains a schema.
 A schema is a Lua table with the same structure that the input tables,
 the values being replaced with values of the expected type.
 
-Expected type       Specification                                                       Exemple
-------------------- ------------------------------------------------------------------- -------------------
-Boolean             any boolean                                                         `true`
-Number              any number                                                          `0`
-String              any string                                                          `"str"`
-Array               a table with one element (type of the array items)                  `{ "str" }`
-Structure           a table with keys (names) and values (types)                        `{ x=0, y=0 }`
-Enumerated type     a list with the `"enum"` keyword and the list of values             `{ "enum", "on", "off" }`
-Interval            a list with the `"range"` keyword and the min and max values        `{ "range", -10, 10 }`
-Union               a list with the `"union"` keyword and the list of accepted types    `{ "union", 0, "str" }`
-Option              a list with the `"option"` keyword and the optional type            `{ "option", "str" }`
-Any value           a list with the `"any"` keyword                                     `{ "any" }`
+| Expected type     | Specification                                                     | Exemple                   |
+| ----------------- | ----------------------------------------------------------------- | ------------------------- |
+| Boolean           | any boolean                                                       | `true`                    |
+| Number            | any number                                                        | `0`                       |
+| String            | any string                                                        | `"str"`                   |
+| Array             | a table with one element (type of the array items)                | `{ "str" }`               |
+| Structure         | a table with keys (names) and values (types)                      | `{ x=0, y=0 }`            |
+| Enumerated type   | a list with the `"enum"` keyword and the list of values           | `{ "enum", "on", "off" }` |
+| Interval          | a list with the `"range"` keyword and the min and max values      | `{ "range", -10, 10 }`    |
+| Union             | a list with the `"union"` keyword and the list of accepted types  | `{ "union", 0, "str" }`   |
+| Option            | a list with the `"option"` keyword and the optional type          | `{ "option", "str" }`     |
+| Any value         | a list with the `"any"` keyword                                   | `{ "any" }`               |
 
 The optional types can be combined with other types. E.g.: `{ "option", "range", -10, 10 }`.
 
@@ -4721,9 +4721,9 @@ F.validate(schema, input, [options])
 returns `true` if `input` is validated by `schema`. Otherwise it returns `false`
 and a list of failures.
 
-Options             Description                                             Default value
-------------------- ------------------------------------------------------- -------------------------
-`options.strict`    Strict validation (unspecified fields are not allowed)  `true`
+| Options           | Description                                               | Default value |
+| ----------------- | --------------------------------------------------------- | ------------- |
+| `options.strict`  | Strict validation (unspecified fields are not allowed)    | `true`        |
 @@@]]
 
 function F.validate(schema, input, options)
@@ -8209,57 +8209,57 @@ if not has_crypt then
 
     crypt.hash = crypt.hash64
 
-end
+    -- SHA-1
+    function crypt.sha1(message)
 
--- SHA-1
-function crypt.sha1(message)
+        local unpack = string.unpack
 
-    local unpack = string.unpack
+        local function rotl(w, n) return ((w << n) | (w >> (32 - n))) & 0xFFFFFFFF end
 
-    local function rotl(w, n) return ((w << n) | (w >> (32 - n))) & 0xFFFFFFFF end
+        -- Padding: bit '1' follwed by '0' upto 448 bits (mod 512)
+        local padding, mod = "\x80", (#message + 1) % 64
+        padding = padding .. ("\x00"):rep(56 - mod + (mod > 56 and 64 or 0))
 
-    -- Padding: bit '1' follwed by '0' upto 448 bits (mod 512)
-    local padding, mod = "\x80", (#message + 1) % 64
-    padding = padding .. ("\x00"):rep(56 - mod + (mod > 56 and 64 or 0))
+        local bytes = message .. padding .. (">I8"):pack(8*#message)
 
-    local bytes = message .. padding .. (">I8"):pack(8*#message)
+        local h0 = 0x67452301
+        local h1 = 0xEFCDAB89
+        local h2 = 0x98BADCFE
+        local h3 = 0x10325476
+        local h4 = 0xC3D2E1F0
 
-    local h0 = 0x67452301
-    local h1 = 0xEFCDAB89
-    local h2 = 0x98BADCFE
-    local h3 = 0x10325476
-    local h4 = 0xC3D2E1F0
+        -- 512 bit blocks
+        for chunk_start = 1, #bytes, 64 do
+            local w = {}
+            for i = 0, 15 do
+                w[i] = unpack(">I4", bytes, chunk_start + i * 4)
+            end
+            for i = 16, 79 do
+                w[i] = rotl(w[i-3] ~ w[i-8] ~ w[i-14] ~ w[i-16], 1)
+            end
 
-    -- 512 bit blocks
-    for chunk_start = 1, #bytes, 64 do
-        local w = {}
-        for i = 0, 15 do
-            w[i] = unpack(">I4", bytes, chunk_start + i * 4)
+            -- block hash
+            local a, b, c, d, e = h0, h1, h2, h3, h4
+            local function round(i, f, k)
+                a, b, c, d, e = (rotl(a, 5) + f + e + k + w[i]) & 0xFFFFFFFF, a, rotl(b, 30), c, d
+            end
+            for i =  0, 19 do round(i, (b & c) | ((~b) & d),        0x5A827999) end
+            for i = 20, 39 do round(i, b ~ c ~ d,                   0x6ED9EBA1) end
+            for i = 40, 59 do round(i, (b & c) | (b & d) | (c & d), 0x8F1BBCDC) end
+            for i = 60, 79 do round(i, b ~ c ~ d,                   0xCA62C1D6) end
+
+            -- update global hash
+            h0 = (h0 + a) & 0xFFFFFFFF
+            h1 = (h1 + b) & 0xFFFFFFFF
+            h2 = (h2 + c) & 0xFFFFFFFF
+            h3 = (h3 + d) & 0xFFFFFFFF
+            h4 = (h4 + e) & 0xFFFFFFFF
         end
-        for i = 16, 79 do
-            w[i] = rotl(w[i-3] ~ w[i-8] ~ w[i-14] ~ w[i-16], 1)
-        end
 
-        -- block hash
-        local a, b, c, d, e = h0, h1, h2, h3, h4
-        local function round(i, f, k)
-            a, b, c, d, e = (rotl(a, 5) + f + e + k + w[i]) & 0xFFFFFFFF, a, rotl(b, 30), c, d
-        end
-        for i =  0, 19 do round(i, (b & c) | ((~b) & d),        0x5A827999) end
-        for i = 20, 39 do round(i, b ~ c ~ d,                   0x6ED9EBA1) end
-        for i = 40, 59 do round(i, (b & c) | (b & d) | (c & d), 0x8F1BBCDC) end
-        for i = 60, 79 do round(i, b ~ c ~ d,                   0xCA62C1D6) end
+        -- Final hexa digest
+        return (">I4I4I4I4I4"):pack(h0, h1, h2, h3, h4):hex()
 
-        -- update global hash
-        h0 = (h0 + a) & 0xFFFFFFFF
-        h1 = (h1 + b) & 0xFFFFFFFF
-        h2 = (h2 + c) & 0xFFFFFFFF
-        h3 = (h3 + d) & 0xFFFFFFFF
-        h4 = (h4 + e) & 0xFFFFFFFF
     end
-
-    -- Final hexa digest
-    return (">I4I4I4I4I4"):pack(h0, h1, h2, h3, h4):hex()
 
 end
 
@@ -8525,9 +8525,9 @@ curl(...)
 @@@]]
 
 local default_curl_options = {
-    "--silent",
-    "--show-error",
-    "--location", -- follow redirections
+    "-s",   --silent
+    "-S",   --show-error
+    "-L",   --location (follow redirections)
 }
 
 setmetatable(curl, { __call = function(_, ...) return curl.request(default_curl_options, ...) end })
@@ -8598,12 +8598,14 @@ function curl.http.request(method, url, options)
     headers["User-Agent"] = headers["User-Agent"] or user_agent
 
     local response, error_message = curl.request {
-        "--location", "--silent", "--show-headers",
-        "--request", method:upper(), url,
+        "-L",                           --location
+        "-s",                           --silent
+        "-i",                           --show-headers
+        "-X", method:upper(), url,      --request
         F.mapk2a(function(k, v)
-            return { "--header", q(('%s: %s'):format(k, v)) }
+            return { "-H", q(('%s: %s'):format(k, v)) } --header
         end, headers),
-        body and { "--data", q(body) } or {},
+        body and { "-d", q(body) } or {},               --data
     }
     if not response then return nil, error_message end
 
@@ -9058,23 +9060,19 @@ if not has_fs then
             else
                 files = sh("dir /b", dir)
             end
-            return files
-                : lines()
+            return (files or "") : lines()
                 : map(clean_path)
                 : sort()
         end
 
         local files
         if recursive then
-            files = sh("find", path, ("-name %q"):format(pattern))
-                : lines()
+            files = (sh("find", path, ("-name %q"):format(pattern), "2>/dev/null") or "") : lines()
                 : filter(F.partial(F.op.ne, path))
         elseif pattern then
-            files = sh("ls -d", path/pattern)
-                : lines()
+            files = (sh("ls -d", path/pattern, "2>/dev/null") or "") : lines()
         else
-            files = sh("ls", dir)
-                : lines()
+            files = (sh("ls", dir, "2>/dev/null") or "") : lines()
                 : map(F.partial(fs.join, dir))
         end
         return files
@@ -10710,6 +10708,135 @@ end
 return json
 
 ]===])
+package.preload["lar"] = lib("luax/lar.lua", [=[--[[
+This file is part of luax.
+
+luax is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+luax is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with luax.  If not, see <https://www.gnu.org/licenses/>.
+
+For further information about luax you can visit
+https://codeberg.org/cdsoft/luax
+--]]
+
+--@LIB
+
+local F = require "F"
+local cbor = require "cbor"
+local crypt = require "crypt"
+local lz4 = require "lz4"
+local lzip = require "lzip"
+
+--[[------------------------------------------------------------------------@@@
+## Lua Archive
+@@@]]
+
+--[[@@@
+```lua
+local lar = require "lar"
+```
+
+`lar` is a simple archive format for Lua values (e.g. Lua tables).
+It contains a Lua value:
+
+- serialized with `cbor`
+- compressed with `lz4` or `lzip`
+- encrypted with `arc4`
+
+The Lua value is only encrypted if a key is provided.
+@@@]]
+local lar = {}
+
+local MAGIC = "!<LuaX archive>"
+
+local RAW  <const> = 0
+local LZ4  <const> = 1
+local LZIP <const> = 2
+
+local compression_options = {
+    { algo=nil,    flag=RAW,  compress=F.id,      decompress=F.id   },
+    { algo="lz4",  flag=LZ4,  compress=lz4.lz4,   decompress=lz4.unlz4  },
+    { algo="lzip", flag=LZIP, compress=lzip.lzip, decompress=lzip.unlzip },
+}
+
+local function find_options(x)
+    for i = 1, #compression_options do
+        local opt = compression_options[i]
+        if x==opt.algo or x==opt.flag then return opt end
+    end
+    return compression_options[1]
+end
+
+--[[@@@
+```lua
+lar.lar(lua_value, [opt])
+```
+Returns a string with `lua_value` serialized, compressed and encrypted.
+
+Options:
+
+- `opt.compress`: compression algorithm (`"lzip"` by default):
+
+    - `"none"`: no compression
+    - `"lz4"`: compression with LZ4 (default compression level)
+    - `"lz4-#"`: compression with LZ4 (compression level `#` with `#` between 0 and 12)
+    - `"lzip"`: compression with lzip (default compression level)
+    - `"lzip-#"`: compression with lzip (compression level `#` with `#` between 0 and 9)
+
+- `opt.key`: encryption key (no encryption by default)
+@@@]]
+
+function lar.lar(lua_value, lar_opt)
+    lar_opt = lar_opt or {}
+    local algo, level = (lar_opt.compress or "lzip"):split"%-":unpack()
+    local compress_opt = find_options(algo)
+
+    local payload = cbor.encode(lua_value, {pairs=F.pairs})
+    payload = assert(compress_opt.compress(payload, tonumber(level)))
+    if lar_opt.key then payload = crypt.arc4(payload, lar_opt.key) end
+
+    local data = string.pack("<zBs4", MAGIC, compress_opt.flag, payload)
+    return data .. string.pack("<I8", data:crc64())
+end
+
+--[[@@@
+```lua
+lar.unlar(archive, [opt])
+```
+Returns the Lua value contained in a serialized, compressed and encrypted string.
+
+Options:
+
+- `opt.key`: encryption key (no encryption by default)
+@@@]]
+
+function lar.unlar(archive, opt)
+    opt = opt or {}
+
+    if type(archive)~="string" then
+        error("bad argument #1 to 'unlar' (string expected, got "..type(archive)..")")
+    end
+    local ok, magic, compress_flag, payload, crc = pcall(string.unpack, "<zBs4I8", archive)
+    assert(ok and magic==MAGIC and crc==archive:sub(1, -9):crc64(), "not a LuaX archive")
+
+    if opt.key then payload = crypt.unarc4(payload, opt.key) end
+    local compress_opt = find_options(compress_flag)
+    payload = assert(compress_opt.decompress(payload))
+
+    return cbor.decode(payload)
+end
+
+return lar
+]=])
 package.preload["linenoise"] = lib("luax/linenoise.lua", [=[--[[
 This file is part of luax.
 
@@ -10967,7 +11094,7 @@ return F{
     {name="windows-aarch64",    machine="ARM64",   kernel="Windows_NT", os="windows", arch="aarch64", libc="gnu",   exe=".exe", so=".dll"  },
 }
 ]=])
-package.preload["luax-version"] = lib("luax/luax-version.lua", [[local version = "10.1.2"
+package.preload["luax-version"] = lib("luax/luax-version.lua", [[local version = "10.3"
 local year = 2026
 local url = "codeberg.org/cdsoft/luax"
 local author = "Christophe Delord"
@@ -12518,44 +12645,44 @@ color_mt = {
 local function color(value) return setmetatable({value=CSI..tostring(value).."m"}, color_mt) end
 local function enable(en) color_enable = en==nil or en end
 local function disable() color_enable = false end
---                                @@@`term.color` field     Description                         @@@
---                                @@@---------------------- ------------------------------------@@@
+--                                @@@| `term.color` field     | Description                          |@@@
+--                                @@@| ---------------------- | ------------------------------------ |@@@
 term.color = {
-    -- attributes               --@@@*Attributes*                                               @@@
-    reset       = color(0),     --@@@`reset`                reset the colors                    @@@
-    clear       = color(0),     --@@@`clear`                same as reset                       @@@
-    default     = color(0),     --@@@`default`              same as reset                       @@@
-    bright      = color(1),     --@@@`bright`               bold or more intense                @@@
-    bold        = color(1),     --@@@`bold`                 same as bold                        @@@
-    dim         = color(2),     --@@@`dim`                  thiner or less intense              @@@
-    italic      = color(3),     --@@@`italic`               italic (sometimes inverse or blink) @@@
-    underline   = color(4),     --@@@`underline`            underlined                          @@@
-    blink       = color(5),     --@@@`blink`                slow blinking (less than 150 bpm)   @@@
-    fast        = color(6),     --@@@`fast`                 fast blinking (more than 150 bpm)   @@@
-    reverse     = color(7),     --@@@`reverse`              swap foreground and background      @@@
-    hidden      = color(8),     --@@@`hidden`               hidden text                         @@@
-    strike      = color(9),     --@@@`strike`               strike or crossed-out               @@@
-    -- foreground               --@@@*Foreground colors*                                        @@@
-    black       = color(30),    --@@@`black`                black foreground                    @@@
-    red         = color(31),    --@@@`red`                  red foreground                      @@@
-    green       = color(32),    --@@@`green`                green foreground                    @@@
-    yellow      = color(33),    --@@@`yellow`               yellow foreground                   @@@
-    blue        = color(34),    --@@@`blue`                 blue foreground                     @@@
-    magenta     = color(35),    --@@@`magenta`              magenta foreground                  @@@
-    cyan        = color(36),    --@@@`cyan`                 cyan foreground                     @@@
-    white       = color(37),    --@@@`white`                white foreground                    @@@
-    -- background               --@@@*Background colors*                                        @@@
-    onblack     = color(40),    --@@@`onblack`              black background                    @@@
-    onred       = color(41),    --@@@`onred`                red background                      @@@
-    ongreen     = color(42),    --@@@`ongreen`              green background                    @@@
-    onyellow    = color(43),    --@@@`onyellow`             yellow background                   @@@
-    onblue      = color(44),    --@@@`onblue`               blue background                     @@@
-    onmagenta   = color(45),    --@@@`onmagenta`            magenta background                  @@@
-    oncyan      = color(46),    --@@@`oncyan`               cyan background                     @@@
-    onwhite     = color(47),    --@@@`onwhite`              white background                    @@@
-    -- enable/disable           --@@@*Control functions*                                        @@@
-    enable      = enable,       --@@@`enable(b)`            enable colors if `b` is `true` or `nil` (default) @@@
-    disable     = disable,      --@@@`disable`              disable colors                      @@@
+    -- attributes               --@@@| *Attributes*           |                                      |@@@
+    reset       = color(0),     --@@@| `reset`                | reset the colors                     |@@@
+    clear       = color(0),     --@@@| `clear`                | same as reset                        |@@@
+    default     = color(0),     --@@@| `default`              | same as reset                        |@@@
+    bright      = color(1),     --@@@| `bright`               | bold or more intense                 |@@@
+    bold        = color(1),     --@@@| `bold`                 | same as bold                         |@@@
+    dim         = color(2),     --@@@| `dim`                  | thiner or less intense               |@@@
+    italic      = color(3),     --@@@| `italic`               | italic (sometimes inverse or blink)  |@@@
+    underline   = color(4),     --@@@| `underline`            | underlined                           |@@@
+    blink       = color(5),     --@@@| `blink`                | slow blinking (less than 150 bpm)    |@@@
+    fast        = color(6),     --@@@| `fast`                 | fast blinking (more than 150 bpm)    |@@@
+    reverse     = color(7),     --@@@| `reverse`              | swap foreground and background       |@@@
+    hidden      = color(8),     --@@@| `hidden`               | hidden text                          |@@@
+    strike      = color(9),     --@@@| `strike`               | strike or crossed-out                |@@@
+    -- foreground               --@@@| *Foreground colors*    |                                      |@@@
+    black       = color(30),    --@@@| `black`                | black foreground                     |@@@
+    red         = color(31),    --@@@| `red`                  | red foreground                       |@@@
+    green       = color(32),    --@@@| `green`                | green foreground                     |@@@
+    yellow      = color(33),    --@@@| `yellow`               | yellow foreground                    |@@@
+    blue        = color(34),    --@@@| `blue`                 | blue foreground                      |@@@
+    magenta     = color(35),    --@@@| `magenta`              | magenta foreground                   |@@@
+    cyan        = color(36),    --@@@| `cyan`                 | cyan foreground                      |@@@
+    white       = color(37),    --@@@| `white`                | white foreground                     |@@@
+    -- background               --@@@| *Background colors*    |                                      |@@@
+    onblack     = color(40),    --@@@| `onblack`              | black background                     |@@@
+    onred       = color(41),    --@@@| `onred`                | red background                       |@@@
+    ongreen     = color(42),    --@@@| `ongreen`              | green background                     |@@@
+    onyellow    = color(43),    --@@@| `onyellow`             | yellow background                    |@@@
+    onblue      = color(44),    --@@@| `onblue`               | blue background                      |@@@
+    onmagenta   = color(45),    --@@@| `onmagenta`            | magenta background                   |@@@
+    oncyan      = color(46),    --@@@| `oncyan`               | cyan background                      |@@@
+    onwhite     = color(47),    --@@@| `onwhite`              | white background                     |@@@
+    -- enable/disable           --@@@| *Control functions*    |                                      |@@@
+    enable      = enable,       --@@@| `enable(b)`            | enable colors if `b` is `true` or `nil` (default) |@@@
+    disable     = disable,      --@@@| `disable`              | disable colors                       |@@@
 }
 
 color_reset = term.color.reset
@@ -12579,16 +12706,16 @@ local function cursor(shape)
     end
 end
 
---                                  @@@`term.cursor` field      Description                         @@@
---                                  @@@------------------------ ------------------------------------@@@
+--                                  @@@| `term.cursor` field      | Description                 |@@@
+--                                  @@@| ------------------------ | --------------------------- |@@@
 term.cursor = {
-    reset           = cursor(0),  --@@@`reset`                  reset to the initial shape          @@@
-    block_blink     = cursor(1),  --@@@`block_blink`            blinking block cursor               @@@
-    block           = cursor(2),  --@@@`block`                  fixed block cursor                  @@@
-    underline_blink = cursor(3),  --@@@`underline_blink`        blinking underline cursor           @@@
-    underline       = cursor(4),  --@@@`underline`              fixed underline cursor              @@@
-    bar_blink       = cursor(5),  --@@@`bar_blink`              blinking bar cursor                 @@@
-    bar             = cursor(6),  --@@@`bar`                    fixed bar cursor                    @@@
+    reset           = cursor(0),  --@@@| `reset`                  | reset to the initial shape  |@@@
+    block_blink     = cursor(1),  --@@@| `block_blink`            | blinking block cursor       |@@@
+    block           = cursor(2),  --@@@| `block`                  | fixed block cursor          |@@@
+    underline_blink = cursor(3),  --@@@| `underline_blink`        | blinking underline cursor   |@@@
+    underline       = cursor(4),  --@@@| `underline`              | fixed underline cursor      |@@@
+    bar_blink       = cursor(5),  --@@@| `bar_blink`              | blinking bar cursor         |@@@
+    bar             = cursor(6),  --@@@| `bar`                    | fixed bar cursor            |@@@
 }
 
 --[[------------------------------------------------------------------------@@@
@@ -12687,6 +12814,27 @@ function term.prompt(p)
     end
     return io.stdin:read "l"
 end
+
+--[[------------------------------------------------------------------------@@@
+## Title
+
+Set the terminal title.
+@@@]]
+
+--[[@@@
+```lua
+term.title(t)
+```
+sets the terminal title.
+@@@]]
+
+function term.title(t)
+    if term.isatty(io.stdout) then
+        io.stdout:write(ESC, "]0;", t, "\a")
+        io.stdout:flush()
+    end
+end
+
 
 return term
 ]=])
@@ -14423,7 +14571,7 @@ end
 
 return tomlx
 ]=])
-package.preload["_PANDA_VERSION"] = lib(".build/src/_PANDA_VERSION.lua", [=[return [[0.9]] --@LOAD]=])
+package.preload["_PANDA_VERSION"] = lib(".build/src/_PANDA_VERSION.lua", [=[return [[0.9.1]] --@LOAD]=])
 require "F"
 require "crypt"
 require "fs"

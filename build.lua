@@ -20,7 +20,7 @@ https://codeberg.org/cdsoft/panda
 
 local F = require "F"
 
-version "0.9"
+version "0.9.1"
 
 help.name "Panda"
 help.description "$name"
@@ -60,6 +60,12 @@ phony "release" {
             return build.cp("$builddir/release/.build/panda-${version}/lib"/script:basename()) { script }
         end),
     },
+    F.flatten(bins) : map(function(script)
+        return build.cp("$builddir/release/${version}"/script:basename()) { script }
+    end),
+    F.flatten(libs) : map(function(script)
+        return build.cp("$builddir/release/${version}"/script:basename()) { script }
+    end),
 }
 
 ---------------------------------------------------------------------
