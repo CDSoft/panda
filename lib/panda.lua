@@ -3,7 +3,7 @@
 -- Generated with LuaX
 -- Copyright (C) 2021-2026 codeberg.org/cdsoft/luax, Christophe Delord
 
-_LUAX_VERSION = "LuaX 10.3"
+_LUAX_VERSION = "LuaX 10.6.3"
 
 local function lib(path, src) return assert(load(src, '@$panda:'..path)) end
 package.preload["F"] = lib("luax/F.lua", [==[--[[
@@ -6945,7 +6945,7 @@ end
 
 local argparse = {}
 
-argparse.version = "0.7.1"
+argparse.version = "0.7.2"
 
 setmetatable(argparse, {__call = function(_, ...)
    return Parser(default_cmdline[0]):add_help(true)(...)
@@ -7821,7 +7821,11 @@ if not has_crypt then
 
     crypt = {}
 
-    local floor = math.floor
+    local math = math
+    local random = math.random
+
+    local clock = os.clock
+    local time = os.time
 
     local byte = string.byte
     local char = string.char
@@ -7854,19 +7858,130 @@ if not has_crypt then
     end
 
     local fnv1a_128_init = {0x6c62272e, 0x07bb0142, 0x62b82175, 0x6295c58d}
-    local fnv1a_128_prime_b, fnv1a_128_prime_d = 1<<(88-2*32), 1<<8 | 0x3b
+    local fnv1a_128_prime_2, fnv1a_128_prime_0 = 1<<(88-2*32), 1<<8 | 0x3b
     local function fnv1a_128(hash, bs)
-        local a, b, c, d = tunpack(hash)
+        local h3, h2, h1, h0 = tunpack(hash)
         for i=1,#bs do
-            d = d ~ byte(bs, i)
-            local c0, d0 = c, d
+            h0 = h0 ~ byte(bs, i)
+            local h1i, h0i = h1, h0
             local carry
-            d =         d0*fnv1a_128_prime_d                            d, carry = d & 0xFFFFFFFF, d >> 32
-            c = carry + c0*fnv1a_128_prime_d                            c, carry = c & 0xFFFFFFFF, c >> 32
-            b = carry + b *fnv1a_128_prime_d + d0*fnv1a_128_prime_b     b, carry = b & 0xFFFFFFFF, b >> 32
-            a = carry + a *fnv1a_128_prime_d + c0*fnv1a_128_prime_b
+            h0 =         h0i*fnv1a_128_prime_0                            h0, carry = h0 & 0xFFFFFFFF, h0 >> 32
+            h1 = carry + h1i*fnv1a_128_prime_0                            h1, carry = h1 & 0xFFFFFFFF, h1 >> 32
+            h2 = carry + h2 *fnv1a_128_prime_0 + h0i*fnv1a_128_prime_2    h2, carry = h2 & 0xFFFFFFFF, h2 >> 32
+            h3 = carry + h3 *fnv1a_128_prime_0 + h1i*fnv1a_128_prime_2
         end
-        return a&0xFFFFFFFF, b, c, d
+        return h3&0xFFFFFFFF, h2, h1, h0
+    end
+
+    local fnv1a_256_init = {
+        0xdd268dbc, 0xaac55036, 0x2d98c384, 0xc4e576cc,
+        0xc8b15368, 0x47b6bbb3, 0x1023b4c8, 0xcaee0535,
+    }
+    local fnv1a_256_prime_5, fnv1a_256_prime_0 = 1<<(168-5*32), 1<<8 | 0x63
+    local function fnv1a_256(hash, bs)
+        local h7, h6, h5, h4, h3, h2, h1, h0 = tunpack(hash)
+        for i=1,#bs do
+            h0 = h0 ~ byte(bs, i)
+            local h2i, h1i, h0i = h2, h1, h0
+            local carry
+            h0 =         h0i*fnv1a_256_prime_0                            h0, carry = h0 & 0xFFFFFFFF, h0 >> 32
+            h1 = carry + h1i*fnv1a_256_prime_0                            h1, carry = h1 & 0xFFFFFFFF, h1 >> 32
+            h2 = carry + h2i*fnv1a_256_prime_0                            h2, carry = h2 & 0xFFFFFFFF, h2 >> 32
+            h3 = carry + h3 *fnv1a_256_prime_0                            h3, carry = h3 & 0xFFFFFFFF, h3 >> 32
+            h4 = carry + h4 *fnv1a_256_prime_0                            h4, carry = h4 & 0xFFFFFFFF, h4 >> 32
+            h5 = carry + h5 *fnv1a_256_prime_0 + h0i*fnv1a_256_prime_5    h5, carry = h5 & 0xFFFFFFFF, h5 >> 32
+            h6 = carry + h6 *fnv1a_256_prime_0 + h1i*fnv1a_256_prime_5    h6, carry = h6 & 0xFFFFFFFF, h6 >> 32
+            h7 = carry + h7 *fnv1a_256_prime_0 + h2i*fnv1a_256_prime_5
+        end
+        return h7&0xFFFFFFFF, h6, h5, h4, h3, h2, h1, h0
+    end
+
+    local fnv1a_512_init = {
+        0xb86db0b1, 0x171f4416, 0xdca1e50f, 0x309990ac,
+        0xac87d059, 0xc9000000, 0x00000000, 0x00000d21,
+        0xe948f68a, 0x34c192f6, 0x2ea79bc9, 0x42dbe7ce,
+        0x18203641, 0x5f56e34b, 0xac982aac, 0x4afe9fd9,
+    }
+    local fnv1a_512_prime_10, fnv1a_512_prime_0 = 1<<(344-10*32), 1<<8 | 0x57
+    local function fnv1a_512(hash, bs)
+        local h15, h14, h13, h12, h11, h10, h9, h8, h7, h6, h5, h4, h3, h2, h1, h0 = tunpack(hash)
+        for i=1,#bs do
+            h0 = h0 ~ byte(bs, i)
+            local h5i, h4i, h3i, h2i, h1i, h0i = h5, h4, h3, h2, h1, h0
+            local carry
+            h0  =         h0i*fnv1a_512_prime_0                            h0,  carry = h0  & 0xFFFFFFFF, h0  >> 32
+            h1  = carry + h1i*fnv1a_512_prime_0                            h1,  carry = h1  & 0xFFFFFFFF, h1  >> 32
+            h2  = carry + h2i*fnv1a_512_prime_0                            h2,  carry = h2  & 0xFFFFFFFF, h2  >> 32
+            h3  = carry + h3 *fnv1a_512_prime_0                            h3,  carry = h3  & 0xFFFFFFFF, h3  >> 32
+            h4  = carry + h4 *fnv1a_512_prime_0                            h4,  carry = h4  & 0xFFFFFFFF, h4  >> 32
+            h5  = carry + h5 *fnv1a_512_prime_0                            h5,  carry = h5  & 0xFFFFFFFF, h5  >> 32
+            h6  = carry + h6 *fnv1a_512_prime_0                            h6,  carry = h6  & 0xFFFFFFFF, h6  >> 32
+            h7  = carry + h7 *fnv1a_512_prime_0                            h7,  carry = h7  & 0xFFFFFFFF, h7  >> 32
+            h8  = carry + h8 *fnv1a_512_prime_0                            h8,  carry = h8  & 0xFFFFFFFF, h8  >> 32
+            h9  = carry + h9 *fnv1a_512_prime_0                            h9,  carry = h9  & 0xFFFFFFFF, h9  >> 32
+            h10 = carry + h10*fnv1a_512_prime_0 + h0i*fnv1a_512_prime_10   h10, carry = h10 & 0xFFFFFFFF, h10 >> 32
+            h11 = carry + h11*fnv1a_512_prime_0 + h1i*fnv1a_512_prime_10   h11, carry = h11 & 0xFFFFFFFF, h11 >> 32
+            h12 = carry + h12*fnv1a_512_prime_0 + h2i*fnv1a_512_prime_10   h12, carry = h12 & 0xFFFFFFFF, h12 >> 32
+            h13 = carry + h13*fnv1a_512_prime_0 + h3i*fnv1a_512_prime_10   h13, carry = h13 & 0xFFFFFFFF, h13 >> 32
+            h14 = carry + h14*fnv1a_512_prime_0 + h4i*fnv1a_512_prime_10   h14, carry = h14 & 0xFFFFFFFF, h14 >> 32
+            h15 = carry + h15*fnv1a_512_prime_0 + h5i*fnv1a_512_prime_10
+        end
+        return h15&0xFFFFFFFF, h14, h13, h12, h11, h10, h9, h8, h7, h6, h5, h4, h3, h2, h1, h0
+    end
+
+    local fnv1a_1024_init = {
+        0x00000000, 0x00000000, 0x005f7a76, 0x758ecc4d,
+        0x32e56d5a, 0x591028b7, 0x4b29fc42, 0x23fdada1,
+        0x6c3bf34e, 0xda3674da, 0x9a21d900, 0x00000000,
+        0x00000000, 0x00000000, 0x00000000, 0x00000000,
+        0x00000000, 0x00000000, 0x00000000, 0x00000000,
+        0x00000000, 0x00000000, 0x00000000, 0x0004c6d7,
+        0xeb6e7380, 0x2734510a, 0x555f256c, 0xc005ae55,
+        0x6bde8cc9, 0xc6a93b21, 0xaff4b16c, 0x71ee90b3,
+    }
+    local fnv1a_1024_prime_21, fnv1a_1024_prime_0 = 1<<(680-21*32), 1<<8 | 0x8d
+    local function fnv1a_1024(hash, bs)
+        local h31, h30, h29, h28, h27, h26, h25, h24, h23, h22, h21, h20, h19, h18, h17, h16,
+              h15, h14, h13, h12, h11, h10, h9, h8, h7, h6, h5, h4, h3, h2, h1, h0 = tunpack(hash)
+        for i=1,#bs do
+            h0 = h0 ~ byte(bs, i)
+            local h10i, h9i, h8i, h7i, h6i, h5i, h4i, h3i, h2i, h1i, h0i = h10, h9, h8, h7, h6, h5, h4, h3, h2, h1, h0
+            local carry
+            h0  =         h0i*fnv1a_1024_prime_0                              h0,  carry = h0  & 0xFFFFFFFF, h0  >> 32
+            h1  = carry + h1i*fnv1a_1024_prime_0                              h1,  carry = h1  & 0xFFFFFFFF, h1  >> 32
+            h2  = carry + h2i*fnv1a_1024_prime_0                              h2,  carry = h2  & 0xFFFFFFFF, h2  >> 32
+            h3  = carry + h3 *fnv1a_1024_prime_0                              h3,  carry = h3  & 0xFFFFFFFF, h3  >> 32
+            h4  = carry + h4 *fnv1a_1024_prime_0                              h4,  carry = h4  & 0xFFFFFFFF, h4  >> 32
+            h5  = carry + h5 *fnv1a_1024_prime_0                              h5,  carry = h5  & 0xFFFFFFFF, h5  >> 32
+            h6  = carry + h6 *fnv1a_1024_prime_0                              h6,  carry = h6  & 0xFFFFFFFF, h6  >> 32
+            h7  = carry + h7 *fnv1a_1024_prime_0                              h7,  carry = h7  & 0xFFFFFFFF, h7  >> 32
+            h8  = carry + h8 *fnv1a_1024_prime_0                              h8,  carry = h8  & 0xFFFFFFFF, h8  >> 32
+            h9  = carry + h9 *fnv1a_1024_prime_0                              h9,  carry = h9  & 0xFFFFFFFF, h9  >> 32
+            h10 = carry + h10*fnv1a_1024_prime_0                              h10, carry = h10 & 0xFFFFFFFF, h10 >> 32
+            h11 = carry + h11*fnv1a_1024_prime_0                              h11, carry = h11 & 0xFFFFFFFF, h11 >> 32
+            h12 = carry + h12*fnv1a_1024_prime_0                              h12, carry = h12 & 0xFFFFFFFF, h12 >> 32
+            h13 = carry + h13*fnv1a_1024_prime_0                              h13, carry = h13 & 0xFFFFFFFF, h13 >> 32
+            h14 = carry + h14*fnv1a_1024_prime_0                              h14, carry = h14 & 0xFFFFFFFF, h14 >> 32
+            h15 = carry + h15*fnv1a_1024_prime_0                              h15, carry = h15 & 0xFFFFFFFF, h15 >> 32
+            h16 = carry + h16*fnv1a_1024_prime_0                              h16, carry = h16 & 0xFFFFFFFF, h16 >> 32
+            h17 = carry + h17*fnv1a_1024_prime_0                              h17, carry = h17 & 0xFFFFFFFF, h17 >> 32
+            h18 = carry + h18*fnv1a_1024_prime_0                              h18, carry = h18 & 0xFFFFFFFF, h18 >> 32
+            h19 = carry + h19*fnv1a_1024_prime_0                              h19, carry = h19 & 0xFFFFFFFF, h19 >> 32
+            h20 = carry + h20*fnv1a_1024_prime_0                              h20, carry = h20 & 0xFFFFFFFF, h20 >> 32
+            h21 = carry + h21*fnv1a_1024_prime_0 + h0i *fnv1a_1024_prime_21   h21, carry = h21 & 0xFFFFFFFF, h21 >> 32
+            h22 = carry + h22*fnv1a_1024_prime_0 + h1i *fnv1a_1024_prime_21   h22, carry = h22 & 0xFFFFFFFF, h22 >> 32
+            h23 = carry + h23*fnv1a_1024_prime_0 + h2i *fnv1a_1024_prime_21   h23, carry = h23 & 0xFFFFFFFF, h23 >> 32
+            h24 = carry + h24*fnv1a_1024_prime_0 + h3i *fnv1a_1024_prime_21   h24, carry = h24 & 0xFFFFFFFF, h24 >> 32
+            h25 = carry + h25*fnv1a_1024_prime_0 + h4i *fnv1a_1024_prime_21   h25, carry = h25 & 0xFFFFFFFF, h25 >> 32
+            h26 = carry + h26*fnv1a_1024_prime_0 + h5i *fnv1a_1024_prime_21   h26, carry = h26 & 0xFFFFFFFF, h26 >> 32
+            h27 = carry + h27*fnv1a_1024_prime_0 + h6i *fnv1a_1024_prime_21   h27, carry = h27 & 0xFFFFFFFF, h27 >> 32
+            h28 = carry + h28*fnv1a_1024_prime_0 + h7i *fnv1a_1024_prime_21   h28, carry = h28 & 0xFFFFFFFF, h28 >> 32
+            h29 = carry + h29*fnv1a_1024_prime_0 + h8i *fnv1a_1024_prime_21   h29, carry = h29 & 0xFFFFFFFF, h29 >> 32
+            h30 = carry + h30*fnv1a_1024_prime_0 + h9i *fnv1a_1024_prime_21   h30, carry = h30 & 0xFFFFFFFF, h30 >> 32
+            h31 = carry + h31*fnv1a_1024_prime_0 + h10i*fnv1a_1024_prime_21
+        end
+        return h31&0xFFFFFFFF, h30, h29, h28, h27, h26, h25, h24, h23, h22, h21, h20, h19, h18, h17, h16,
+               h15, h14, h13, h12, h11, h10, h9, h8, h7, h6, h5, h4, h3, h2, h1, h0
     end
 
     -- Random number generator
@@ -7875,12 +7990,13 @@ if not has_crypt then
 
     local entropy do
         local hash = fnv1a_64_init
-        entropy = function(ptr)
-            hash = fnv1a_64(hash, pack("<I8I8I8I8",
-                os.time(),
-                floor(os.clock()*1000000),
-                tonumber(format("%p", ptr)),
-                tonumber(format("%p", {}))
+        entropy = function()
+            hash = fnv1a_64(hash, pack("<I8dI8I8d",
+                time(),
+                clock(),
+                tonumber(format("%p", {})),
+                tonumber(format("%p", math)),
+                random()
             ))
             return hash
         end
@@ -7902,8 +8018,8 @@ if not has_crypt then
     function prng_mt.__index:seed(seed, incr)
         if seed == -1 then seed = default_pcg_state end
         if incr == -1 then incr = default_pcg_increment end
-        self.state = seed or entropy(self)
-        self.increment = incr or entropy({})
+        self.state = seed or entropy()
+        self.increment = incr or entropy()
         self.state = pcg_multiplier*self.state + self.increment
         self.state = pcg_multiplier*self.state + self.increment
         return self
@@ -8203,8 +8319,23 @@ if not has_crypt then
     function crypt.hash64(s) return ("<I8"):pack(fnv1a_64(fnv1a_64_init, s)):hex() end
 
     function crypt.hash128(s)
-        local a, b, c, d = fnv1a_128(fnv1a_128_init, s)
-        return ("<I4I4I4I4"):pack(d, c, b, a):hex()
+        local h = {fnv1a_128(fnv1a_128_init, s)}
+        return ("<"..("I4"):rep(#h)):pack(F.reverse(h):unpack()):hex()
+    end
+
+    function crypt.hash256(s)
+        local h = {fnv1a_256(fnv1a_256_init, s)}
+        return ("<"..("I4"):rep(#h)):pack(F.reverse(h):unpack()):hex()
+    end
+
+    function crypt.hash512(s)
+        local h = {fnv1a_512(fnv1a_512_init, s)}
+        return ("<"..("I4"):rep(#h)):pack(F.reverse(h):unpack()):hex()
+    end
+
+    function crypt.hash1024(s)
+        local h = {fnv1a_1024(fnv1a_1024_init, s)}
+        return ("<"..("I4"):rep(#h)):pack(F.reverse(h):unpack()):hex()
     end
 
     crypt.hash = crypt.hash64
@@ -8259,6 +8390,87 @@ if not has_crypt then
         -- Final hexa digest
         return (">I4I4I4I4I4"):pack(h0, h1, h2, h3, h4):hex()
 
+    end
+
+    -- SHA-256
+    function crypt.sha256(message)
+
+        local K = {
+            0x428a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5,
+            0x3956c25b, 0x59f111f1, 0x923f82a4, 0xab1c5ed5,
+            0xd807aa98, 0x12835b01, 0x243185be, 0x550c7dc3,
+            0x72be5d74, 0x80deb1fe, 0x9bdc06a7, 0xc19bf174,
+            0xe49b69c1, 0xefbe4786, 0x0fc19dc6, 0x240ca1cc,
+            0x2de92c6f, 0x4a7484aa, 0x5cb0a9dc, 0x76f988da,
+            0x983e5152, 0xa831c66d, 0xb00327c8, 0xbf597fc7,
+            0xc6e00bf3, 0xd5a79147, 0x06ca6351, 0x14292967,
+            0x27b70a85, 0x2e1b2138, 0x4d2c6dfc, 0x53380d13,
+            0x650a7354, 0x766a0abb, 0x81c2c92e, 0x92722c85,
+            0xa2bfe8a1, 0xa81a664b, 0xc24b8b70, 0xc76c51a3,
+            0xd192e819, 0xd6990624, 0xf40e3585, 0x106aa070,
+            0x19a4c116, 0x1e376c08, 0x2748774c, 0x34b0bcb5,
+            0x391c0cb3, 0x4ed8aa4a, 0x5b9cca4f, 0x682e6ff3,
+            0x748f82ee, 0x78a5636f, 0x84c87814, 0x8cc70208,
+            0x90befffa, 0xa4506ceb, 0xbef9a3f7, 0xc67178f2,
+        }
+
+        local H0 = {
+            0x6a09e667, 0xbb67ae85, 0x3c6ef372, 0xa54ff53a,
+            0x510e527f, 0x9b05688c, 0x1f83d9ab, 0x5be0cd19,
+        }
+
+        local function u32(x)       return x & 0xFFFFFFFF end
+        local function rotr(x, n)   return u32((x >> n) | (x << (32 - n))) end
+        local function Ch(e, f, g)  return (e & f) ~ (~e & g) end
+        local function Maj(a, b, c) return (a & b) ~ (a & c) ~ (b & c) end
+        local function Sigma0(a)    return rotr(a,  2) ~ rotr(a, 13) ~ rotr(a, 22) end
+        local function Sigma1(e)    return rotr(e,  6) ~ rotr(e, 11) ~ rotr(e, 25) end
+        local function sigma0(x)    return rotr(x,  7) ~ rotr(x, 18) ~ u32(x >>  3) end
+        local function sigma1(x)    return rotr(x, 17) ~ rotr(x, 19) ~ u32(x >> 10) end
+
+        local H = {}
+        for i = 1, #H0 do H[i] = H0[i] end
+
+        local msgLen = #message
+        local bitLen = msgLen * 8
+
+        -- #padded + 8 shall be 0 (mod 64), i.e. pad to a multiple of 64 - 8
+        local padLen = (55 - msgLen) % 64
+        local padded = table.concat {
+            message,
+            "\x80",                 -- padding: 0x80
+            ("\x00"):rep(padLen),   --          zeros
+            (">I8"):pack(bitLen),   --          64 bit big-endian length
+        }
+
+        for offset = 1, #padded, 64 do
+            local W = {}
+            for i = 1, 16 do
+                W[i] = (">I4"):unpack(padded, offset + (i - 1) * 4)
+            end
+            for i = 17, 64 do
+                W[i] = u32(sigma1(W[i-2]) + W[i-7] + sigma0(W[i-15]) + W[i-16])
+            end
+            local a, b, c, d, e, f, g, h = H[1], H[2], H[3], H[4], H[5], H[6], H[7], H[8]
+            for i = 1, 64 do
+                local T1 = u32(h + Sigma1(e) + Ch(e, f, g)  + K[i] + W[i])
+                local T2 = u32(Sigma0(a) + Maj(a, b, c))
+                h = g;  g = f;  f = e
+                e = u32(d + T1)
+                d = c;  c = b;  b = a
+                a = u32(T1 + T2)
+            end
+            H[1] = u32(H[1] + a)
+            H[2] = u32(H[2] + b)
+            H[3] = u32(H[3] + c)
+            H[4] = u32(H[4] + d)
+            H[5] = u32(H[5] + e)
+            H[6] = u32(H[6] + f)
+            H[7] = u32(H[7] + g)
+            H[8] = u32(H[8] + h)
+        end
+
+        return (">I4I4I4I4I4I4I4I4"):pack(H[1], H[2], H[3], H[4], H[5], H[6], H[7], H[8]):hex()
     end
 
 end
@@ -8336,6 +8548,10 @@ s:hash32()          == crypt.hash32(s)
 s:hash64()          == crypt.hash64(s)
 s:hash128()         == crypt.hash128(s)
 s:sha1()            == crypt.sha1(s)
+s:sha256()          == crypt.sha256(s)
+s:hash256()         == crypt.hash256(s)
+s:hash512()         == crypt.hash512(s)
+s:hash1024()        == crypt.hash1024(s)
 ```
 @@@]]
 
@@ -8351,7 +8567,11 @@ string.hash         = crypt.hash
 string.hash32       = crypt.hash32
 string.hash64       = crypt.hash64
 string.hash128      = crypt.hash128
+string.hash256      = crypt.hash256
+string.hash512      = crypt.hash512
+string.hash1024     = crypt.hash1024
 string.sha1         = crypt.sha1
+string.sha256       = crypt.sha256
 string.crc32        = crypt.crc32
 string.crc64        = crypt.crc64
 
@@ -9476,35 +9696,38 @@ if not has_imath then
 
     local mt = {__index={}}
 
+    local F = require "F"
+
     ---@diagnostic disable:unused-vararg
     local function ni(f) return function(...) error(f.." not implemented") end end
 
     local floor = math.floor
-    local ceil = math.ceil
-    local sqrt = math.sqrt
     local log = math.log
     local max = math.max
+    local mtype = math.type
+
+    local concat = table.concat
 
     local RADIX <const> = 10000000
     local RADIX_LEN <const> = floor(log(RADIX, 10))
 
     assert(RADIX^2 < 2^53, "RADIX^2 shall be storable on a Lua number")
 
-    local int_add, int_sub, int_mul, int_divmod, int_abs
+    local int_add, int_sub, int_mul, int_absdivmod, int_divmod, int_shortdiv, int_abs
 
     local function int_trim(a)
         for i = #a, 1, -1 do
             if a[i] and a[i] ~= 0 then break end
             a[i] = nil
         end
-        if #a == 0 then a.sign = 1 end
+        if #a == 0 then a.s = 1 end
     end
 
     local function int(n, base)
         n = n or 0
         if type(n) == "table" then return n end
         if type(n) == "number" then
-            if math.type(n) == "float" then
+            if mtype(n) == "float" then
                 n = ("%.0f"):format(floor(n))
             else
                 n = ("%d"):format(n)
@@ -9522,23 +9745,23 @@ if not has_imath then
         elseif n:sub(d, d+1) == "0b" then d = d+2; base = 2
         else base = base or 10
         end
-        local self = {sign=1}
+        local self = {s=1}
         if base == 10 then
             for i = #n, d, -RADIX_LEN do
                 local digit = n:sub(max(d, i-RADIX_LEN+1), i)
                 self[#self+1] = tonumber(digit)
             end
         else
-            local bn_base = {sign=1, base}
-            local bn_shift = {sign=1, 1}
-            local bn_digit = {sign=1, 0}
+            local bn_base = {s=1, base}
+            local bn_shift = {s=1, 1}
+            local bn_digit = {s=1, 0}
             for i = #n, d, -1 do
                 bn_digit[1] = tonumber(n:sub(i, i), base)
                 self = int_add(self, int_mul(bn_digit, bn_shift))
                 bn_shift = int_mul(bn_shift, bn_base)
             end
         end
-        self.sign = sign
+        self.s = sign
         int_trim(self)
         return setmetatable(self, mt)
     end
@@ -9548,46 +9771,45 @@ if not has_imath then
     local int_two <const> = int(2)
 
     local function int_copy(n)
-        local c = {sign=n.sign}
-        for i = 1, #n do
-            c[i] = n[i]
-        end
+        local c = {s=n.s}
+        for i = 1, #n do c[i] = n[i] end
         return setmetatable(c, mt)
     end
 
     local function int_tonumber(n)
-        local s = n.sign < 0 and "-0" or "0"
+        local s = {(n.s < 0 and #n > 0) and "-0" or "0"}
         local fmt = ("%%0%dd"):format(RADIX_LEN)
         for i = #n, 1, -1 do
-            s = s..fmt:format(n[i])
+            s[#s+1] = fmt:format(n[i])
         end
-        return tonumber(s..".")
+        s[#s+1] = "."
+        return tonumber(concat(s))
     end
 
     local function int_tostring(n, base)
         base = base or 10
-        local s = ""
-        local sign = n.sign
+        local s = F{}
+        local sign = n.s
         if base == 10 then
             local fmt = ("%%0%dd"):format(RADIX_LEN)
             for i = 1, #n do
-                s = fmt:format(n[i]) .. s
+                s[#s+1] = fmt:format(n[i])
             end
+            s = concat(s:reverse())
             s = s:gsub("^[_0]+", "")
             if s == "" then s = "0" end
         else
-            local bn_base = int(base)
             local absn = int_abs(n)
             while #absn > 0 do
                 local d
-                absn, d = int_divmod(absn, bn_base)
-                d = int_tonumber(d)
-                s = ("0123456789ABCDEF"):sub(d+1, d+1) .. s
+                absn, d = int_shortdiv(absn, base)
+                s[#s+1] = ("0123456789ABCDEF"):sub(d+1, d+1)
             end
+            s = concat(s:reverse())
             s = s:gsub("^0+", "")
             if s == "" then s = "0" end
         end
-        if sign < 0 then s = "-" .. s end
+        if sign < 0 and s ~= "0" then s = "-" .. s end
         return s
     end
 
@@ -9596,177 +9818,239 @@ if not has_imath then
     end
 
     local function int_isone(a)
-        return #a == 1 and a[1] == 1 and a.sign == 1
+        return #a == 1 and a[1] == 1 and a.s == 1
+    end
+
+    local function int_istwo(a)
+        return #a == 1 and a[1] == 2 and a.s == 1
     end
 
     local function int_cmp(a, b)
         if #a == 0 and #b == 0 then return 0 end -- 0 == -0
-        if a.sign > b.sign then return 1 end
-        if a.sign < b.sign then return -1 end
-        if #a > #b then return a.sign end
-        if #a < #b then return -a.sign end
+        if a.s ~= b.s then return a.s > b.s and 1 or -1 end
+        if #a ~= #b then return #a > #b and a.s or -a.s end
         for i = #a, 1, -1 do
-            if a[i] > b[i] then return a.sign end
-            if a[i] < b[i] then return -a.sign end
+            if a[i] ~= b[i] then return a[i] > b[i] and a.s or -a.s end
         end
         return 0
     end
 
     local function int_abscmp(a, b)
-        if #a > #b then return 1 end
-        if #a < #b then return -1 end
+        if #a ~= #b then return #a > #b and 1 or -1 end
         for i = #a, 1, -1 do
-            if a[i] > b[i] then return 1 end
-            if a[i] < b[i] then return -1 end
+            if a[i] ~= b[i] then return a[i] > b[i] and 1 or -1 end
         end
         return 0
     end
 
     local function int_neg(a)
         local b = int_copy(a)
-        b.sign = -a.sign
+        b.s = -a.s
         return b
     end
 
     int_add = function(a, b)
-        if a.sign == b.sign then            -- a+b = a+b, (-a)+(-b) = -(a+b)
-            local c = int()
-            c.sign = a.sign
-            local carry = 0
-            for i = 1, max(#a, #b) + 1 do -- +1 for the last carry
-                c[i] = carry + (a[i] or 0) + (b[i] or 0)
-                if c[i] >= RADIX then
-                    c[i] = c[i] - RADIX
-                    carry = 1
-                else
-                    carry = 0
-                end
-            end
-            int_trim(c)
-            return c
-        else
-            return int_sub(a, int_neg(b))
+        if a.s ~= b.s then return int_sub(a, int_neg(b)) end
+        local c = int()
+        c.s = a.s
+        local carry = 0
+        for i = 1, max(#a, #b) do
+            c[i] = carry + (a[i] or 0) + (b[i] or 0)
+            if c[i] >= RADIX then c[i], carry = c[i] - RADIX, 1
+            else carry = 0 end
         end
+        if carry > 0 then c[#c+1] = carry end
+        return c
     end
 
     int_sub = function(a, b)
-        if a.sign == b.sign then
-            local A, B
-            local cmp = int_abscmp(a, b)
-            if cmp >= 0 then A = a; B = b; else A = b; B = a; end
-            local c = int()
-            local carry = 0
-            for i = 1, #A do
-                c[i] = A[i] - (B[i] or 0) - carry
-                if c[i] < 0 then
-                    c[i] = c[i] + RADIX
-                    carry = 1
-                else
-                    carry = 0
-                end
-            end
-            assert(carry == 0) -- should be true if |A| >= |B|
-            c.sign = (cmp >= 0) and a.sign or -a.sign
-            int_trim(c)
-            return c
-        else
-            local c = int_add(a, int_neg(b))
-            c.sign = a.sign
-            return c
+        if a.s ~= b.s then return int_add(a, int_neg(b)) end
+        local A, B
+        local cmp = int_abscmp(a, b)
+        if cmp >= 0 then A = a; B = b; else A = b; B = a; end
+        local c = int()
+        local carry = 0
+        for i = 1, #A do
+            c[i] = A[i] - (B[i] or 0) - carry
+            if c[i] < 0 then c[i], carry = c[i] + RADIX, 1
+            else carry = 0 end
         end
+        assert(carry == 0) -- should be true if |A| >= |B|
+        c.s = (cmp >= 0) and a.s or -a.s
+        int_trim(c)
+        return c
     end
 
     int_mul = function(a, b)
         local c = int()
+        for i = 1, #a + #b do c[i] = 0 end
         for i = 1, #a do
             local carry = 0
             for j = 1, #b do
-                carry = (c[i+j-1] or 0) + a[i]*b[j] + carry
+                carry = c[i+j-1] + a[i]*b[j] + carry
                 c[i+j-1] = carry % RADIX
-                carry = math.floor(carry / RADIX)
+                carry = carry // RADIX
             end
-            if carry ~= 0 then
-                c[i + #b] = carry
-            end
+            if carry ~= 0 then c[i + #b] = carry end
         end
         int_trim(c)
-        c.sign = a.sign * b.sign
+        c.s = a.s * b.s
         return c
     end
 
-    local function int_absdiv2(a)
-        local c = int()
-        local carry = 0
+    local function mul_scalar(a, k)
+        local r, carry = int(), 0
         for i = 1, #a do
-            c[i] = 0
+            local p = a[i]*k + carry
+            r[i] = p % RADIX
+            carry = p // RADIX
         end
-        for i = #a, 1, -1 do
-            c[i] = floor(carry + a[i] / 2)
-            if a[i] % 2 ~= 0 then
-                carry = RADIX // 2
-            else
-                carry = 0
-            end
+        while carry > 0 do
+            r[#r+1] = carry % RADIX
+            carry = carry // RADIX
         end
-        c.sign = a.sign
-        int_trim(c)
-        return c, (a[1] or 0) % 2
+        int_trim(r)
+        return r
     end
 
-    int_divmod = function(a, b)
-        -- euclidian division using dichotomie
-        -- searching q and r such that a = q*b + r and |r| < |b|
-        assert(not int_iszero(b), "Division by zero")
-        if int_iszero(a) then return int_zero, int_zero end
-        if int_isone(b) then return a, int_zero end
-        if b.sign < 0 then a = int_neg(a); b = int_neg(b) end
-        local qmin = int_neg(a)
-        local qmax = a
-        if int_cmp(qmax, qmin) < 0 then qmin, qmax = qmax, qmin end
-        local rmin = int_sub(a, int_mul(qmin, b))
-        if rmin.sign > 0 and int_cmp(rmin, b) < 0 then return qmin, rmin end
-        local rmax = int_sub(a, int_mul(qmax, b))
-        if rmax.sign > 0 and int_cmp(rmax, b) < 0 then return qmax, rmax end
-        assert(rmin.sign ~= rmax.sign)
-        local q = int_absdiv2(int_add(qmin, qmax))
-        local r = int_sub(a, int_mul(q, b))
-        while r.sign < 0 or int_cmp(r, b) >= 0 do
-            if r.sign == rmin.sign then
-                qmin, qmax = q, qmax
-                rmin, rmax = r, rmax
-            else
-                qmin, qmax = qmin, q
-                rmin, rmax = rmin, r
-            end
-            q = int_absdiv2(int_add(qmin, qmax))
-            r = int_sub(a, int_mul(q, b))
+    int_shortdiv = function(a, b)
+        local q, r = int(), 0
+        for i = #a, 1, -1 do
+            local cur = r*RADIX + a[i]
+            q[i] = cur // b
+            r = cur % b
         end
+        int_trim(q)
         return q, r
     end
 
-    local function int_sqrt(a)
-        assert(a.sign >= 0, "Square root of a negative number")
-        if int_iszero(a) then return int_zero end
-        local b = int()
-        local c = int()
-        for i = #a//2+1, #a do b[#b+1] = ceil(sqrt(a[i])) end
-        while b ~= c do
-            c = b
-            local q, _ = int_divmod(a, b)
-            b = int_absdiv2(int_add(b, q))
-            --if b^2 <= a and (b+1)^2 > a then break end
+    int_absdivmod = function(a, b)
+        assert(not int_iszero(b), "Division by zero")
+        if int_abscmp(a, b) < 0 then return int_zero, int_abs(a) end
+
+        if #b == 1 then -- short division
+            local q, r = int_shortdiv(a, b[1])
+            return q, int(r)
         end
-        assert(b^2 <= a and (b+1)^2 > a)
+
+        -- Knuth algorithm (D)
+        local n = #b        -- size of the divider
+        local m = #a - n    -- size of the quotient
+        -- D1: normalization
+        local d = RADIX // (b[n] + 1)
+        local u = mul_scalar(a, d)
+        local v = mul_scalar(b, d)
+        while #u < m+n+1 do u[#u+1] = 0 end -- u shall contain m+n+1 digits
+        local vn = v[n]
+        local vn1 = v[n-1]
+        local q = int()
+        for j = 1, m+1 do q[j] = 0 end
+        -- D2-D7: main loop
+        for j = m, 0, -1 do
+            -- D3: estimate q̂
+            local idx = j + n + 1
+            local uj, uj1, uj2 = u[idx] or 0, u[idx-1] or 0, u[idx-2] or 0
+            local num = uj*RADIX + uj1
+            local qhat = num // vn
+            local rhat = num % vn
+            -- Correction 1: is q̂ >= RADIX or q̂*v[n-1] > RADIX*rhat + u[j+n-1]
+            while true do
+                if qhat >= RADIX then
+                    qhat = RADIX-1
+                    rhat = rhat + vn
+                end
+                if qhat*vn1 <= RADIX*rhat + uj2 then break end
+                qhat = qhat - 1
+                rhat = rhat + vn
+                if rhat >= RADIX then break end
+            end
+            -- D4: substract q̂ * v shifted by u
+            local borrow = 0
+            for i = 1, n do
+                local p = qhat * v[i]
+                local sub_val = u[j+i] - p%RADIX - borrow
+                borrow = p // RADIX
+                if sub_val < 0 then
+                    sub_val = sub_val + RADIX
+                    borrow = borrow + 1
+                end
+                u[j+i] = sub_val
+            end
+            local top = u[j+n+1] - borrow
+            u[j+n+1] = top
+            -- D5: quotient digit
+            q[j+1] = qhat
+            -- D6: substract top
+            if top < 0 then
+                q[j+i] = qhat - 1
+                local carry = 0
+                for i = 1, n do
+                    local s = u[j+i] + v[i] + carry
+                    u[j+i], carry = s%RADIX, s//RADIX
+                end
+                u[j+n+1] = (u[j+n+1] + carry) % RADIX
+            end
+        end
+        -- D8: remainder denormalization
+        local r_norm = {}
+        for i = 1, n do r_norm[i] = u[i] end
+        local rem_carry = 0
+        local r_final = int()
+        for i = n, 1, -1 do
+            local cur = rem_carry*RADIX + r_norm[i]
+            r_final[i] = cur // d
+            rem_carry = cur % d
+        end
+
+        int_trim(q)
+        int_trim(r_final)
+        return q, r_final
+    end
+
+    int_divmod = function(a, b)
+        local q, r = int_absdivmod(a, b)
+        q.s = a.s == b.s and 1 or -1
+        return q, r
+    end
+
+    -- sqrt: integral Newton-Raphson iteration
+    local function int_sqrt(a)
+        assert(a.s >= 0, "Square root of a negative number")
+        if int_iszero(a) then return int_zero end
+        if int_isone(a) then return int_one end
+
+        local p = #a
+        local half = (p+1) // 2
+        local b = int(0)
+        b[half+1] = 1
+        for i = 1, half do b[i] = 0 end
+        while true do
+            local q, _ = int_absdivmod(a, b)
+            local s = int_add(b, q)
+            local b_new, _ = int_shortdiv(s, 2)
+            if int_abscmp(b_new, b) >= 0 then break end
+            b = b_new
+        end
+        local b2 = int_mul(b, b)
+        if int_abscmp(b2, a) > 0 then
+            b = int_sub(b, int_one)
+        else
+            local b1 = int_add(b, int_one)
+            if int_abscmp(int_mul(b1, b1), a) <= 0 then
+                b = b1
+            end
+        end
+
         return b
     end
 
     local function int_pow(a, b)
-        assert(b.sign > 0)
-        if #b == 0 then return int_one end
-        if #b == 1 and b[1] == 1 then return a end
-        if #b == 1 and b[1] == 2 then return int_mul(a, a) end
+        assert(b.s > 0)
+        if int_iszero(b) then return int_one end
+        if int_isone(b) then return a end
+        if int_istwo(b) then return int_mul(a, a) end
         local c
-        local q, r = int_absdiv2(b)
+        local q, r = int_shortdiv(b, 2)
         c = int_pow(a, q)
         c = int_mul(c, c)
         if r == 1 then c = int_mul(c, a) end
@@ -9775,31 +10059,9 @@ if not has_imath then
 
     int_abs = function(a)
         local b = int_copy(a)
-        b.sign = 1
+        b.s = 1
+        int_trim(b)
         return b
-    end
-
-    local function int_gcd(a, b)
-        a = int_abs(a)
-        b = int_abs(b)
-        while true do
-            local _
-            local order = int_cmp(a, b)
-            if order == 0 then return a end
-            if order > 0 then
-                _, a = int_divmod(a, b)
-                if int_iszero(a) then return b end
-            else
-                _, b = int_divmod(b, a)
-                if int_iszero(b) then return a end
-            end
-        end
-    end
-
-    local function int_lcm(a, b)
-        a = int_abs(a)
-        b = int_abs(b)
-        return int_mul((int_divmod(a, int_gcd(a, b))), b)
     end
 
     local function int_iseven(a)
@@ -9810,11 +10072,38 @@ if not has_imath then
         return #a > 0 and a[1]%2 == 1
     end
 
+    local function int_gcd(a, b)
+        a = int_abs(a)
+        b = int_abs(b)
+        if int_iszero(a) then return b end
+        if int_iszero(b) then return a end
+        local shift = 0
+        while int_iseven(a) and int_iseven(b) do
+            a = int_shortdiv(a, 2)
+            b = int_shortdiv(b, 2)
+            shift = shift + 1
+        end
+        while int_iseven(a) do a = int_shortdiv(a, 2) end
+        while not int_iszero(b) do
+            while int_iseven(b) do b = int_shortdiv(b, 2) end
+            if int_abscmp(a, b) > 0 then a, b = b, a end
+            b = int_sub(b, a)
+        end
+        for _ = 1, shift do a = int_add(a, a) end
+        return a
+    end
+
+    local function int_lcm(a, b)
+        a = int_abs(a)
+        b = int_abs(b)
+        return int_mul((int_absdivmod(a, int_gcd(a, b))), b)
+    end
+
     local int_shift_left, int_shift_right
 
     int_shift_left = function(a, b)
         if int_iszero(b) then return a end
-        if b.sign > 0 then
+        if b.s > 0 then
             return int_mul(a, int_two^b)
         else
             return int_shift_right(a, int_neg(b))
@@ -9823,7 +10112,7 @@ if not has_imath then
 
     int_shift_right = function(a, b)
         if int_iszero(b) then return a end
-        if b.sign < 0 then
+        if b.s < 0 then
             return int_shift_left(a, int_neg(b))
         else
             return (int_divmod(a, int_two^b))
@@ -9865,6 +10154,7 @@ if not has_imath then
     mt.__index.quotrem = function(a, b) return int_divmod(int(a), int(b)) end
     mt.__index.root = ni "root"
     mt.__index.shift = mt.__index.shl
+    mt.__index.sign = function(a) return int_cmp(int(a), int_zero) end
     mt.__index.sqr = function(a) return int_mul(a, a) end
     mt.__index.sqrt = int_sqrt
     mt.__index.sub = mt.__sub
@@ -9895,6 +10185,7 @@ if not has_imath then
     imath.quotrem = function(a, b) return int(a):quotrem(int(b)) end
     imath.root = function(a) return int(a):root() end
     imath.shift = function(a, b) return int(a) << b end
+    imath.sign = function(a) return int_cmp(int(a), int_zero) end
     imath.sqr = function(a) return int(a):sqr() end
     imath.sqrt = function(a) return int(a):sqrt() end
     imath.sub = function(a, b) return int(a) - int(b) end
@@ -9961,9 +10252,9 @@ local global_module_name = 'json'
 
 --[==[
 
-David Kolf's JSON module for Lua 5.1 - 5.4
+David Kolf's JSON module for Lua 5.1 - 5.5
 
-Version 2.8
+Version 2.10
 
 
 For the documentation see the corresponding readme.txt or visit
@@ -9973,7 +10264,7 @@ You can contact the author by sending an e-mail to 'david' at the
 domain 'dkolf.de'.
 
 
-Copyright (C) 2010-2024 David Heiko Kolf
+Copyright (C) 2010-2026 David Heiko Kolf
 
 Permission is hereby granted, free of charge, to any person obtaining
 a copy of this software and associated documentation files (the
@@ -10008,7 +10299,7 @@ local strrep, gsub, strsub, strbyte, strchar, strfind, strlen, strformat =
 local strmatch = string.match
 local concat = table.concat
 
-local json = { version = "dkjson 2.8" }
+local json = { version = "dkjson 2.10" }
 
 local jsonlpeg = {}
 
@@ -10362,21 +10653,26 @@ end
 
 local function scanwhite (str, pos)
   while true do
-    pos = strfind (str, "%S", pos)
-    if not pos then return nil end
-    local sub2 = strsub (str, pos, pos + 1)
-    if sub2 == "\239\187" and strsub (str, pos + 2, pos + 2) == "\191" then
+    pos = strmatch (str, "%s*()", pos)
+    local n1, n2, n3 = strbyte (str, pos, pos + 2)
+    if n1 == 239 and n2 == 187 and n3 == 191 then
       -- UTF-8 Byte Order Mark
       pos = pos + 3
-    elseif sub2 == "//" then
-      pos = strfind (str, "[\n\r]", pos + 2)
-      if not pos then return nil end
-    elseif sub2 == "/*" then
-      pos = strfind (str, "*/", pos + 2)
-      if not pos then return nil end
-      pos = pos + 2
+    elseif n1 == 47 then
+      if n2 == 47 then -- "//"
+        pos = strfind (str, "[\n\r]", pos + 2)
+        if not pos then return nil end
+      elseif n2 == 42 then -- "/*"
+        pos = strfind (str, "*/", pos + 2)
+        if not pos then return nil end
+        pos = pos + 2
+      else
+        return pos, n1
+      end
+    elseif n1 == nil then
+      return nil
     else
-      return pos
+      return pos, n1
     end
   end
 end
@@ -10420,7 +10716,7 @@ local function scanstring (str, pos)
       n = n + 1
       buffer[n] = strsub (str, lastpos, nextpos - 1)
     end
-    if strsub (str, nextpos, nextpos) == "\"" then
+    if strbyte (str, nextpos) == 34 then -- '"'
       lastpos = nextpos + 1
       break
     else
@@ -10471,83 +10767,137 @@ end
 
 local scanvalue -- forward declaration
 
-local function scantable (what, closechar, str, startpos, nullval, objectmeta, arraymeta)
-  local tbl, n = {}, 0
+local function scanobject (str, startpos, nullval, objectmeta, arraymeta)
+  local tbl = setmetatable ({}, objectmeta)
   local pos = startpos + 1
-  if what == 'object' then
-    setmetatable (tbl, objectmeta)
-  else
-    setmetatable (tbl, arraymeta)
-  end
+
   while true do
-    pos = scanwhite (str, pos)
-    if not pos then return unterminated (str, what, startpos) end
-    local char = strsub (str, pos, pos)
-    if char == closechar then
+    local char
+    pos, char = scanwhite (str, pos)
+    local key, err
+    if char == 34 then -- '"'
+      key, pos, err = scanstring (str, pos)
+    elseif char == 125 then -- "}"
       return tbl, pos + 1
-    end
-    local val1, err
-    val1, pos, err = scanvalue (str, pos, nullval, objectmeta, arraymeta)
-    if err then return nil, pos, err end
-    pos = scanwhite (str, pos)
-    if not pos then return unterminated (str, what, startpos) end
-    char = strsub (str, pos, pos)
-    if char == ":" then
-      if val1 == nil then
-        return nil, pos, "cannot use nil as table index (at " .. loc (str, pos) .. ")"
-      end
-      pos = scanwhite (str, pos + 1)
-      if not pos then return unterminated (str, what, startpos) end
-      local val2
-      val2, pos, err = scanvalue (str, pos, nullval, objectmeta, arraymeta)
-      if err then return nil, pos, err end
-      tbl[val1] = val2
-      pos = scanwhite (str, pos)
-      if not pos then return unterminated (str, what, startpos) end
-      char = strsub (str, pos, pos)
+    elseif not pos then
+      return unterminated (str, "object", startpos)
     else
-      n = n + 1
-      tbl[n] = val1
+      return nil, pos, "invalid key at " .. loc (str, pos)
     end
-    if char == "," then
+    if err then return nil, pos, err end
+
+    char = strbyte (str, pos)
+    if char ~= 58 then -- ":"
+      pos, char = scanwhite (str, pos)
+      if char ~= 58 then
+        return nil, pos, "missing colon at " .. loc (str, pos)
+      end
+    end
+
+    pos = scanwhite (str, pos + 1)
+    if not pos then return unterminated (str, "object", startpos) end
+    local val
+    val, pos, err = scanvalue (str, pos, nullval, objectmeta, arraymeta)
+    if err then return nil, pos, err end
+    tbl[key] = val
+
+    char = strbyte (str, pos)
+    if char == 44 then -- ","
       pos = pos + 1
+    else
+      pos, char = scanwhite (str, pos)
+
+      if char == 44 then
+        pos = pos + 1
+      elseif not pos then
+        return unterminated (str, "object", startpos)
+      end
     end
+  end
+end
+
+local function scanarray (str, startpos, nullval, objectmeta, arraymeta)
+  local tbl, n = setmetatable ({}, arraymeta), 0
+  local pos = startpos + 1
+
+  while true do
+    local char
+    pos, char = scanwhite (str, pos)
+
+    if char == 93 then -- "]"
+      return tbl, pos + 1
+    elseif not pos then
+      return unterminated (str, "array", startpos)
+    end
+
+    local val, err
+    val, pos, err = scanvalue (str, pos, nullval, objectmeta, arraymeta)
+    if err then return nil, pos, err end
+    n = n + 1
+    tbl[n] = val
+
+    char = strbyte (str, pos)
+    if char == 44 then -- ","
+      pos = pos + 1
+    else
+      pos, char = scanwhite (str, pos)
+
+      if char == 44 then
+        pos = pos + 1
+      elseif not pos then
+        return unterminated (str, "array", startpos)
+      end
+    end
+  end
+end
+
+local function scaninvalid (str, pos)
+  return nil, pos, "no valid JSON value at " .. loc (str, pos)
+end
+
+local function scanliteral (str, pos, expected, value)
+  local pstart, pend = strfind (str, "^%a%w*", pos)
+  local name = strsub (str, pstart, pend)
+  if name == expected then
+    return value, pend + 1
+  else
+    return scaninvalid (str, pos)
+  end
+end
+
+local function scannumber (str, pos)
+  local pstart, pend = strfind (str, "^%-?[%d%.]*[eE]?[%+%-]?%d*", pos)
+  local number = str2num (strsub (str, pstart, pend))
+  if number then
+    return number, pend + 1
+  else
+    return scaninvalid (str, pos)
   end
 end
 
 scanvalue = function (str, pos, nullval, objectmeta, arraymeta)
   pos = pos or 1
-  pos = scanwhite (str, pos)
-  if not pos then
-    return nil, strlen (str) + 1, "no valid JSON value (reached the end)"
-  end
-  local char = strsub (str, pos, pos)
-  if char == "{" then
-    return scantable ('object', "}", str, pos, nullval, objectmeta, arraymeta)
-  elseif char == "[" then
-    return scantable ('array', "]", str, pos, nullval, objectmeta, arraymeta)
-  elseif char == "\"" then
+  local c
+  pos, c = scanwhite (str, pos)
+
+  if c == 34 then -- '"'
     return scanstring (str, pos)
+  elseif c == 123 then -- "{"
+    return scanobject (str, pos, nullval, objectmeta, arraymeta)
+  elseif c == 91 then -- "["
+    return scanarray (str, pos, nullval, objectmeta, arraymeta)
+  elseif c == 45 or (c >= 48 and c <= 57) then -- "-", "0"..."9"
+    return scannumber (str, pos)
+  elseif c == 116 then -- "t"
+    return scanliteral (str, pos, "true", true)
+  elseif c == 102 then -- "f"
+    return scanliteral (str, pos, "false", false)
+  elseif c == 110 then -- "n"
+    return scanliteral (str, pos, "null", nullval)
+  elseif not pos then
+    return nil, strlen (str) + 1, "no valid JSON value (reached the end)"
   else
-    local pstart, pend = strfind (str, "^%-?[%d%.]+[eE]?[%+%-]?%d*", pos)
-    if pstart then
-      local number = str2num (strsub (str, pstart, pend))
-      if number then
-        return number, pend + 1
-      end
-    end
-    pstart, pend = strfind (str, "^%a%w*", pos)
-    if pstart then
-      local name = strsub (str, pstart, pend)
-      if name == "true" then
-        return true, pend + 1
-      elseif name == "false" then
-        return false, pend + 1
-      elseif name == "null" then
-        return nullval, pend + 1
-      end
-    end
-    return nil, pos, "no valid JSON value at " .. loc (str, pos)
+    return scaninvalid (str, pos)
   end
 end
 
@@ -10706,7 +11056,6 @@ if always_use_lpeg then
 end
 
 return json
-
 ]===])
 package.preload["lar"] = lib("luax/lar.lua", [=[--[[
 This file is part of luax.
@@ -10860,21 +11209,12 @@ https://codeberg.org/cdsoft/luax
 --@LIB
 
 local has_linenoise, linenoise = pcall(require, "_linenoise")
+if has_linenoise then return linenoise end
 
-if not has_linenoise then
+local read = require "term".prompt
+local function nop() return nop end
 
-    local F = require "F"
-    local term = require "term"
-
-    linenoise = setmetatable({
-        read = term.prompt,
-    }, {
-        __index = F.const(F.const()),
-    })
-
-end
-
-return linenoise
+return setmetatable({read=read}, {__index=nop})
 ]=])
 package.preload["luax-debug"] = lib("luax/luax-debug.lua", [==[--[[
 This file is part of luax.
@@ -11094,7 +11434,7 @@ return F{
     {name="windows-aarch64",    machine="ARM64",   kernel="Windows_NT", os="windows", arch="aarch64", libc="gnu",   exe=".exe", so=".dll"  },
 }
 ]=])
-package.preload["luax-version"] = lib("luax/luax-version.lua", [[local version = "10.3"
+package.preload["luax-version"] = lib("luax/luax-version.lua", [[local version = "10.6.3"
 local year = 2026
 local url = "codeberg.org/cdsoft/luax"
 local author = "Christophe Delord"
@@ -11514,6 +11854,26 @@ if not has_qmath then
         return (a.num*b.den):compare(b.num*a.den)
     end
 
+    local function decompose(r)
+        if r >= 0 then
+            local a = r.num//r.den
+            return a, r - a
+        else
+            local a = -r.num//r.den
+            return -a, r + a
+        end
+    end
+
+    local function frac(r)
+        if r >= 0 then
+            local a = r.num//r.den
+            return r - a
+        else
+            local a = -r.num//r.den
+            return r + a
+        end
+    end
+
     mt.__add = function(a, b) a, b = rat(a), rat(b); return rat(a.num*b.den + b.num*a.den, a.den*b.den) end
     mt.__div = function(a, b) a, b = rat(a), rat(b); return rat(a.num*b.den, a.den*b.num) end
     mt.__eq = function(a, b) a, b = rat(a), rat(b); return compare(a, b) == 0 end
@@ -11539,8 +11899,10 @@ if not has_qmath then
     mt.__index.abs = function(a) return rat(a.num:abs(), a.den) end
     mt.__index.add = mt.__add
     mt.__index.compare = function(a, b) return compare(rat(a), rat(b)) end
+    mt.__index.decompose = function(a) return decompose(rat(a)) end
     mt.__index.denom = function(a) return rat(a.den) end
     mt.__index.div = mt.__div
+    mt.__index.frac = frac
     mt.__index.int = function(a) return rat(a.num / a.den) end
     mt.__index.inv = function(a) return rat(a.den, a.num) end
     mt.__index.isinteger = function(a) return a.den:isone() end
@@ -11557,8 +11919,10 @@ if not has_qmath then
     qmath.abs = function(a) return rat(a):abs() end
     qmath.add = function(a, b) return rat(a) + rat(b) end
     qmath.compare = function(a, b) return rat(a):compare(rat(b)) end
+    qmath.decompose = function(a) return rat(a):decompose() end
     qmath.denom = function(a) return rat(a):denom() end
     qmath.div = function(a, b) return rat(a) / rat(b) end
+    qmath.frac = frac
     qmath.int = function(a) return rat(a):int() end
     qmath.inv = function(a) return rat(a):inv() end
     qmath.isinteger = function(a) return rat(a):isinteger() end
@@ -11639,21 +12003,12 @@ https://codeberg.org/cdsoft/luax
 --@LIB
 
 local has_readline, readline = pcall(require, "_readline")
+if has_readline then return readline end
 
-if not has_readline then
+local read = require "term".prompt
+local function nop() return nop end
 
-    local F = require "F"
-    local term = require "term"
-
-    readline = setmetatable({
-        read = term.prompt,
-    }, {
-        __index = F.const(F.const()),
-    })
-
-end
-
-return readline
+return setmetatable({read=read}, {__index=nop})
 ]=])
 package.preload["serpent"] = lib("luax/serpent.lua", [=[local n, v = "serpent", "0.303" -- (C) 2012-18 Paul Kulchenko; MIT License
 local c, d = "Paul Kulchenko", "Lua serializer and pretty printer"
@@ -11965,24 +12320,19 @@ All global variables must be 'declared' through a regular assignment
 (even assigning nil will do) in a main chunk before being used
 anywhere or assigned to inside a function.
 
+`strict` is distributed under the Lua license: <http://www.lua.org/license.html>
+
 ```lua
 require "strict"
 ```
 
-This module is `strict.lua` <from https://www.lua.org/extras/>
+This module is `strict.lua` from <https://www.lua.org/extras/>
 adpated for LuaX.
 
 This module not loaded by default since some global variables are tested when LuaX start but may not be defined.
 @@@]]
 
 --@LIB
-
--- strict.lua
--- checks uses of undeclared global variables
--- All global variables must be 'declared' through a regular assignment
--- (even assigning nil will do) in a main chunk before being used
--- anywhere or assigned to inside a function.
--- distributed under the Lua license: http://www.lua.org/license.html
 
 local getinfo, error, rawset, rawget = debug.getinfo, error, rawset, rawget
 
@@ -14436,7 +14786,7 @@ local function chain(env1, env2)
         __index = function(_, k)
             local v = env2[k]
             if v ~= nil then return v end
-            return env1 and env1[k]
+            return env1[k]
         end
     })
 end
@@ -14571,7 +14921,869 @@ end
 
 return tomlx
 ]=])
-package.preload["_PANDA_VERSION"] = lib(".build/src/_PANDA_VERSION.lua", [=[return [[0.9.1]] --@LOAD]=])
+package.preload["yaml"] = lib("luax/yaml.lua", [[-------------------------------------------------------------------------------
+-- tinyyaml - YAML subset parser
+-------------------------------------------------------------------------------
+
+local table = table
+local string = string
+local schar = string.char
+local ssub, gsub = string.sub, string.gsub
+local sfind, smatch = string.find, string.match
+local tinsert, tconcat, tremove = table.insert, table.concat, table.remove
+local setmetatable = setmetatable
+local pairs = pairs
+local rawget = rawget
+local type = type
+local tonumber = tonumber
+local math = math
+local getmetatable = getmetatable
+local error = error
+local end_symbol = "..."
+local end_break_symbol = "...\n"
+
+local UNESCAPES = {
+  ['0'] = "\x00", z = "\x00", N    = "\x85",
+  a = "\x07",     b = "\x08", t    = "\x09",
+  n = "\x0a",     v = "\x0b", f    = "\x0c",
+  r = "\x0d",     e = "\x1b", ['\\'] = '\\',
+};
+
+-------------------------------------------------------------------------------
+-- utils
+local function select(list, pred)
+  local selected = {}
+  for i = 0, #list do
+    local v = list[i]
+    if v and pred(v, i) then
+      tinsert(selected, v)
+    end
+  end
+  return selected
+end
+
+local function startswith(haystack, needle)
+  return ssub(haystack, 1, #needle) == needle
+end
+
+local function ltrim(str)
+  return smatch(str, "^%s*(.-)$")
+end
+
+local function rtrim(str)
+  return smatch(str, "^(.-)%s*$")
+end
+
+local function trim(str)
+  return smatch(str, "^%s*(.-)%s*$")
+end
+
+-------------------------------------------------------------------------------
+-- Implementation.
+--
+local class = {__meta={}}
+function class.__meta.__call(cls, ...)
+  local self = setmetatable({}, cls)
+  if cls.__init then
+    cls.__init(self, ...)
+  end
+  return self
+end
+
+function class.def(base, typ, cls)
+  base = base or class
+  local mt = {__metatable=base, __index=base}
+  for k, v in pairs(base.__meta) do mt[k] = v end
+  cls = setmetatable(cls or {}, mt)
+  cls.__index = cls
+  cls.__metatable = cls
+  cls.__type = typ
+  cls.__meta = mt
+  return cls
+end
+
+
+local types = {
+  null = class:def('null'),
+  map = class:def('map'),
+  omap = class:def('omap'),
+  pairs = class:def('pairs'),
+  set = class:def('set'),
+  seq = class:def('seq'),
+  timestamp = class:def('timestamp'),
+}
+
+local Null = types.null
+function Null.__tostring() return 'yaml.null' end
+function Null.isnull(v)
+  if v == nil then return true end
+  if type(v) == 'table' and getmetatable(v) == Null then return true end
+  return false
+end
+local null = Null()
+
+function types.timestamp:__init(y, m, d, h, i, s, f, z)
+  self.year = tonumber(y)
+  self.month = tonumber(m)
+  self.day = tonumber(d)
+  self.hour = tonumber(h or 0)
+  self.minute = tonumber(i or 0)
+  self.second = tonumber(s or 0)
+  if type(f) == 'string' and sfind(f, '^%d+$') then
+    self.fraction = tonumber(f) * math.pow(10, 3 - #f)
+  elseif f then
+    self.fraction = f
+  else
+    self.fraction = 0
+  end
+  self.timezone = z
+end
+
+function types.timestamp:__tostring()
+  return string.format(
+    '%04d-%02d-%02dT%02d:%02d:%02d.%03d%s',
+    self.year, self.month, self.day,
+    self.hour, self.minute, self.second, self.fraction,
+    self:gettz())
+end
+
+function types.timestamp:gettz()
+  if not self.timezone then
+    return ''
+  end
+  if self.timezone == 0 then
+    return 'Z'
+  end
+  local sign = self.timezone > 0
+  local z = sign and self.timezone or -self.timezone
+  local zh = math.floor(z)
+  local zi = (z - zh) * 60
+  return string.format(
+    '%s%02d:%02d', sign and '+' or '-', zh, zi)
+end
+
+
+local function countindent(line)
+  local _, j = sfind(line, '^%s+')
+  if not j then
+    return 0, line
+  end
+  return j, ssub(line, j+1)
+end
+
+local Parser = {
+  timestamps=true,-- parse timestamps as objects instead of strings
+}
+
+function Parser:parsestring(line, stopper)
+  stopper = stopper or ''
+  local q = ssub(line, 1, 1)
+  if q == ' ' or q == '\t' then
+    return self:parsestring(ssub(line, 2))
+  end
+  if q == "'" then
+    local i = sfind(line, "'", 2, true)
+    if not i then
+      return nil, line
+    end
+    -- Unescape repeated single quotes.
+    while i < #line and ssub(line, i+1, i+1) == "'" do
+      i = sfind(line, "'", i + 2, true)
+      if not i then
+        return nil, line
+      end
+    end
+    return ssub(line, 2, i-1):gsub("''", "'"), ssub(line, i+1)
+  end
+  if q == '"' then
+    local i, buf = 2, ''
+    while i < #line do
+      local c = ssub(line, i, i)
+      if c == '\\' then
+        local n = ssub(line, i+1, i+1)
+        if UNESCAPES[n] ~= nil then
+          buf = buf..UNESCAPES[n]
+        elseif n == 'x' then
+          local h = ssub(i+2,i+3)
+          if sfind(h, '^[0-9a-fA-F]$') then
+            buf = buf..schar(tonumber(h, 16))
+            i = i + 2
+          else
+            buf = buf..'x'
+          end
+        else
+          buf = buf..n
+        end
+        i = i + 1
+      elseif c == q then
+        break
+      else
+        buf = buf..c
+      end
+      i = i + 1
+    end
+    return buf, ssub(line, i+1)
+  end
+  if q == '{' or q == '[' then  -- flow style
+    return nil, line
+  end
+  if q == '|' or q == '>' then  -- block
+    return nil, line
+  end
+  if q == '-' or q == ':' then
+    if ssub(line, 2, 2) == ' ' or ssub(line, 2, 2) == '\n' or #line == 1 then
+      return nil, line
+    end
+  end
+
+  if line == "*" then
+    error("did not find expected alphabetic or numeric character")
+  end
+
+  local buf = ''
+  while #line > 0 do
+    local c = ssub(line, 1, 1)
+    if sfind(stopper, c, 1, true) then
+      break
+    elseif c == ':' and (ssub(line, 2, 2) == ' ' or ssub(line, 2, 2) == '\n' or #line == 1) then
+      break
+    elseif c == '#' and (ssub(buf, #buf, #buf) == ' ') then
+      break
+    else
+      buf = buf..c
+    end
+    line = ssub(line, 2)
+  end
+  buf = rtrim(buf)
+  local val = tonumber(buf) or buf
+  return val, line
+end
+
+local function isemptyline(line)
+  return line == '' or sfind(line, '^%s*$') or sfind(line, '^%s*#')
+end
+
+local function equalsline(line, needle)
+  return startswith(line, needle) and isemptyline(ssub(line, #needle+1))
+end
+
+local function compactifyemptylines(lines)
+  -- Appends empty lines as "\n" to the end of the nearest preceding non-empty line
+  local compactified = {}
+  local lastline = {}
+  for i = 1, #lines do
+    local line = lines[i]
+    if isemptyline(line) then
+      if #compactified > 0 and i < #lines then
+        tinsert(lastline, "\n")
+      end
+    else
+      if #lastline > 0 then
+        tinsert(compactified, tconcat(lastline, ""))
+      end
+      lastline = {line}
+    end
+  end
+  if #lastline > 0 then
+    tinsert(compactified, tconcat(lastline, ""))
+  end
+  return compactified
+end
+
+local function checkdupekey(map, key)
+  if rawget(map, key) ~= nil then
+    -- print("found a duplicate key '"..key.."' in line: "..line)
+    local suffix = 1
+    while rawget(map, key..'_'..suffix) do
+      suffix = suffix + 1
+    end
+    key = key ..'_'..suffix
+  end
+  return key
+end
+
+
+function Parser:parseflowstyle(line, lines)
+  local stack = {}
+  while true do
+    if #line == 0 then
+      if #lines == 0 then
+        break
+      else
+        line = tremove(lines, 1)
+      end
+    end
+    local c = ssub(line, 1, 1)
+    if c == '#' then
+      line = ''
+    elseif c == ' ' or c == '\t' or c == '\r' or c == '\n' then
+      line = ssub(line, 2)
+    elseif c == '{' or c == '[' then
+      tinsert(stack, {v={},t=c})
+      line = ssub(line, 2)
+    elseif c == ':' then
+      local s = tremove(stack)
+      tinsert(stack, {v=s.v, t=':'})
+      line = ssub(line, 2)
+    elseif c == ',' then
+      local value = tremove(stack)
+      if value.t == ':' or value.t == '{' or value.t == '[' then error() end
+      if stack[#stack].t == ':' then
+        -- map
+        local key = tremove(stack)
+        key.v = checkdupekey(stack[#stack].v, key.v)
+        stack[#stack].v[key.v] = value.v
+      elseif stack[#stack].t == '{' then
+        -- set
+        stack[#stack].v[value.v] = true
+      elseif stack[#stack].t == '[' then
+        -- seq
+        tinsert(stack[#stack].v, value.v)
+      end
+      line = ssub(line, 2)
+    elseif c == '}' then
+      if stack[#stack].t == '{' then
+        if #stack == 1 then break end
+        stack[#stack].t = '}'
+        line = ssub(line, 2)
+      else
+        line = ','..line
+      end
+    elseif c == ']' then
+      if stack[#stack].t == '[' then
+        if #stack == 1 then break end
+        stack[#stack].t = ']'
+        line = ssub(line, 2)
+      else
+        line = ','..line
+      end
+    else
+      local s, rest = self:parsestring(line, ',{}[]')
+      if not s then
+        error('invalid flowstyle line: '..line)
+      end
+      tinsert(stack, {v=s, t='s'})
+      line = rest
+    end
+  end
+  return stack[1].v, line
+end
+
+function Parser:parseblockstylestring(line, lines, indent)
+  if #lines == 0 then
+    error("failed to find multi-line scalar content")
+  end
+  local s = {}
+  local firstindent = -1
+  local endline = -1
+  for i = 1, #lines do
+    local ln = lines[i]
+    local idt = countindent(ln)
+    if idt <= indent then
+      break
+    end
+    if ln == '' then
+      tinsert(s, '')
+    else
+      if firstindent == -1 then
+        firstindent = idt
+      elseif idt < firstindent then
+        break
+      end
+      tinsert(s, ssub(ln, firstindent + 1))
+    end
+    endline = i
+  end
+
+  local striptrailing = true
+  local sep = '\n'
+  local newlineatend = true
+  if line == '|' then
+    striptrailing = true
+    sep = '\n'
+    newlineatend = true
+  elseif line == '|+' then
+    striptrailing = false
+    sep = '\n'
+    newlineatend = true
+  elseif line == '|-' then
+    striptrailing = true
+    sep = '\n'
+    newlineatend = false
+  elseif line == '>' then
+    striptrailing = true
+    sep = ' '
+    newlineatend = true
+  elseif line == '>+' then
+    striptrailing = false
+    sep = ' '
+    newlineatend = true
+  elseif line == '>-' then
+    striptrailing = true
+    sep = ' '
+    newlineatend = false
+  else
+    error('invalid blockstyle string:'..line)
+  end
+
+  if #s == 0 then
+    return ""
+  end
+
+  local _, eonl = s[#s]:gsub('\n', '\n')
+  s[#s] = rtrim(s[#s])
+  if striptrailing then
+    eonl = 0
+  end
+  if newlineatend then
+    eonl = eonl + 1
+  end
+  for i = endline, 1, -1 do
+    tremove(lines, i)
+  end
+  return tconcat(s, sep)..string.rep('\n', eonl)
+end
+
+function Parser:parsetimestamp(line)
+  local _, p1, y, m, d = sfind(line, '^(%d%d%d%d)%-(%d%d)%-(%d%d)')
+  if not p1 then
+    return nil, line
+  end
+  if p1 == #line then
+    return types.timestamp(y, m, d), ''
+  end
+  local _, p2, h, i, s = sfind(line, '^[Tt ](%d+):(%d+):(%d+)', p1+1)
+  if not p2 then
+    return types.timestamp(y, m, d), ssub(line, p1+1)
+  end
+  if p2 == #line then
+    return types.timestamp(y, m, d, h, i, s), ''
+  end
+  local _, p3, f = sfind(line, '^%.(%d+)', p2+1)
+  if not p3 then
+    p3 = p2
+    f = 0
+  end
+  local zc = ssub(line, p3+1, p3+1)
+  local _, p4, zs, z = sfind(line, '^ ?([%+%-])(%d+)', p3+1)
+  if p4 then
+    z = tonumber(z)
+    local _, p5, zi = sfind(line, '^:(%d+)', p4+1)
+    if p5 then
+      z = z + tonumber(zi) / 60
+    end
+    z = zs == '-' and -tonumber(z) or tonumber(z)
+  elseif zc == 'Z' then
+    p4 = p3 + 1
+    z = 0
+  else
+    p4 = p3
+    z = false
+  end
+  return types.timestamp(y, m, d, h, i, s, f, z), ssub(line, p4+1)
+end
+
+function Parser:parsescalar(line, lines, indent)
+  line = trim(line)
+  line = gsub(line, '^%s*#.*$', '')  -- comment only -> ''
+  line = gsub(line, '^%s*', '')  -- trim head spaces
+
+  if line == '' or line == '~' then
+    return null
+  end
+
+  if self.timestamps then
+    local ts, _ = self:parsetimestamp(line)
+    if ts then
+      return ts
+    end
+  end
+
+  local s, _ = self:parsestring(line)
+  -- startswith quote ... string
+  -- not startswith quote ... maybe string
+  if s and (startswith(line, '"') or startswith(line, "'")) then
+    return s
+  end
+
+  if startswith('!', line) then  -- unexpected tagchar
+    error('unsupported line: '..line)
+  end
+
+  if equalsline(line, '{}') then
+    return {}
+  end
+  if equalsline(line, '[]') then
+    return {}
+  end
+
+  if startswith(line, '{') or startswith(line, '[') then
+    return self:parseflowstyle(line, lines)
+  end
+
+  if startswith(line, '|') or startswith(line, '>') then
+    return self:parseblockstylestring(line, lines, indent)
+  end
+
+  -- Regular unquoted string
+  line = gsub(line, '%s*#.*$', '')  -- trim tail comment
+  local v = line
+  if v == 'null' or v == 'Null' or v == 'NULL'then
+    return null
+  elseif v == 'true' or v == 'True' or v == 'TRUE' then
+    return true
+  elseif v == 'false' or v == 'False' or v == 'FALSE' then
+    return false
+  elseif v == '.inf' or v == '.Inf' or v == '.INF' then
+    return math.huge
+  elseif v == '+.inf' or v == '+.Inf' or v == '+.INF' then
+    return math.huge
+  elseif v == '-.inf' or v == '-.Inf' or v == '-.INF' then
+    return -math.huge
+  elseif v == '.nan' or v == '.NaN' or v == '.NAN' then
+    return 0 / 0
+  elseif sfind(v, '^[%+%-]?[0-9]+$') or sfind(v, '^[%+%-]?[0-9]+%.$')then
+    return tonumber(v)  -- : int
+  elseif sfind(v, '^[%+%-]?[0-9]+%.[0-9]+$') then
+    return tonumber(v)
+  end
+  return s or v
+end
+
+function Parser:parseseq(line, lines, indent)
+  local seq = setmetatable({}, types.seq)
+  if line ~= '' then
+    error()
+  end
+  while #lines > 0 do
+    -- Check for a new document
+    line = lines[1]
+    if startswith(line, '---') then
+      while #lines > 0 and not startswith(lines, '---') do
+        tremove(lines, 1)
+      end
+      return seq
+    end
+
+    -- Check the indent level
+    local level = countindent(line)
+    if level < indent then
+      return seq
+    elseif level > indent then
+      error("found bad indenting in line: ".. line)
+    end
+
+    local i, j = sfind(line, '%-%s+')
+    if not i then
+      i, j = sfind(line, '%-$')
+      if not i then
+        return seq
+      end
+    end
+    local rest = ssub(line, j+1)
+
+    if sfind(rest, '^[^\'\"%s]*:%s*$') or sfind(rest, '^[^\'\"%s]*:%s+.') then
+      -- Inline nested hash
+      -- There are two patterns need to match as inline nested hash
+      --   first one should have no other characters except whitespace after `:`
+      --   and the second one should have characters besides whitespace after `:`
+      --
+      --  value:
+      --    - foo:
+      --        bar: 1
+      --
+      -- and
+      --
+      --  value:
+      --    - foo: bar
+      --
+      -- And there is one pattern should not be matched, where there is no space after `:`
+      --   in below, `foo:bar` should be parsed into a single string
+      --
+      -- value:
+      --   - foo:bar
+      local indent2 = j
+      lines[1] = string.rep(' ', indent2)..rest
+      tinsert(seq, self:parsemap('', lines, indent2))
+    elseif sfind(rest, '^%-%s+') then
+      -- Inline nested seq
+      local indent2 = j
+      lines[1] = string.rep(' ', indent2)..rest
+      tinsert(seq, self:parseseq('', lines, indent2))
+    elseif isemptyline(rest) then
+      tremove(lines, 1)
+      if #lines == 0 then
+        tinsert(seq, null)
+        return seq
+      end
+      if sfind(lines[1], '^%s*%-') then
+        local nextline = lines[1]
+        local indent2 = countindent(nextline)
+        if indent2 == indent then
+          -- Null seqay entry
+          tinsert(seq, null)
+        else
+          tinsert(seq, self:parseseq('', lines, indent2))
+        end
+      else
+        -- - # comment
+        --   key: value
+        local nextline = lines[1]
+        local indent2 = countindent(nextline)
+        tinsert(seq, self:parsemap('', lines, indent2))
+      end
+    elseif line == "*" then
+      error("did not find expected alphabetic or numeric character")
+    elseif rest then
+      -- Array entry with a value
+      local nextline = lines[1]
+      local indent2 = countindent(nextline)
+      tremove(lines, 1)
+      tinsert(seq, self:parsescalar(rest, lines, indent2))
+    end
+  end
+  return seq
+end
+
+function Parser:parseset(line, lines, indent)
+  if not isemptyline(line) then
+    error('not seq line: '..line)
+  end
+  local set = setmetatable({}, types.set)
+  while #lines > 0 do
+    -- Check for a new document
+    line = lines[1]
+    if startswith(line, '---') then
+      while #lines > 0 and not startswith(lines, '---') do
+        tremove(lines, 1)
+      end
+      return set
+    end
+
+    -- Check the indent level
+    local level = countindent(line)
+    if level < indent then
+      return set
+    elseif level > indent then
+      error("found bad indenting in line: ".. line)
+    end
+
+    local i, j = sfind(line, '%?%s+')
+    if not i then
+      i, j = sfind(line, '%?$')
+      if not i then
+        return set
+      end
+    end
+    local rest = ssub(line, j+1)
+
+    if sfind(rest, '^[^\'\"%s]*:') then
+      -- Inline nested hash
+      local indent2 = j
+      lines[1] = string.rep(' ', indent2)..rest
+      set[self:parsemap('', lines, indent2)] = true
+    elseif sfind(rest, '^%s+$') then
+      tremove(lines, 1)
+      if #lines == 0 then
+        tinsert(set, null)
+        return set
+      end
+      if sfind(lines[1], '^%s*%?') then
+        local indent2 = countindent(lines[1])
+        if indent2 == indent then
+          -- Null array entry
+          set[null] = true
+        else
+          set[self:parseseq('', lines, indent2)] = true
+        end
+      end
+
+    elseif rest then
+      tremove(lines, 1)
+      set[self:parsescalar(rest, lines)] = true
+    else
+      error("failed to classify line: "..line)
+    end
+  end
+  return set
+end
+
+function Parser:parsemap(line, lines, indent)
+  if not isemptyline(line) then
+    error('not map line: '..line)
+  end
+  local map = setmetatable({}, types.map)
+  while #lines > 0 do
+    -- Check for a new document
+    line = lines[1]
+    if line == end_symbol or line == end_break_symbol then
+      for i, _ in ipairs(lines) do
+        lines[i] = nil
+      end
+      return map
+    end
+
+    if startswith(line, '---') then
+      while #lines > 0 and not startswith(lines, '---') do
+        tremove(lines, 1)
+      end
+      return map
+    end
+
+    -- Check the indent level
+    local level, _ = countindent(line)
+    if level < indent then
+      return map
+    elseif level > indent then
+      error("found bad indenting in line: ".. line)
+    end
+
+    -- Find the key
+    local key
+    local s, rest = self:parsestring(line)
+
+    -- Quoted keys
+    if s and startswith(rest, ':') then
+      local sc = self:parsescalar(s, {}, 0)
+      if sc and type(sc) ~= 'string' then
+        key = sc
+      else
+        key = s
+      end
+      line = ssub(rest, 2)
+    else
+      error("failed to classify line: "..line)
+    end
+
+    key = checkdupekey(map, key)
+    line = ltrim(line)
+
+    if ssub(line, 1, 1) == '!' then
+      -- ignore type
+      local rh = ltrim(ssub(line, 3))
+      local typename = smatch(rh, '^!?[^%s]+')
+      line = ltrim(ssub(rh, #typename+1))
+    end
+
+    if not isemptyline(line) then
+      tremove(lines, 1)
+      line = ltrim(line)
+      map[key] = self:parsescalar(line, lines, indent)
+    else
+      -- An indent
+      tremove(lines, 1)
+      if #lines == 0 then
+        map[key] = null
+        return map;
+      end
+      if sfind(lines[1], '^%s*%-') then
+        local indent2 = countindent(lines[1])
+        map[key] = self:parseseq('', lines, indent2)
+      elseif sfind(lines[1], '^%s*%?') then
+        local indent2 = countindent(lines[1])
+        map[key] = self:parseset('', lines, indent2)
+      else
+        local indent2 = countindent(lines[1])
+        if indent >= indent2 then
+          -- Null hash entry
+          map[key] = null
+        else
+          map[key] = self:parsemap('', lines, indent2)
+        end
+      end
+    end
+  end
+  return map
+end
+
+
+-- : (list<str>)->dict
+function Parser:parsedocuments(lines)
+  lines = compactifyemptylines(lines)
+
+  if sfind(lines[1], '^%%YAML') then tremove(lines, 1) end
+
+  local root = {}
+  local in_document = false
+  while #lines > 0 do
+    local line = lines[1]
+    -- Do we have a document header?
+    local docright;
+    if sfind(line, '^%-%-%-') then
+      -- Handle scalar documents
+      docright = ssub(line, 4)
+      tremove(lines, 1)
+      in_document = true
+    end
+    if docright then
+      if (not sfind(docright, '^%s+$') and
+          not sfind(docright, '^%s+#')) then
+        tinsert(root, self:parsescalar(docright, lines))
+      end
+    elseif #lines == 0 or startswith(line, '---') then
+      -- A naked document
+      tinsert(root, null)
+      while #lines > 0 and not sfind(lines[1], '---') do
+        tremove(lines, 1)
+      end
+      in_document = false
+    -- XXX The final '-+$' is to look for -- which ends up being an
+    -- error later.
+    elseif not in_document and #root > 0 then
+      -- only the first document can be explicit
+      error('parse error: '..line)
+    elseif sfind(line, '^%s*%-') then
+      -- An array at the root
+      tinsert(root, self:parseseq('', lines, 0))
+    elseif sfind(line, '^%s*[^%s]') then
+      -- A hash at the root
+      local level = countindent(line)
+      tinsert(root, self:parsemap('', lines, level))
+    else
+      -- Shouldn't get here.  @lines have whitespace-only lines
+      -- stripped, and previous match is a line with any
+      -- non-whitespace.  So this clause should only be reachable via
+      -- a perlbug where \s is not symmetric with \S
+
+      -- uncoverable statement
+      error('parse error: '..line)
+    end
+  end
+  if #root > 1 and Null.isnull(root[1]) then
+    tremove(root, 1)
+    return root
+  end
+  return root
+end
+
+--- Parse yaml string into table.
+function Parser:parse(source)
+  local lines = {}
+  for line in string.gmatch(source .. '\n', '(.-)\r?\n') do
+    tinsert(lines, line)
+  end
+
+  local docs = self:parsedocuments(lines)
+  if #docs == 1 then
+    return docs[1]
+  end
+
+  return docs
+end
+
+local function parse(source, options)
+  local options = options or {}
+  local parser = setmetatable (options, {__index=Parser})
+  return parser:parse(source)
+end
+
+return {
+  version = 0.1,
+  parse = parse,
+}
+--@LIB
+]])
+package.preload["_PANDA_VERSION"] = lib(".build/src/_PANDA_VERSION.lua", [=[return [[0.9.2]] --@LOAD]=])
 require "F"
 require "crypt"
 require "fs"

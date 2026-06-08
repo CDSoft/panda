@@ -20,12 +20,12 @@ https://codeberg.org/cdsoft/panda
 
 local F = require "F"
 
-version "0.9.1"
+version "0.9.2"
 
 help.name "Panda"
 help.description "$name"
 
-var "plantuml_version" "1.2026.2"
+var "plantuml_version" "1.2026.5"
 var "plantuml_url" "https://github.com/plantuml/plantuml/releases/download/v$plantuml_version/plantuml-$plantuml_version.jar"
 
 var "ditaa_version" "0.11.0"
