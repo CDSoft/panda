@@ -34,7 +34,8 @@ Output file: .build/test/test.md
 - email2 = [eMail](mailto:me2@example.com)
 - build directory = .build
 
-::: { foo = bar } :::
+::: {foo="bar"}
+:::
 
 [bar](bar/index.html)
 

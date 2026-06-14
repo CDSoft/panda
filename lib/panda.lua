@@ -3,7 +3,7 @@
 -- Generated with LuaX
 -- Copyright (C) 2021-2026 codeberg.org/cdsoft/luax, Christophe Delord
 
-_LUAX_VERSION = "LuaX 10.6.3"
+_LUAX_VERSION = "LuaX 10.6.6"
 
 local function lib(path, src) return assert(load(src, '@$panda:'..path)) end
 package.preload["F"] = lib("luax/F.lua", [==[--[[
@@ -4300,7 +4300,7 @@ function string.matches(s, pattern, init)
     while true do
         local xs = {iterator()}
         if #xs == 0 then return ms end
-        ms[#ms+1] = #xs==1 and xs[1] or xs
+        ms[#ms+1] = #xs==1 and xs[1] or setmetatable(xs, mt)
     end
 end
 
@@ -4658,7 +4658,7 @@ F.choose(xs)    -- using the global PRNG
 xs:choose(prng)
 xs:choose()     -- using the global PRNG
 ```
-returns a random item from `xs`
+> returns a random item from `xs`
 @@@]]
 
 function F.choose(xs, prng)
@@ -4677,7 +4677,7 @@ F.shuffle(xs)   -- using the global PRNG
 xs:shuffle(prng)
 xs:shuffle()    -- using the global PRNG
 ```
-returns a shuffled copy of `xs`
+> returns a shuffled copy of `xs`
 @@@]]
 
 function F.shuffle(xs, prng)
@@ -4718,12 +4718,12 @@ The optional types can be combined with other types. E.g.: `{ "option", "range",
 ```lua
 F.validate(schema, input, [options])
 ```
-returns `true` if `input` is validated by `schema`. Otherwise it returns `false`
-and a list of failures.
-
-| Options           | Description                                               | Default value |
-| ----------------- | --------------------------------------------------------- | ------------- |
-| `options.strict`  | Strict validation (unspecified fields are not allowed)    | `true`        |
+> returns `true` if `input` is validated by `schema`. Otherwise it returns `false`
+> and a list of failures.
+>
+> | Options           | Description                                               | Default value |
+> | ----------------- | --------------------------------------------------------- | ------------- |
+> | `options.strict`  | Strict validation (unspecified fields are not allowed)    | `true`        |
 @@@]]
 
 function F.validate(schema, input, options)
@@ -8097,10 +8097,10 @@ if not has_crypt then
     -- see <https://en.wikipedia.org/wiki/Base64>
 
     local base64_map = { [0] =
-    'A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P','Q','R','S','T','U','V','W','X','Y','Z',
-    'a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','r','s','t','u','v','w','x','y','z',
-    '0','1','2','3','4','5','6','7','8','9',
-    '+','/',
+        'A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P','Q','R','S','T','U','V','W','X','Y','Z',
+        'a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','r','s','t','u','v','w','x','y','z',
+        '0','1','2','3','4','5','6','7','8','9',
+        '+','/',
     }
 
     local base64_rev = {}
@@ -8144,9 +8144,9 @@ if not has_crypt then
         for i = 1, #s, 4 do
             local a, b, c, d = byte(s, i, i+3)
             local u24 = (base64_rev[a] << (3*6))
-                    | (base64_rev[b] << (2*6))
-                    | (base64_rev[c] << (1*6))
-                    | (base64_rev[d] << (0*6))
+                      | (base64_rev[b] << (2*6))
+                      | (base64_rev[c] << (1*6))
+                      | (base64_rev[d] << (0*6))
             tokens[#tokens+1] = char((u24 >> (2*8)) & 0xFF)
             tokens[#tokens+1] = char((u24 >> (1*8)) & 0xFF)
             tokens[#tokens+1] = char((u24 >> (0*8)) & 0xFF)
@@ -8314,28 +8314,28 @@ if not has_crypt then
 
     crypt.unarc4 = crypt.arc4
 
-    function crypt.hash32(s) return ("<I4"):pack(fnv1a_32(fnv1a_32_init, s)):hex() end
+    function crypt.hash32(s) return (">I4"):pack(fnv1a_32(fnv1a_32_init, s)):hex() end
 
-    function crypt.hash64(s) return ("<I8"):pack(fnv1a_64(fnv1a_64_init, s)):hex() end
+    function crypt.hash64(s) return (">I8"):pack(fnv1a_64(fnv1a_64_init, s)):hex() end
 
     function crypt.hash128(s)
         local h = {fnv1a_128(fnv1a_128_init, s)}
-        return ("<"..("I4"):rep(#h)):pack(F.reverse(h):unpack()):hex()
+        return (">"..("I4"):rep(#h)):pack(F.unpack(h)):hex()
     end
 
     function crypt.hash256(s)
         local h = {fnv1a_256(fnv1a_256_init, s)}
-        return ("<"..("I4"):rep(#h)):pack(F.reverse(h):unpack()):hex()
+        return (">"..("I4"):rep(#h)):pack(F.unpack(h)):hex()
     end
 
     function crypt.hash512(s)
         local h = {fnv1a_512(fnv1a_512_init, s)}
-        return ("<"..("I4"):rep(#h)):pack(F.reverse(h):unpack()):hex()
+        return (">"..("I4"):rep(#h)):pack(F.unpack(h)):hex()
     end
 
     function crypt.hash1024(s)
         local h = {fnv1a_1024(fnv1a_1024_init, s)}
-        return ("<"..("I4"):rep(#h)):pack(F.reverse(h):unpack()):hex()
+        return (">"..("I4"):rep(#h)):pack(F.unpack(h)):hex()
     end
 
     crypt.hash = crypt.hash64
@@ -8485,7 +8485,7 @@ end
 prng:choose(xs)
 crypt.choose(xs)    -- using the global PRNG
 ```
-returns a random item from `xs`
+> returns a random item from `xs`
 @@@]]
 
 local prng_mt = getmetatable(crypt.prng())
@@ -8503,7 +8503,7 @@ end
 prng:shuffle(xs)
 crypt.shuffle(xs)    -- using the global PRNG
 ```
-returns a shuffled copy of `xs`
+> returns a shuffled copy of `xs`
 @@@]]
 
 function prng_mt.__index:shuffle(xs)
@@ -9333,9 +9333,9 @@ end
 ```lua
 fs.join(...)
 ```
-return a path name made of several path components
-(separated by `fs.sep`).
-If a component is absolute, the previous components are removed.
+> return a path name made of several path components
+> (separated by `fs.sep`).
+> If a component is absolute, the previous components are removed.
 @@@]]
 
 function fs.join(...)
@@ -9355,7 +9355,7 @@ end
 ```lua
 fs.splitpath(path)
 ```
-return a list of path components.
+> return a list of path components.
 @@@]]
 
 function fs.splitpath(path)
@@ -9369,7 +9369,7 @@ end
 ```lua
 fs.findpath(name)
 ```
-returns the full path of `name` if `name` is found in `$PATH` or `nil`.
+> returns the full path of `name` if `name` is found in `$PATH` or `nil`.
 @@@]]
 
 function fs.findpath(name)
@@ -9385,7 +9385,7 @@ end
 ```lua
 fs.rmdir(path)
 ```
-deletes the directory `path` and its content recursively.
+> deletes the directory `path` and its content recursively.
 @@@]]
 
 function fs.rmdir(path)
@@ -9401,20 +9401,20 @@ end
 ```lua
 fs.walk([path], [{reverse=true|false, links=true|false, cross=true|false}])
 ```
-returns a list listing directory and
-file names in `path` and its subdirectories (the default path is the current
-directory).
-
-Options:
-
-- `stat`: returns the list of stat results instead of just filenames
-- `reverse`: the list is built in a reverse order
-  (suitable for recursive directory removal)
-- `cross`: walk across several devices
-- `func`: function applied to the current file or directory.
-  `func` takes two parameters (path of the file or directory and the stat object returned by `fs.stat`)
-  and returns a boolean (to continue or not walking recursively through the subdirectories)
-  and the value to add to the list.
+> returns a list listing directory and
+> file names in `path` and its subdirectories (the default path is the current
+> directory).
+>
+> Options:
+>
+> - `stat`: returns the list of stat results instead of just filenames
+> - `reverse`: the list is built in a reverse order
+>   (suitable for recursive directory removal)
+> - `cross`: walk across several devices
+> - `func`: function applied to the current file or directory.
+>   `func` takes two parameters (path of the file or directory and the stat object returned by `fs.stat`)
+>   and returns a boolean (to continue or not walking recursively through the subdirectories)
+>   and the value to add to the list.
 @@@]]
 
 function fs.walk(path, options)
@@ -9485,7 +9485,7 @@ end
 ```lua
 fs.with_tmpfile(f)
 ```
-calls `f(tmp)` where `tmp` is the name of a temporary file.
+> calls `f(tmp)` where `tmp` is the name of a temporary file.
 @@@]]
 
 function fs.with_tmpfile(f)
@@ -9504,7 +9504,7 @@ end
 ```lua
 fs.with_tmpdir(f)
 ```
-calls `f(tmp)` where `tmp` is the name of a temporary directory.
+> calls `f(tmp)` where `tmp` is the name of a temporary directory.
 @@@]]
 
 function fs.with_tmpdir(f)
@@ -9521,7 +9521,7 @@ end
 ```lua
 fs.with_dir(path, f)
 ```
-changes the current working directory to `path` and calls `f()`.
+> changes the current working directory to `path` and calls `f()`.
 @@@]]
 
 function fs.with_dir(path, f)
@@ -9542,10 +9542,10 @@ end
 ```lua
 fs.expand(path, [vars])
 ```
-returns the expanded path
-where `"~"` at the beginning of the path is replaced by the home directory of the current user
-and `$XXX` or `${XXX}` is replaced by the environment variable `XXX`.
-Variable values can also be taken from the optional `vars` table.
+> returns the expanded path
+> where `"~"` at the beginning of the path is replaced by the home directory of the current user
+> and `$XXX` or `${XXX}` is replaced by the environment variable `XXX`.
+> Variable values can also be taken from the optional `vars` table.
 @@@]]
 
 local function expanduser(path)
@@ -9571,7 +9571,7 @@ end
 ```lua
 fs.read(filename)
 ```
-returns the content of the text file `filename`.
+> returns the content of the text file `filename`.
 @@@]]
 
 function fs.read(name)
@@ -9584,7 +9584,7 @@ end
 ```lua
 fs.write(filename, ...)
 ```
-write `...` to the text file `filename`.
+> write `...` to the text file `filename`.
 @@@]]
 
 function fs.write(name, ...)
@@ -9598,7 +9598,7 @@ end
 ```lua
 fs.read_bin(filename)
 ```
-returns the content of the binary file `filename`.
+> returns the content of the binary file `filename`.
 @@@]]
 
 function fs.read_bin(name)
@@ -9611,7 +9611,7 @@ end
 ```lua
 fs.write_bin(filename, ...)
 ```
-write `...` to the binary file `filename`.
+> write `...` to the binary file `filename`.
 @@@]]
 
 function fs.write_bin(name, ...)
@@ -9982,7 +9982,7 @@ if not has_imath then
             q[j+1] = qhat
             -- D6: substract top
             if top < 0 then
-                q[j+i] = qhat - 1
+                q[j+1] = qhat - 1
                 local carry = 0
                 for i = 1, n do
                     local s = u[j+i] + v[i] + carry
@@ -10233,10 +10233,10 @@ configuration parameters being global variables defined in the configuration fil
 ```lua
 local conf = import("myconf.lua", [env])
 ```
-Evaluates `"myconf.lua"` in a new table and returns this table.
-All files are tracked in `package.modpath`.
-
-The execution environment inherits from `env` (or `_ENV` if `env` is not defined).
+> Evaluates `"myconf.lua"` in a new table and returns this table.
+> All files are tracked in `package.modpath`.
+>
+> The execution environment inherits from `env` (or `_ENV` if `env` is not defined).
 @@@]]
 
 return function(fname, env)
@@ -11129,19 +11129,19 @@ end
 ```lua
 lar.lar(lua_value, [opt])
 ```
-Returns a string with `lua_value` serialized, compressed and encrypted.
-
-Options:
-
-- `opt.compress`: compression algorithm (`"lzip"` by default):
-
-    - `"none"`: no compression
-    - `"lz4"`: compression with LZ4 (default compression level)
-    - `"lz4-#"`: compression with LZ4 (compression level `#` with `#` between 0 and 12)
-    - `"lzip"`: compression with lzip (default compression level)
-    - `"lzip-#"`: compression with lzip (compression level `#` with `#` between 0 and 9)
-
-- `opt.key`: encryption key (no encryption by default)
+> Returns a string with `lua_value` serialized, compressed and encrypted.
+>
+> Options:
+>
+> - `opt.compress`: compression algorithm (`"lzip"` by default):
+>
+>     - `"none"`: no compression
+>     - `"lz4"`: compression with LZ4 (default compression level)
+>     - `"lz4-#"`: compression with LZ4 (compression level `#` with `#` between 0 and 12)
+>     - `"lzip"`: compression with lzip (default compression level)
+>     - `"lzip-#"`: compression with lzip (compression level `#` with `#` between 0 and 9)
+>
+> - `opt.key`: encryption key (no encryption by default)
 @@@]]
 
 function lar.lar(lua_value, lar_opt)
@@ -11161,11 +11161,11 @@ end
 ```lua
 lar.unlar(archive, [opt])
 ```
-Returns the Lua value contained in a serialized, compressed and encrypted string.
-
-Options:
-
-- `opt.key`: encryption key (no encryption by default)
+> Returns the Lua value contained in a serialized, compressed and encrypted string.
+>
+> Options:
+>
+> - `opt.key`: encryption key (no encryption by default)
 @@@]]
 
 function lar.unlar(archive, opt)
@@ -11434,7 +11434,7 @@ return F{
     {name="windows-aarch64",    machine="ARM64",   kernel="Windows_NT", os="windows", arch="aarch64", libc="gnu",   exe=".exe", so=".dll"  },
 }
 ]=])
-package.preload["luax-version"] = lib("luax/luax-version.lua", [[local version = "10.6.3"
+package.preload["luax-version"] = lib("luax/luax-version.lua", [[local version = "10.6.6"
 local year = 2026
 local url = "codeberg.org/cdsoft/luax"
 local author = "Christophe Delord"
@@ -12205,7 +12205,7 @@ local __WINDOWS__ = sys.os == "windows"
 ```lua
 sh.run(...)
 ```
-Runs the command `...` with `os.execute`.
+> Runs the command `...` with `os.execute`.
 @@@]]
 
 function sh.run(...)
@@ -12217,9 +12217,9 @@ end
 ```lua
 sh.read(...)
 ```
-Runs the command `...` with `io.popen`.
-When `sh.read` succeeds, it returns the content of stdout.
-Otherwise it returns the error identified by `io.popen`.
+> Runs the command `...` with `io.popen`.
+> When `sh.read` succeeds, it returns the content of stdout.
+> Otherwise it returns the error identified by `io.popen`.
 @@@]]
 
 function sh.read(...)
@@ -12239,8 +12239,8 @@ end
 ```lua
 sh.write(...)(data)
 ```
-Runs the command `...` with `io.popen` and feeds `stdin` with `data`.
-`sh.write` returns the same values returned by `os.execute`.
+> Runs the command `...` with `io.popen` and feeds `stdin` with `data`.
+> `sh.write` returns the same values returned by `os.execute`.
 @@@]]
 
 function sh.write(...)
@@ -12260,9 +12260,9 @@ end
 ```lua
 sh.pipe(...)(data)
 ```
-Runs the command `...` with `io.popen` and feeds `stdin` with `data`.
-When `sh.pipe` succeeds, it returns the content of stdout.
-Otherwise it returns the error identified by `io.popen`.
+> Runs the command `...` with `io.popen` and feeds `stdin` with `data`.
+> When `sh.pipe` succeeds, it returns the content of stdout.
+> Otherwise it returns the error identified by `io.popen`.
 @@@]]
 
 function sh.pipe(...)
@@ -12284,7 +12284,7 @@ end
 ``` lua
 sh(...)
 ```
-`sh` can be called as a function. `sh(...)` is a shortcut to `sh.read(...)`.
+> `sh` can be called as a function. `sh(...)` is a shortcut to `sh.read(...)`.
 @@@]]
 setmetatable(sh, {
     __call = function(_, ...) return sh.read(...) end,
@@ -12974,14 +12974,13 @@ term.color.X("...")
 -- build a complex color with attributes
 local c = term.color.red + term.color.italic + term.color.oncyan
 ```
-
-The user can disable the color support (e.g. when not running on a terminal):
-
-``` lua
-if not term.isatty(io.stdout) then
-    term.color.disable()
-end
-```
+> The user can disable the color support (e.g. when not running on a terminal):
+>
+> ``` lua
+> if not term.isatty(io.stdout) then
+>     term.color.disable()
+> end
+> ```
 @@@]]
 
 local color_mt, color_reset
@@ -13087,7 +13086,7 @@ end
 ``` lua
 term.reset()
 ```
-resets the colors and the cursor shape.
+> resets the colors and the cursor shape.
 @@@]]
 term.reset    = f(color_reset..     -- reset colors
                   CSI.."0 q"..      -- reset cursor shape
@@ -13101,7 +13100,7 @@ term.clearline()
 term.cleareol()
 term.clearend()
 ```
-clears the terminal, the current line, the end of the current line or from the cursor to the end of the terminal.
+> clears the terminal, the current line, the end of the current line or from the cursor to the end of the terminal.
 @@@]]
 term.clear       = f(CSI..'1;1H'..CSI..'2J')
 term.clearline   = f(CSI..'2K'..CSI..'E')
@@ -13112,7 +13111,7 @@ term.clearend    = f(CSI..'J')
 ``` lua
 term.pos(row, col)
 ```
-moves the cursor to the line `row` and the column `col`.
+> moves the cursor to the line `row` and the column `col`.
 @@@]]
 term.pos         = f(CSI..'%d;%dH')
 
@@ -13121,7 +13120,7 @@ term.pos         = f(CSI..'%d;%dH')
 term.save_pos()
 term.restore_pos()
 ```
-saves and restores the position of the cursor.
+> saves and restores the position of the cursor.
 @@@]]
 term.save_pos    = f(CSI..'s')
 term.restore_pos = f(CSI..'u')
@@ -13133,7 +13132,7 @@ term.down([n])
 term.right([n])
 term.left([n])
 ```
-moves the cursor by `n` characters up, down, right or left.
+> moves the cursor by `n` characters up, down, right or left.
 @@@]]
 term.up          = f(CSI..'%d;A')
 term.down        = f(CSI..'%d;B')
@@ -13154,7 +13153,7 @@ is highly recommended for a better user experience on Linux.
 ```lua
 s = term.prompt(p)
 ```
-prints `p` and waits for a user input
+> prints `p` and waits for a user input
 @@@]]
 
 function term.prompt(p)
@@ -13175,7 +13174,7 @@ Set the terminal title.
 ```lua
 term.title(t)
 ```
-sets the terminal title.
+> sets the terminal title.
 @@@]]
 
 function term.title(t)
@@ -15783,7 +15782,7 @@ return {
 }
 --@LIB
 ]])
-package.preload["_PANDA_VERSION"] = lib(".build/src/_PANDA_VERSION.lua", [=[return [[0.9.2]] --@LOAD]=])
+package.preload["_PANDA_VERSION"] = lib(".build/src/_PANDA_VERSION.lua", [=[return [[0.9.3]] --@LOAD]=])
 require "F"
 require "crypt"
 require "fs"

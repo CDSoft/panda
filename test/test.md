@@ -45,7 +45,7 @@ sumsq100 = sumsq(100)
 - email2 = [eMail](mailto:{{email2}})
 - build directory = {{vars.build}}
 
-::: { foo = {{foo}} }
+::: { foo="{{foo}}" }
 :::
 
 [{{foo}}]({{foo}}/index.html)
