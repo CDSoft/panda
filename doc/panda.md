@@ -1,6 +1,4 @@
-% Panda - Pandoc add-ons (Lua filters for Pandoc)
-% Christophe Delord - <https://codeberg.org/cdsoft/panda>
-% 9th July 2024
+# Panda - Pandoc add-ons (Lua filters for Pandoc)
 
 [panda]: https://codeberg.org/cdsoft/panda "Pandoc add-ons (Lua filters for Pandoc)"
 [GraphViz]: http://graphviz.org/
@@ -9,13 +7,9 @@
 [blockdiag]: http://blockdiag.com/
 [Asymptote]: http://asymptote.sourceforge.net/
 [mermaid]: https://mermaidjs.github.io/
-[R]: https://www.r-project.org/
 [Pandoc]: http://pandoc.org/
 [Pandoc Lua filter]: http://pandoc.org/lua-filters.html
-[Python]: https://www.python.org/
-[Lua]: http://www.lua.org/
 [Codeberg]: https://codeberg.org/cdsoft/panda
-[CDSoft]: https://cdsoft.codeberg.page
 [gnuplot]: http://www.gnuplot.info/
 [lsvg]: https://codeberg.org/cdsoft/lsvg/
 [ypp]: https://codeberg.org/cdsoft/ypp "Yet a PreProcessor"
@@ -23,8 +17,7 @@
 [Bang]: https://codeberg.org/cdsoft/bang "Ninja file generator"
 [Ninja]: https://ninja-build.org
 
-About panda
-===========
+## About panda
 
 Panda is a [Pandoc Lua filter] that works on internal Pandoc's AST.
 
@@ -40,7 +33,7 @@ Panda is heavily inspired by [abp](https://codeberg.org/cdsoft/abp) reimplemente
 
 If you need a more generic text preprocessor, [ypp] may be a better choice.
 
-## Releases
+### Releases
 
 It is strongly recommended to build Panda from source,
 as this is the only reliable way to install the exact version you need.
@@ -50,7 +43,7 @@ this page offers a selection for various platforms: <https://cdelord.fr/pub>.
 
 Note that the `bin` directory contains a prebuilt `panda.lua` script that can be used by Pandoc with no dependency.
 
-## Pricing
+### Pricing
 
 Panda is a free and open source software.
 But it has a cost. It takes time to develop, maintain and support.
@@ -63,8 +56,7 @@ users are cordially invited to contribute financially to its development.
 
 Feel free to promote Panda!
 
-Open source
-===========
+## Open source
 
 [Panda] is an Open source software.
 Anybody can contribute on [Codeberg] to:
@@ -76,8 +68,7 @@ Anybody can contribute on [Codeberg] to:
 - find new usages
 - ...
 
-Installation
-============
+## Installation
 
 Installing Panda from sources requires [Ninja], [LuaX] and [Bang].
 
@@ -89,24 +80,22 @@ Installing Panda from sources requires [Ninja], [LuaX] and [Bang].
 
 `panda` and `panda.lua` can also be installed anywhere. Nothing else is required (except from [Pandoc] obviously).
 
-Usage
-=====
+## Usage
 
 `panda.lua` is a [Pandoc Lua filter] and is not meant to be called directly.
 `panda` is just a shell script that calls `pandoc -L panda.lua ...`.
 
 ``` sh
-$ pandoc -L panda.lua ...
+pandoc -L panda.lua ...
 ```
 
 or
 
 ``` sh
-$ panda ...
+panda ...
 ```
 
-Cheat sheet
-===========
+## Cheat sheet
 
 +-------------------+---------------+---------------------------+-----------------------------------------------+
 | Syntactic item    | Class         | Attributes                | Description                                   |
@@ -160,8 +149,7 @@ Cheat sheet
 |                   |               |                           | name)                                         |
 +-------------------+---------------+---------------------------+-----------------------------------------------+
 
-Commented blocks
-================
+## Commented blocks
 
 Div blocks with the `comment` class are commented:
 
@@ -171,8 +159,7 @@ This block is a comment and is discarded by panda.
 :::
 ```
 
-String expansion
-================
+## String expansion
 
 `panda` stores variables in an environment used to expand strings.
 Variables can be defined by a Lua script with the `meta` class.
@@ -189,28 +176,27 @@ Variable names are enclosed between double curly brackets.
 
 E.g.:
 
-~~~markdown
+``````markdown
 ```meta
 foo = "bar (note: this is parsed as **Markdown**)"
 ```
 
 foo is {{foo}}.
-~~~
+``````
 
-~~~markdown
+``````markdown
 ```{.meta include=foo.lua}
 This text is ignored, definitions are in foo.lua.
 ```
 
 foo is defined in `foo.lua` and is {{foo}}.
-~~~
+``````
 
 `meta` code blocks contain Lua code executed by the Pandoc Lua interpretor.
 Panda also contains the [LuaX] modules reimplemented in Lua.
 More details are available in the [Luax documentation].
 
-Conditional blocks
-==================
+## Conditional blocks
 
 Blocks can be conditionally kept or omitted. The condition is described with attributes.
 
@@ -220,20 +206,19 @@ This block is emitted only if the value of the variable "name" is "value"
 :::
 ```
 
-Div inclusion
-=============
+## Div inclusion
 
 Fragments of documents can be imported from external files.
 The `include` attribute contains the name of the file to include.
 The content of the file is parsed according to its format (deduced from its name)
 and replaces the div block content.
 
-~~~markdown
+``````markdown
 :::{include=file.md shift=n}
 This text is optional and will be replaced by the content of file.md.
 Section title levels are shifted by n (0 if not specified).
 :::
-~~~
+``````
 
 The included file can be in a different format
 (e.g. a markdown file can include a reStructuredText file).
@@ -241,18 +226,17 @@ The included file can be in a different format
 If the block has an input format as a class, the file is parsed according to
 this format.
 
-Block inclusion
-===============
+## Block inclusion
 
 Code examples can be imported from external files.
 The `include` attribute contains the name of the file to include.
 The content of the file replaces the code block content.
 
-~~~markdown
+``````markdown
 ```{.c include=foo.c fromline=3 toline=10 pattern="Lua string pattern" format="%1"}
 This text is optional and will be replaced by the content of foo.c.
 ```
-~~~
+``````
 
 The optional `fromline` and `toline` defines the first and last lines to be included.
 
@@ -263,24 +247,22 @@ The format uses the captures defined by the pattern to format the content of the
 If the block has an input format as a class, its result is parsed according to
 this format.
 
-Documentation extraction
-========================
+## Documentation extraction
 
 Documentation fragments can be extracted from other source code files.
 The `doc` attribute contains the name of the file where documentation is extracted.
 All the documentation blocks are extracted, concatenated and parsed.
 The result replaces the div block content.
 
-~~~markdown
+``````markdown
 :::{doc=file.h shift=n from="@@@" to="@@@"}
 This text is optional and will be replaced by the content of file.h
 which is delimited by @@@.
 Section title levels are shifted by n (0 if not specified).
 :::
-~~~
+``````
 
-Scripts
-=======
+## Scripts
 
 Scripts can be executed by inline or code blocks.
 The `cmd` attribute defines the command to execute.
@@ -298,21 +280,20 @@ specific file extensions (e.g. `%s.fs` for F#).
 +-------------------------------------------------------+-------------------------------------------------------+
 | Source                                                | Result                                                |
 +=======================================================+=======================================================+
-| ~~~ markdown                                          |                                                       |
+| `````` markdown                                       |                                                       |
 | ```{.python cmd=python}                               | ```{.python cmd=python}                               |
 | print("Hello from Python!")                           | print("Hello from Python!")                           |
 | ```                                                   | ```                                                   |
-| ~~~                                                   |                                                       |
+| ``````                                                |                                                       |
 +-------------------------------------------------------+-------------------------------------------------------+
-| ~~~ markdown                                          |                                                       |
+| `````` markdown                                       |                                                       |
 | Lua says `print "Hello from Lua!"`{icmd=lua}          | Lua says `print "Hello from Lua!"`{icmd=lua}          |
-| ~~~                                                   |                                                       |
+| ``````                                                |                                                       |
 +-------------------------------------------------------+-------------------------------------------------------+
 
 Note: `{.python cmd=python}` is equivalent to `{.python cmd="python %s"}` and `{.python cmd="python %s.py"}`.
 
-Diagrams
-========
+## Diagrams
 
 Code blocks containing diagrams are replaced with an image resulting from the diagram source code.
 
@@ -352,7 +333,7 @@ _build = "output_path"
 +---------------------------------------+-------------------------------------------------+
 | Source                                | Result                                          |
 +=======================================+=================================================+
-| ~~~ markdown                          |                                                 |
+| `````` markdown                       |                                                 |
 | ``` { render="{{_plantuml}}"          | ``` { render="{{plantuml}}" name=alice_and_bob  |
 |       caption="Caption"               |       caption="Caption"                         |
 |       alt="Alternative description" } |       alt="Alternative description" }           |
@@ -360,7 +341,7 @@ _build = "output_path"
 | Alice -> Bob: hello                   | Alice -> Bob: hello                             |
 | @enduml                               | @enduml                                         |
 | ```                                   | ```                                             |
-| ~~~                                   |                                                 |
+| ``````                                |                                                 |
 +---------------------------------------+-------------------------------------------------+
 
 Some render commands are predefined:
@@ -427,7 +408,7 @@ _gnuplot = "{{gnuplot}}"
 +-------------------------------------------+-----------------------------------------------------+
 | Source                                    | Result                                              |
 +===========================================+=====================================================+
-| ~~~ markdown                              |                                                     |
+| `````` markdown                              |                                                     |
 | ```{.dot render="{{_dot}}"}               | ```{.dot render="{{dot}}" name=panda}               |
 | digraph {                                 | digraph {                                           |
 |     rankdir=LR;                           |     rankdir=LR;                                     |
@@ -437,15 +418,15 @@ _gnuplot = "{{gnuplot}}"
 |     { rank=same; diagrams, output }       |     { rank=same; diagrams, output }                 |
 | }                                         | }                                                   |
 | ```                                       | ```                                                 |
-| ~~~                                       |                                                     |
+| ``````                                       |                                                     |
 +-------------------------------------------+-----------------------------------------------------+
-| ~~~ markdown                              |                                                     |
+| `````` markdown                              |                                                     |
 | ```{ render="{{_gnuplot}}"}               | ```{ render="{{gnuplot}}" name=gnuplot}             |
 | set xrange [-pi:pi]                       | set xrange [-2*pi:2*pi]                             |
 | set yrange [-1.5:1.5]                     | set yrange [-1.5:1.5]                               |
 | plot sin(x) lw 4, cos(x) lw 4             | plot sin(x) lw 4, cos(x) lw 4                       |
 | ```                                       | ```                                                 |
-| ~~~                                       |                                                     |
+| ``````                                       |                                                     |
 +-------------------------------------------+-----------------------------------------------------+
 
 Filters can be combined. E.g.: a diagram can be stored in an external file, included and rendered by `panda`.
@@ -457,25 +438,24 @@ _doc = "path"
 +-------------------------------------------+-------------------------------------------+
 | Source                                    | Result                                    |
 +===========================================+===========================================+
-| ~~~ markdown                              |                                           |
+| `````` markdown                           |                                           |
 | The file `hello.dot` contains:            | The file `hello.dot` contains:            |
 |                                           |                                           |
 | ```{.dot include="{{_doc}}/hello.dot"     | ```{.dot include="{{vars.doc}}/hello.dot" |
 |          pattern="digraph%s*%b{}" }       |          pattern="digraph%s*%b{}" }       |
 | ```                                       | ```                                       |
-| ~~~                                       |                                           |
+| ``````                                    |                                           |
 +-------------------------------------------+-------------------------------------------+
-| ~~~ markdown                              |                                           |
+| `````` markdown                           |                                           |
 | and is rendered as:                       | and is rendered as:                       |
 |                                           |                                           |
 | ```{ render="{{_dot}}"                    | ```{ render="{{dot}}" name=hello          |
 |      include="{{_doc}}/hello.dot" }       |      include="{{vars.doc}}/hello.dot" }   |
 | ```                                       | ```                                       |
-| ~~~                                       |                                           |
+| ``````                                    |                                           |
 +-------------------------------------------+-------------------------------------------+
 
-Makefile dependencies
-=====================
+## Makefile dependencies
 
 It is sometimes useful to build a dependency list on the fly.
 `panda` can generate a dependency list for make, in the same vein than the gcc `-M` option.
@@ -496,29 +476,24 @@ PANDA_TARGET=index.html panda index.md -o index.html
 
 This will produce a file named `index.html.d` containing `index.html: ...`.
 
-Licenses
-========
+## Licenses
 
-## Panda
+### Panda
 
-    Panda is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
+```
+Panda is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
 
-    Panda is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
+Panda is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
-    along with Panda.  If not, see <https://www.gnu.org/licenses/>.
+You should have received a copy of the GNU General Public License
+along with Panda.  If not, see <https://www.gnu.org/licenses/>.
 
-    For further information about Panda you can visit
-    https://codeberg.org/cdsoft/panda
-
-Feedback
-========
-
-Your feedback and contributions are welcome.
-You can contact me at [CDSoft].
+For further information about Panda you can visit
+https://codeberg.org/cdsoft/panda
+```

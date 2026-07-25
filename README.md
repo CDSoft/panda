@@ -1,4 +1,6 @@
-# About panda
+# Panda - Pandoc add-ons (Lua filters for Pandoc)
+
+## About panda
 
 Panda is a [Pandoc Lua filter](http://pandoc.org/lua-filters.html) that
 works on internal Pandoc’s AST.
@@ -24,7 +26,7 @@ If you need a more generic text preprocessor,
 [ypp](https://codeberg.org/cdsoft/ypp "Yet a PreProcessor") may be a
 better choice.
 
-## Releases
+### Releases
 
 It is strongly recommended to build Panda from source, as this is the
 only reliable way to install the exact version you need.
@@ -35,7 +37,7 @@ selection for various platforms: <https://cdelord.fr/pub>.
 Note that the `bin` directory contains a prebuilt `panda.lua` script
 that can be used by Pandoc with no dependency.
 
-## Pricing
+### Pricing
 
 Panda is a free and open source software. But it has a cost. It takes
 time to develop, maintain and support.
@@ -48,7 +50,7 @@ cordially invited to contribute financially to its development.
 
 Feel free to promote Panda!
 
-# Open source
+## Open source
 
 [Panda](https://codeberg.org/cdsoft/panda "Pandoc add-ons (Lua filters for Pandoc)")
 is an Open source software. Anybody can contribute on
@@ -61,7 +63,7 @@ is an Open source software. Anybody can contribute on
 - find new usages
 - …
 
-# Installation
+## Installation
 
 Installing Panda from sources requires [Ninja](https://ninja-build.org),
 [LuaX](https://codeberg.org/cdsoft/luax "Lua eXtended interpretor") and
@@ -77,23 +79,23 @@ Installing Panda from sources requires [Ninja](https://ninja-build.org),
 `panda` and `panda.lua` can also be installed anywhere. Nothing else is
 required (except from [Pandoc](http://pandoc.org/) obviously).
 
-# Usage
+## Usage
 
 `panda.lua` is a [Pandoc Lua filter](http://pandoc.org/lua-filters.html)
 and is not meant to be called directly. `panda` is just a shell script
 that calls `pandoc -L panda.lua ...`.
 
 ``` sh
-$ pandoc -L panda.lua ...
+pandoc -L panda.lua ...
 ```
 
 or
 
 ``` sh
-$ panda ...
+panda ...
 ```
 
-# Cheat sheet
+## Cheat sheet
 
 | Syntactic item | Class | Attributes | Description |
 |----|----|----|----|
@@ -111,7 +113,7 @@ $ panda ...
 | code block, inline code |  | `cmd="shell command"` `icmd="shell command"` | replaces the code block by the result of the shell command. With`icmd` the code block content is parsed by Pandoc and included in a Div block. |
 | code block |  | `render="command"` | replaces the code block by a link to the image produced by the command (`%i` is the input file name, its content is the content of the code block, `%o` is the output file name) |
 
-# Commented blocks
+## Commented blocks
 
 Div blocks with the `comment` class are commented:
 
@@ -121,7 +123,7 @@ This block is a comment and is discarded by panda.
 :::
 ```
 
-# String expansion
+## String expansion
 
 `panda` stores variables in an environment used to expand strings.
 Variables can be defined by a Lua script with the `meta` class. The
@@ -161,7 +163,7 @@ interpretor. Panda also contains the
 modules reimplemented in Lua. More details are available in the \[Luax
 documentation\].
 
-# Conditional blocks
+## Conditional blocks
 
 Blocks can be conditionally kept or omitted. The condition is described
 with attributes.
@@ -172,7 +174,7 @@ This block is emitted only if the value of the variable "name" is "value"
 :::
 ```
 
-# Div inclusion
+## Div inclusion
 
 Fragments of documents can be imported from external files. The
 `include` attribute contains the name of the file to include. The
@@ -192,7 +194,7 @@ include a reStructuredText file).
 If the block has an input format as a class, the file is parsed
 according to this format.
 
-# Block inclusion
+## Block inclusion
 
 Code examples can be imported from external files. The `include`
 attribute contains the name of the file to include. The content of the
@@ -214,7 +216,7 @@ the content of the block (`"%1"` if not defined).
 If the block has an input format as a class, its result is parsed
 according to this format.
 
-# Documentation extraction
+## Documentation extraction
 
 Documentation fragments can be extracted from other source code files.
 The `doc` attribute contains the name of the file where documentation is
@@ -229,7 +231,7 @@ Section title levels are shifted by n (0 if not specified).
 :::
 ```
 
-# Scripts
+## Scripts
 
 Scripts can be executed by inline or code blocks. The `cmd` attribute
 defines the command to execute. The content of the block is in a
@@ -275,7 +277,7 @@ class="sourceCode markdown"><code class="sourceCode markdown"><span id="cb3-1"><
 Note: `{.python cmd=python}` is equivalent to
 `{.python cmd="python %s"}` and `{.python cmd="python %s.py"}`.
 
-# Diagrams
+## Diagrams
 
 Code blocks containing diagrams are replaced with an image resulting
 from the diagram source code.
@@ -397,42 +399,10 @@ Notes:
 
 E.g.:
 
-<table>
-<colgroup>
-<col style="width: 44%" />
-<col style="width: 55%" />
-</colgroup>
-<thead>
-<tr>
-<th>Source</th>
-<th>Result</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><div class="sourceCode" id="cb1"><pre
-class="sourceCode markdown"><code class="sourceCode markdown"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="in">```{.dot render=&quot;{{dot}}&quot;}</span></span>
-<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="in">digraph {</span></span>
-<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="in">    rankdir=LR;</span></span>
-<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="in">    input -&gt; pandoc -&gt; output</span></span>
-<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="in">    pandoc -&gt; panda -&gt; {pandoc, diagrams}</span></span>
-<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="in">    { rank=same; pandoc, panda }</span></span>
-<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="in">    { rank=same; diagrams, output }</span></span>
-<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a><span class="in">}</span></span>
-<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span></code></pre></div></td>
-<td><p><img src="./img/panda.svg" class="dot" /></p></td>
-</tr>
-<tr>
-<td><div class="sourceCode" id="cb2"><pre
-class="sourceCode markdown"><code class="sourceCode markdown"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="in">```{ render=&quot;{{gnuplot}}&quot;}</span></span>
-<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="in">set xrange [-pi:pi]</span></span>
-<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="in">set yrange [-1.5:1.5]</span></span>
-<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="in">plot sin(x) lw 4, cos(x) lw 4</span></span>
-<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span></code></pre></div></td>
-<td><p><img src="./img/gnuplot.svg" /></p></td>
-</tr>
-</tbody>
-</table>
+|  |
+|----|
+| Source \| Result \| ===========================================+=====================================================+ ```` markdown                              |  ```{.dot render="{{dot}}"}               | ```{.dot render="dot -Tsvg -o %o.svg %i" name=panda}               |  digraph {                                 | digraph {                                           |      rankdir=LR;                           |     rankdir=LR;                                     |      input -> pandoc -> output             |     input -> pandoc -> output                       |      pandoc -> panda -> {pandoc, diagrams} |     pandoc -> panda -> {pandoc, diagrams}           |      { rank=same; pandoc, panda }          |     { rank=same; pandoc, panda }                    |      { rank=same; diagrams, output }       |     { rank=same; diagrams, output }                 |  }                                         | }                                                   |  ```                                       | ```                                                 | ```` \| |
+| ```` markdown                              | ```{ render="{{gnuplot}}"}               | ```{ render="gnuplot -e 'set terminal svg' -e 'set output "%o.svg"' -c %i" name=gnuplot}             | set xrange [-pi:pi]                       | set xrange [-2*pi:2*pi]                             | set yrange [-1.5:1.5]                     | set yrange [-1.5:1.5]                               | plot sin(x) lw 4, cos(x) lw 4             | plot sin(x) lw 4, cos(x) lw 4                       | ```                                       | ```                                                 | ```` \| |
 
 Filters can be combined. E.g.: a diagram can be stored in an external
 file, included and rendered by `panda`.
@@ -476,7 +446,7 @@ class="sourceCode markdown"><code class="sourceCode markdown"><span id="cb3-1"><
 </tbody>
 </table>
 
-# Makefile dependencies
+## Makefile dependencies
 
 It is sometimes useful to build a dependency list on the fly. `panda`
 can generate a dependency list for make, in the same vein than the gcc
@@ -501,9 +471,9 @@ PANDA_TARGET=index.html panda index.md -o index.html
 This will produce a file named `index.html.d` containing
 `index.html: ...`.
 
-# Licenses
+## Licenses
 
-## Panda
+### Panda
 
     Panda is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -520,8 +490,3 @@ This will produce a file named `index.html.d` containing
 
     For further information about Panda you can visit
     https://codeberg.org/cdsoft/panda
-
-# Feedback
-
-Your feedback and contributions are welcome. You can contact me at
-[CDSoft](https://cdsoft.codeberg.page).
