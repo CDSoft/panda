@@ -12,6 +12,7 @@
 [Codeberg]: https://codeberg.org/cdsoft/panda
 [gnuplot]: http://www.gnuplot.info/
 [lsvg]: https://codeberg.org/cdsoft/lsvg/
+[figure]: https://codeberg.org/cdsoft/figure/
 [ypp]: https://codeberg.org/cdsoft/ypp "Yet a PreProcessor"
 [LuaX]: https://codeberg.org/cdsoft/luax "Lua eXtended interpretor"
 [Bang]: https://codeberg.org/cdsoft/bang "Ninja file generator"
@@ -379,6 +380,10 @@ Diagram         Predefined variable     Render command
                 `lsvg.svg`              `{{lsvg.svg}}`
                 `lsvg.png`              `{{lsvg.png}}`
                 `lsvg.pdf`              `{{lsvg.pdf}}`
+[figure]        `fig`                   `{{fig}}`
+                `fig.svg`               `{{fig.svg}}`
+                `fig.png`               `{{fig.png}}`
+                `fig.pdf`               `{{fig.pdf}}`
 
 Notes:
 

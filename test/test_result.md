@@ -152,6 +152,6 @@ description](.build/img/0ec62f1568ac33e20ec8d430ae77a9cbe6c9cd46.svg "Alice & Bo
 [![Alternative
 description](.build/img/test-bob-and-alice.svg "Alice & Bob")](http://example.com "Alice & Bob")
 
-![](.build/img/9660f55f4f866c1e04f58eb9f9b88a3605d65d96.svg){.lua}
+![](.build/img/68ba3050aa53cb17b29c55be103aa766a8f610e7.svg){.lua}
 
 ![](.build/img/dot.svg)

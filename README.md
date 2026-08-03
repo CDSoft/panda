@@ -373,6 +373,10 @@ Some render commands are predefined:
 |  | `lsvg.svg` | `lsvg %i.lua -o %o.svg` |
 |  | `lsvg.png` | `lsvg %i.lua -o %o.png` |
 |  | `lsvg.pdf` | `lsvg %i.lua -o %o.pdf` |
+| [figure](https://codeberg.org/cdsoft/figure/) | `fig` | `fig %i.lua -o %o.svg` |
+|  | `fig.svg` | `fig %i.lua -o %o.svg` |
+|  | `fig.png` | `fig %i.lua -o %o.png` |
+|  | `fig.pdf` | `fig %i.lua -o %o.pdf` |
 
 Notes:
 

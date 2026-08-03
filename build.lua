@@ -20,7 +20,7 @@ https://codeberg.org/cdsoft/panda
 
 local F = require "F"
 
-version "0.9.3"
+version "0.9.4"
 
 help.name "Panda"
 help.description "$name"

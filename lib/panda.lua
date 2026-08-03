@@ -3,65 +3,67 @@
 -- Generated with LuaX
 -- Copyright (C) 2021-2026 codeberg.org/cdsoft/luax, Christophe Delord
 
-_LUAX_VERSION = "LuaX 10.6.6"
+_LUAX_VERSION = "LuaX 10.9.4"
 
 local function lib(path, src) return assert(load(src, '@$panda:'..path)) end
-package.preload["F"] = lib("luax/F.lua", [==[--[[
-This file is part of luax.
+package.preload["F"] = lib("luax/F.lua", [=[
 
-luax is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
 
-luax is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
 
-You should have received a copy of the GNU General Public License
-along with luax.  If not, see <https://www.gnu.org/licenses/>.
 
-For further information about luax you can visit
-https://codeberg.org/cdsoft/luax
---]]
 
--- Load F.lua to add new methods to strings
---@LOAD=_
 
---[[------------------------------------------------------------------------@@@
-# Functional programming utilities
 
-```lua
-local F = require "F"
-```
 
-`F` provides some useful functions inspired by functional programming languages,
-especially by these Haskell modules:
 
-- [`Data.List`](https://hackage.haskell.org/package/base-4.17.0.0/docs/Data-List.html)
-- [`Data.Map`](https://hackage.haskell.org/package/containers-0.6.6/docs/Data-Map.html)
-- [`Data.String`](https://hackage.haskell.org/package/base-4.17.0.0/docs/Data-String.html)
-- [`Prelude`](https://hackage.haskell.org/package/base-4.17.0.0/docs/Prelude.html)
 
-@@@]]
 
---[[@@@
-This module provides functions for Lua tables that can represent both arrays (i.e. integral indices)
-and tables (i.e. any indice types).
-The `F` constructor adds methods to tables which may interfere with table fields that could have the same names.
-In this case, F also defines the `__call` metamethod that takes a method name
-and returns a function that actually calls the requested method.
-E.g.:
 
-```lua
-t = F{foo = 12, mapk = 42} -- note that mapk is also a method of F tables
 
-t:mapk(func)    -- fails because mapk is a field of t
-t"mapk"(func)   -- works and is equivalent to F.mapk(func, t)
-```
 
-@@@]]
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+require "luax-compat"
 
 local getmetatable, setmetatable = getmetatable, setmetatable
 local ipairs, pairs, next = ipairs, pairs, next
@@ -72,10 +74,16 @@ local select = select
 local tostring = tostring
 local type = type
 
+local t_create = table.create
 local t_concat = table.concat
-local t_insert, t_remove = table.insert, table.remove
+local t_insert, t_remove, t_move = table.insert, table.remove, table.move
 local t_sort = table.sort
-local t_unpack = table.unpack
+local t_pack, t_unpack = table.pack, table.unpack
+
+local function t_create_safe(nseq)
+    if nseq <= 0 then return {} end
+    return t_create(nseq)
+end
 
 local s_byte, s_char = string.byte, string.char
 local s_find, s_match, s_gmatch, s_gsub = string.find, string.match, string.gmatch, string.gsub
@@ -92,6 +100,7 @@ local s_init, s_last
 local s_split
 
 local abs = math.abs
+local ceil = math.ceil
 local fmod = math.fmod
 local math_type = math.type
 local max = math.max
@@ -135,9 +144,9 @@ local F_zip
 local F_minimum
 local F_permutations
 
---[[------------------------------------------------------------------------@@@
-## Standard types, and related functions
-@@@]]
+
+
+
 
 local type_rank = {
     ["nil"]         = 0,
@@ -247,38 +256,38 @@ local function key_ge(a, b)
     return a >= b
 end
 
---[[------------------------------------------------------------------------@@@
-### Operators
-@@@]]
+
+
+
 
 F.op = {}
 
---[[@@@
-```lua
-F.op.land(a, b)             -- a and b
-F.op.lor(a, b)              -- a or b
-F.op.lxor(a, b)             -- (not a and b) or (not b and a)
-F.op.lnot(a)                -- not a
-```
-> Logical operators
-@@@]]
+
+
+
+
+
+
+
+
+
 
 F.op.land = function(a, b) return a and b end
 F.op.lor = function(a, b) return a or b end
 F.op.lxor = function(a, b) return (not a and b) or (not b and a) end
 F.op.lnot = function(a) return not a end
 
---[[@@@
-```lua
-F.op.band(a, b)             -- a & b
-F.op.bor(a, b)              -- a | b
-F.op.bxor(a, b)             -- a ~ b
-F.op.bnot(a)                -- ~a
-F.op.shl(a, b)              -- a << b
-F.op.shr(a, b)              -- a >> b
-```
-> Bitwise operators
-@@@]]
+
+
+
+
+
+
+
+
+
+
+
 
 F.op.band = function(a, b) return a & b end
 F.op.bor = function(a, b) return a | b end
@@ -287,17 +296,17 @@ F.op.bnot = function(a) return ~a end
 F.op.shl = function(a, b) return a << b end
 F.op.shr = function(a, b) return a >> b end
 
---[[@@@
-```lua
-F.op.eq(a, b)               -- a == b
-F.op.ne(a, b)               -- a ~= b
-F.op.lt(a, b)               -- a < b
-F.op.le(a, b)               -- a <= b
-F.op.gt(a, b)               -- a > b
-F.op.ge(a, b)               -- a >= b
-```
-> Comparison operators
-@@@]]
+
+
+
+
+
+
+
+
+
+
+
 
 F.op.eq = function(a, b) return a == b end
 F.op.ne = function(a, b) return a ~= b end
@@ -309,18 +318,18 @@ F.op.ge = function(a, b) return a >= b end
 F_op_eq = F.op.eq
 F_op_lt = F.op.lt
 
---[[@@@
-```lua
-F.op.ueq(a, b)              -- a == b  (†)
-F.op.une(a, b)              -- a ~= b  (†)
-F.op.ult(a, b)              -- a < b   (†)
-F.op.ule(a, b)              -- a <= b  (†)
-F.op.ugt(a, b)              -- a > b   (†)
-F.op.uge(a, b)              -- a >= b  (†)
-```
-> Universal comparison operators
-  ((†) recursive comparisons on elements of possibly different Lua types)
-@@@]]
+
+
+
+
+
+
+
+
+
+
+
+
 
 F.op.ueq = universal_eq
 F.op.une = universal_ne
@@ -329,20 +338,20 @@ F.op.ule = universal_le
 F.op.ugt = universal_gt
 F.op.uge = universal_ge
 
---[[@@@
-```lua
-F.op.keq(a, b)              -- a == b  (†)
-F.op.kne(a, b)              -- a ~= b  (†)
-F.op.klt(a, b)              -- a < b   (†)
-F.op.kle(a, b)              -- a <= b  (†)
-F.op.kgt(a, b)              -- a > b   (†)
-F.op.kge(a, b)              -- a >= b  (†)
-```
-> Universal comparison operators
-  ((†) non recursive comparisons on elements of possibly different Lua types).
-  The `kxx` functions are faster but less generic than `uxx`.
-  They are more suitable for sorting keys (e.g. F.keys).
-@@@]]
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 F.op.keq = key_eq
 F.op.kne = key_ne
@@ -351,19 +360,19 @@ F.op.kle = key_le
 F.op.kgt = key_gt
 F.op.kge = key_ge
 
---[[@@@
-```lua
-F.op.add(a, b)              -- a + b
-F.op.sub(a, b)              -- a - b
-F.op.mul(a, b)              -- a * b
-F.op.div(a, b)              -- a / b
-F.op.idiv(a, b)             -- a // b
-F.op.mod(a, b)              -- a % b
-F.op.neg(a)                 -- -a
-F.op.pow(a, b)              -- a ^ b
-```
-> Arithmetic operators
-@@@]]
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 F.op.add = function(a, b) return a + b end
 F.op.sub = function(a, b) return a - b end
@@ -374,55 +383,55 @@ F.op.mod = function(a, b) return a % b end
 F.op.neg = function(a) return -a end
 F.op.pow = function(a, b) return a ^ b end
 
---[[@@@
-```lua
-F.op.concat(a, b)           -- a .. b
-F.op.len(a)                 -- #a
-```
-> String/list operators
-@@@]]
+
+
+
+
+
+
+
 
 F.op.concat = function(a, b) return a..b end
 F.op.len = function(a) return #a end
 
---[[------------------------------------------------------------------------@@@
-### Basic data types
-@@@]]
 
---[[@@@
-```lua
-F.maybe(b, f, a)
-```
-> Returns f(a) if f(a) is not nil, otherwise b
-@@@]]
+
+
+
+
+
+
+
+
+
 function F.maybe(b, f, a)
     local v = f(a)
     if v == nil then return b end
     return v
 end
 
---[[@@@
-```lua
-F.default(def, x)
-```
-> Returns x if x is not nil, otherwise def
-@@@]]
+
+
+
+
+
+
 function F.default(def, x)
     if x == nil then return def end
     return x
 end
 
---[[@@@
-```lua
-F.case(x) {
-    t1 = v1,
-    ...
-    tn = vn,
-    [F.Nil] = default_value,
-}
-```
-> returns `vi` such that `ti == x` or `default_value` if no `ti` is equal to `x`.
-@@@]]
+
+
+
+
+
+
+
+
+
+
+
 
 function F.case(val)
     return function(cases)
@@ -432,64 +441,64 @@ function F.case(val)
     end
 end
 
---[[------------------------------------------------------------------------@@@
-#### Tuples
-@@@]]
 
---[[@@@
-```lua
-F.fst(xs)
-xs:fst()
-```
-> Extract the first component of a list.
-@@@]]
+
+
+
+
+
+
+
+
+
+
 
 function F.fst(xs) return xs[1] end
 mt.__index.fst = F.fst
 
---[[@@@
-```lua
-F.snd(xs)
-xs:snd()
-```
-> Extract the second component of a list.
-@@@]]
+
+
+
+
+
+
+
 
 function F.snd(xs) return xs[2] end
 mt.__index.snd = F.snd
 
---[[@@@
-```lua
-F.thd(xs)
-xs:thd()
-```
-> Extract the third component of a list.
-@@@]]
+
+
+
+
+
+
+
 
 function F.thd(xs) return xs[3] end
 mt.__index.thd = F.thd
 
---[[@@@
-```lua
-F.nth(n, xs)
-xs:nth(n)
-```
-> Extract the n-th component of a list.
-@@@]]
+
+
+
+
+
+
+
 
 function F.nth(n, xs) return xs[n] end
 function mt.__index:nth(n) return F.nth(n, self) end
 
---[[------------------------------------------------------------------------@@@
-### Basic type classes
-@@@]]
 
---[[@@@
-```lua
-F.comp(a, b)
-```
-> Comparison (-1, 0, 1)
-@@@]]
+
+
+
+
+
+
+
+
+
 
 F_comp = function(a, b)
     if a < b then return -1 end
@@ -498,108 +507,108 @@ F_comp = function(a, b)
 end
 F.comp = F_comp
 
---[[@@@
-```lua
-F.ucomp(a, b)
-```
-> Comparison (-1, 0, 1) (using universal comparison operators)
-@@@]]
+
+
+
+
+
+
 
 F.ucomp = universal_comp
 
---[[@@@
-```lua
-F.max(a, b)
-```
-> max(a, b)
-@@@]]
+
+
+
+
+
+
 
 function F.max(a, b) if a >= b then return a else return b end end
 
---[[@@@
-```lua
-F.min(a, b)
-```
-> min(a, b)
-@@@]]
+
+
+
+
+
+
 
 function F.min(a, b) if a <= b then return a else return b end end
 
---[[@@@
-```lua
-F.succ(a)
-```
-> a + 1
-@@@]]
+
+
+
+
+
+
 
 function F.succ(a) return a + 1 end
 
---[[@@@
-```lua
-F.pred(a)
-```
-> a - 1
-@@@]]
+
+
+
+
+
+
 
 function F.pred(a) return a - 1 end
 
---[[------------------------------------------------------------------------@@@
-### Numbers
-@@@]]
---
---[[------------------------------------------------------------------------@@@
-#### Numeric type classes
-@@@]]
 
---[[@@@
-```lua
-F.negate(a)
-```
-> -a
-@@@]]
+
+
+
+
+
+
+
+
+
+
+
+
+
 function F.negate(a) return -a end
 
---[[@@@
-```lua
-F.abs(a)
-```
-> absolute value of a
-@@@]]
+
+
+
+
+
+
 F.abs = math.abs
 
---[[@@@
-```lua
-F.signum(a)
-```
-> sign of a (-1, 0 or +1)
-@@@]]
+
+
+
+
+
+
 function F.signum(a) return F_comp(a, 0) end
 
---[[@@@
-```lua
-F.quot(a, b)
-```
-> integer division truncated toward zero
-@@@]]
+
+
+
+
+
+
 
 function F.quot(a, b)
     return (a - fmod(a, b)) // b
 end
 
---[[@@@
-```lua
-F.rem(a, b)
-```
-> integer remainder satisfying quot(a, b)*b + rem(a, b) == a, 0 <= rem(a, b) < abs(b)
-@@@]]
+
+
+
+
+
+
 F.rem = fmod
 
---[[@@@
-```lua
-F.quot_rem(a, b)
-```
-> simultaneous quot and rem
-@@@]]
+
+
+
+
+
+
 
 F_quot_rem = function(a, b)
     local r = fmod(a, b)
@@ -608,34 +617,34 @@ F_quot_rem = function(a, b)
 end
 F.quot_rem = F_quot_rem
 
---[[@@@
-```lua
-F.div(a, b)
-```
-> integer division truncated toward negative infinity
-@@@]]
+
+
+
+
+
+
 
 function F.div(a, b)
     return a // b
 end
 
---[[@@@
-```lua
-F.mod(a, b)
-```
-> integer modulus satisfying div(a, b)*b + mod(a, b) == a, 0 <= mod(a, b) < abs(b)
-@@@]]
+
+
+
+
+
+
 
 function F.mod(a, b)
     return a - b*(a//b)
 end
 
---[[@@@
-```lua
-F.div_mod(a, b)
-```
-> simultaneous div and mod
-@@@]]
+
+
+
+
+
+
 
 F_div_mod = function(a, b)
     local q = a // b
@@ -644,37 +653,37 @@ F_div_mod = function(a, b)
 end
 F.div_mod = F_div_mod
 
---[[@@@
-```lua
-F.recip(a)
-```
-> Reciprocal fraction.
-@@@]]
+
+
+
+
+
+
 
 function F.recip(a) return 1 / a end
 
---[[@@@
-```lua
-F.pi
-F.exp(x)
-F.log(x), F.log(x, base)
-F.log10(x), F.log2(x)
-F.sqrt(x)
-F.sin(x)
-F.cos(x)
-F.tan(x)
-F.asin(x)
-F.acos(x)
-F.atan(x)
-F.sinh(x)
-F.cosh(x)
-F.tanh(x)
-F.asinh(x)
-F.acosh(x)
-F.atanh(x)
-```
-> standard math constants and functions
-@@@]]
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 F.pi = math.pi
 F.exp = math.exp
 F.log = math.log
@@ -694,129 +703,129 @@ F.asinh = mathx.asinh
 F.acosh = mathx.acosh
 F.atanh = mathx.atanh
 
---[[@@@
-```lua
-F.proper_fraction(x)
-```
-> returns a pair (n, f) such that x = n+f, and:
->
-> - n is an integral number with the same sign as x
-> - f is a fraction with the same type and sign as x, and with absolute value less than 1.
-@@@]]
+
+
+
+
+
+
+
+
+
 F.proper_fraction = math.modf
 
---[[@@@
-```lua
-F.truncate(x)
-```
-> returns the integer nearest x between zero and x and the fractional part of x.
-@@@]]
+
+
+
+
+
+
 F.truncate = math.modf
 
---[[@@@
-```lua
-F.round(x)
-```
-> returns the nearest integer to x; the even integer if x is equidistant between two integers
-@@@]]
+
+
+
+
+
+
 
 F.round = mathx.round
 
---[[@@@
-```lua
-F.ceiling(x)
-F.ceil(x)
-```
-> returns the least integer not less than x.
-@@@]]
+
+
+
+
+
+
+
 F.ceiling = math.ceil
 F.ceil = F.ceiling
 
---[[@@@
-```lua
-F.floor(x)
-```
-> returns the greatest integer not greater than x.
-@@@]]
+
+
+
+
+
+
 F.floor = math.floor
 
---[[@@@
-```lua
-F.is_nan(x)
-```
-> True if the argument is an IEEE "not-a-number" (NaN) value
-@@@]]
+
+
+
+
+
+
 
 F.is_nan = mathx.isnan
 
---[[@@@
-```lua
-F.is_infinite(x)
-```
-> True if the argument is an IEEE infinity or negative infinity
-@@@]]
+
+
+
+
+
+
 
 F.is_infinite = mathx.isinf
 
---[[@@@
-```lua
-F.is_normalized(x)
-```
-> True if the argument is represented in normalized format
-@@@]]
+
+
+
+
+
+
 
 F.is_normalized = mathx.isnormal
 
---[[@@@
-```lua
-F.is_denormalized(x)
-```
-> True if the argument is too small to be represented in normalized format
-@@@]]
+
+
+
+
+
+
 
 function F.is_denormalized(x)
     return not isnormal(x)
 end
 
---[[@@@
-```lua
-F.is_negative_zero(x)
-```
-> True if the argument is an IEEE negative zero
-@@@]]
+
+
+
+
+
+
 
 function F.is_negative_zero(x)
     return x == 0.0 and copysign(1, x) < 0
 end
 
---[[@@@
-```lua
-F.atan2(y, x)
-```
-> computes the angle (from the positive x-axis) of the vector from the origin to the point (x, y).
-@@@]]
+
+
+
+
+
+
 
 F.atan2 = mathx.atan
 
---[[@@@
-```lua
-F.even(n)
-F.odd(n)
-```
-> parity check
-@@@]]
+
+
+
+
+
+
+
 
 function F.even(n) return n&1 == 0 end
 
 function F.odd(n) return n&1 == 1 end
 
---[[@@@
-```lua
-F.gcd(a, b)
-F.lcm(a, b)
-```
-> Greatest Common Divisor and Least Common Multiple of a and b.
-@@@]]
+
+
+
+
+
+
+
 
 do
 
@@ -836,40 +845,40 @@ F.gcd, F.lcm = gcd, lcm
 
 end
 
---[[------------------------------------------------------------------------@@@
-### Miscellaneous functions
-@@@]]
 
---[[@@@
-```lua
-F.id(x)
-```
-> Identity function.
-@@@]]
+
+
+
+
+
+
+
+
+
 
 function F.id(...) return ... end
 
---[[@@@
-```lua
-F.const(...)
-```
-> Constant function. const(...)(y) always returns ...
-@@@]]
+
+
+
+
+
+
 
 F_const = function(...)
-    local val = {...}
-    return function(...) ---@diagnostic disable-line:unused-vararg
+    local val = t_pack(...)
+    return function(...)
         return t_unpack(val)
     end
 end
 F.const = F_const
 
---[[@@@
-```lua
-F.compose(fs)
-```
-> Function composition. compose{f, g, h}(...) returns f(g(h(...))).
-@@@]]
+
+
+
+
+
+
 
 function F.compose(fs)
     local n = #fs
@@ -882,12 +891,12 @@ function F.compose(fs)
     end
 end
 
---[[@@@
-```lua
-F.flip(f)
-```
-> takes its (first) two arguments in the reverse order of f.
-@@@]]
+
+
+
+
+
+
 
 function F.flip(f)
     return function(a, b, ...)
@@ -895,12 +904,12 @@ function F.flip(f)
     end
 end
 
---[[@@@
-```lua
-F.curry(f)
-```
-> curry(f)(x)(...) calls f(x, ...)
-@@@]]
+
+
+
+
+
+
 
 function F.curry(f)
     return function(x)
@@ -910,12 +919,12 @@ function F.curry(f)
     end
 end
 
---[[@@@
-```lua
-F.uncurry(f)
-```
-> uncurry(f)(x, ...) calls f(x)(...)
-@@@]]
+
+
+
+
+
+
 
 function F.uncurry(f)
     return function(x, ...)
@@ -923,57 +932,49 @@ function F.uncurry(f)
     end
 end
 
---[[@@@
-```lua
-F.partial(f, ...)
-```
-> F.partial(f, xs)(ys) calls f(xs..ys)
-@@@]]
+
+
+
+
+
+
 
 function F.partial(f, ...)
     local n = select("#", ...)
-    if n == 0 then
-        return f
-    elseif n == 1 then
-        local x1 = ...
-        return function(...)
-            return f(x1, ...)
-        end
-    elseif n == 2 then
-        local x1, x2 = ...
-        return function(...)
-            return f(x1, x2, ...)
-        end
-    elseif n == 3 then
-        local x1, x2, x3 = ...
-        return function(...)
-            return f(x1, x2, x3, ...)
-        end
-    else
-        local xs = {...}
-        return function(...)
-            return f(t_unpack(F_concat{xs, {...}}))
-        end
+    if n == 0 then return f end
+    if n == 1 then local x1                     = ... return function(...) return f(x1, ...) end end
+    if n == 2 then local x1, x2                 = ... return function(...) return f(x1, x2, ...) end end
+    if n == 3 then local x1, x2, x3             = ... return function(...) return f(x1, x2, x3, ...) end end
+    if n == 4 then local x1, x2, x3, x4         = ... return function(...) return f(x1, x2, x3, x4, ...) end end
+    if n == 5 then local x1, x2, x3, x4, x5     = ... return function(...) return f(x1, x2, x3, x4, x5, ...) end end
+    if n == 6 then local x1, x2, x3, x4, x5, x6 = ... return function(...) return f(x1, x2, x3, x4, x5, x6, ...) end end
+    local xs = t_pack(...)
+    local xn = xs.n
+    return function(...)
+        local ys = t_pack(...)
+        local yn = ys.n
+        t_move(ys, 1, yn, xn+1, xs)
+        return f(t_unpack(xs, 1, xn+yn))
     end
 end
 
---[[@@@
-```lua
-F.call(f, ...)
-```
-> calls `f(...)`
-@@@]]
+
+
+
+
+
+
 
 function F.call(f, ...)
     return f(...)
 end
 
---[[@@@
-```lua
-F.until_(p, f, x)
-```
-> yields the result of applying f until p holds.
-@@@]]
+
+
+
+
+
+
 
 function F.until_(p, f, x)
     while not p(x) do
@@ -982,13 +983,13 @@ function F.until_(p, f, x)
     return x
 end
 
---[[@@@
-```lua
-F.error(message, level)
-F.error_without_stack_trace(message, level)
-```
-> stops execution and displays an error message (with out without a stack trace).
-@@@]]
+
+
+
+
+
+
+
 
 do
 
@@ -1019,36 +1020,36 @@ function F.error_without_stack_trace(message, level) err(message, level, false) 
 
 end
 
---[[@@@
-```lua
-F.prefix(pre)
-```
-> returns a function that adds the prefix pre to a string
-@@@]]
+
+
+
+
+
+
 
 function F.prefix(pre)
     return function(s) return pre..s end
 end
 
---[[@@@
-```lua
-F.suffix(suf)
-```
-> returns a function that adds the suffix suf to a string
-@@@]]
+
+
+
+
+
+
 
 function F.suffix(suf)
     return function(s) return s..suf end
 end
 
---[[@@@
-```lua
-F.memo1(f)
-```
-> returns a memoized function (one argument)
->
-> Note that the memoized function has a `reset` method to forget all the previously computed values.
-@@@]]
+
+
+
+
+
+
+
+
 
 function F.memo1(f)
     local mem = {}
@@ -1059,21 +1060,21 @@ function F.memo1(f)
         __call = function(_, k)
             local v = mem[k]
             if v then return t_unpack(v) end
-            v = {f(k)}
+            v = t_pack(f(k))
             mem[k] = v
             return t_unpack(v)
         end,
     })
 end
 
---[[@@@
-```lua
-F.memo(f)
-```
-> returns a memoized function (any number of arguments)
->
-> Note that the memoized function has a `reset` method to forget all the previously computed values.
-@@@]]
+
+
+
+
+
+
+
+
 
 function F.memo(f)
     local _nil = {}
@@ -1090,32 +1091,32 @@ function F.memo(f)
                 cur[k] = cur[k] or {}
                 cur = cur[k]
             end
-            cur[_value] = cur[_value] or {f(...)}
+            cur[_value] = cur[_value] or t_pack(f(...))
             return t_unpack(cur[_value])
         end,
     })
 end
 
---[[------------------------------------------------------------------------@@@
-## Converting to and from string
-@@@]]
 
---[[------------------------------------------------------------------------@@@
-### Converting to string
-@@@]]
 
---[[@@@
-```lua
-F.show(x, [opt])
-```
-> Convert x to a string
->
-> `opt` is an optional table that customizes the output string:
->
->   - `opt.int`: integer format
->   - `opt.flt`: floating point number format
->   - `opt.indent`: number of spaces use to indent tables (`nil` for a single line output)
-@@@]]
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 do
 
@@ -1126,13 +1127,12 @@ local default_show_options = {
     lt = F.op.klt,
 }
 
-local keywords = {}
-for _, k in ipairs {
-    "and",       "break",     "do",        "else",      "elseif",    "end",
-    "false",     "for",       "function",  "global",    "goto",      "if",
-    "in",        "local",     "nil",       "not",       "or",        "repeat",
-    "return",    "then",      "true",      "until",     "while",
-} do keywords[k] = true end
+local keywords = {
+    ["and"]=true,       ["break"]=true,     ["do"]=true,        ["else"]=true,      ["elseif"]=true,    ["end"]=true,
+    ["false"]=true,     ["for"]=true,       ["function"]=true,  ["global"]=true,    ["goto"]=true,      ["if"]=true,
+    ["in"]=true,        ["local"]=true,     ["nil"]=true,       ["not"]=true,       ["or"]=true,        ["repeat"]=true,
+    ["return"]=true,    ["then"]=true,      ["true"]=true,      ["until"]=true,     ["while"]=true,
+}
 
 function F.show(x, opt)
 
@@ -1160,7 +1160,7 @@ function F.show(x, opt)
     local function fmt(val)
         if type(val) == "table" then
             if in_stack(val) then
-                emit "{...}" -- recursive table
+                emit "{...}"
             else
                 push(val)
                 local need_nl = false
@@ -1219,47 +1219,47 @@ mt.__index.show = F.show
 
 end
 
---[[------------------------------------------------------------------------@@@
-### Converting from string
-@@@]]
 
---[[@@@
-```lua
-F.read(s)
-```
-> Convert s to a Lua value
-@@@]]
+
+
+
+
+
+
+
+
+
 
 function F.read(s)
     local chunk, msg = load("return "..s)
     if chunk == nil then return nil, msg end
-    local ret = F{pcall(chunk)}
-    local status, value = ret:head(), ret:tail()
-    if not status then return nil, value:unpack() end
-    return value:unpack()
+    local ret = t_pack(pcall(chunk))
+    local status, value = ret[1], t_pack(t_unpack(ret, 2, ret.n))
+    if not status then return nil, t_unpack(value) end
+    return t_unpack(value)
 end
 
---[[------------------------------------------------------------------------@@@
-## Table construction
-@@@]]
 
---[[@@@
-```lua
-F(t)
-```
-> `F(t)` sets the metatable of `t` and returns `t`.
-> Most of the functions of `F` will be methods of `t`.
->
-> Note that other `F` functions that return tables actually return `F` tables.
-@@@]]
 
---[[@@@
-```lua
-F.clone(t)
-t:clone()
-```
-> `F.clone(t)` clones the first level of `t`.
-@@@]]
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 F_clone = function(t)
     local t2 = {}
@@ -1269,13 +1269,13 @@ end
 F.clone = F_clone
 mt.__index.clone = F_clone
 
---[[@@@
-```lua
-F.deep_clone(t)
-t:deep_clone()
-```
-> `F.deep_clone(t)` recursively clones `t`.
-@@@]]
+
+
+
+
+
+
+
 
 function F.deep_clone(t)
     local function go(t1)
@@ -1288,65 +1288,53 @@ function F.deep_clone(t)
 end
 mt.__index.deep_clone = F.deep_clone
 
---[[@@@
-```lua
-F.rep(n, x)
-```
-> Returns a list of length n with x the value of every element.
-@@@]]
+
+
+
+
+
+
 
 function F.rep(n, x)
-    local xs = {}
+    local xs = t_create_safe(n)
     for i = 1, n do
         xs[i] = x
     end
     return setmetatable(xs, mt)
 end
 
---[[@@@
-```lua
-F.range(a)
-F.range(a, b)
-F.range(a, b, step)
-```
-> Returns a range [1, a], [a, b] or [a, a+step, ... b]
-@@@]]
+
+
+
+
+
+
+
+
 
 function F.range(a, b, step)
     step = step or 1
     if step == 0 then return nil, "range step can not be zero" end
     if b == nil then a, b = 1, a end
-    local r = {}
-    if step > 0 then
-        while a <= b do
-            r[#r+1] = a
-            a = a + step
-        end
-    else
-        while a >= b do
-            r[#r+1] = a
-            a = a + step
-        end
-    end
+    local r = t_create_safe(ceil((b-a)/step) + 1)
+    for x = a, b, step do r[#r+1] = x end
     return setmetatable(r, mt)
 end
 
---[[@@@
-```lua
-F.concat{xs1, xs2, ... xsn}
-F{xs1, xs2, ... xsn}:concat()
-xs1 .. xs2
-```
-> concatenates lists
-@@@]]
+
+
+
+
+
+
+
+
 
 F_concat = function(xss)
-    local ys = {}
+    local ys = t_create(F_map(F.op.len, xss):sum())
     for i = 1, #xss do
         local xs = xss[i]
-        for j = 1, #xs do
-            ys[#ys+1] = xs[j]
-        end
+        t_move(xs, 1, #xs, #ys+1, ys)
     end
     return setmetatable(ys, mt)
 end
@@ -1357,20 +1345,20 @@ function mt.__concat(xs1, xs2)
     return F_concat{xs1, xs2}
 end
 
---[[@@@
-```lua
-F.flatten(xs, [leaf])
-xs:flatten([leaf])
-```
-> Returns a flat list with all elements recursively taken from xs.
-  The optional `leaf` parameter is a predicate that can stop `flatten` on some kind of nodes.
-  By default, `flatten` only recurses on tables with no metatable or on `F` tables.
-@@@]]
+
+
+
+
+
+
+
+
+
 
 do
 
 local function default_leaf(x)
-    -- by default, a table is a leaf if it has a metatable and is not an F' list
+
     local xmt = getmetatable(x)
     return xmt and xmt ~= mt
 end
@@ -1396,13 +1384,13 @@ mt.__index.flatten = F_flatten
 
 end
 
---[=[@@@
-```lua
-F.str({s1, s2, ... sn}, [separator, [last_separator]])
-ss:str([separator, [last_separator]])
-```
-> concatenates strings (separated with an optional separator) and returns a string.
-@@@]=]
+
+
+
+
+
+
+
 
 function F.str(ss, sep, last_sep)
     if last_sep then
@@ -1414,13 +1402,13 @@ function F.str(ss, sep, last_sep)
 end
 mt.__index.str = F.str
 
---[[@@@
-```lua
-F.from_set(f, ks)
-ks:from_set(f)
-```
-> Build a map from a set of keys and a function which for each key computes its value.
-@@@]]
+
+
+
+
+
+
+
 
 F_from_set = function(f, ks)
     local t = {}
@@ -1433,13 +1421,13 @@ end
 F.from_set = F_from_set
 mt.__index.from_set = function(ks, f) return F_from_set(f, ks) end
 
---[[@@@
-```lua
-F.from_list(kvs)
-kvs:from_list()
-```
-> Build a map from a list of key/value pairs.
-@@@]]
+
+
+
+
+
+
+
 
 function F.from_list(kvs)
     local t = {}
@@ -1451,20 +1439,20 @@ function F.from_list(kvs)
 end
 mt.__index.from_list = F.from_list
 
---[[------------------------------------------------------------------------@@@
-## Iterators
-@@@]]
 
---[[@@@
-```lua
-F.pairs(t, [comp_lt])
-t:pairs([comp_lt])
-F.ipairs(xs, [comp_lt])
-xs:ipairs([comp_lt])
-```
-> behave like the Lua `pairs` and `ipairs` iterators.
-> `F.pairs` sorts keys using the function `comp_lt` or the default `<=` operator for keys (`F.op.klt`).
-@@@]]
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 F.ipairs = ipairs
 mt.__index.ipairs = ipairs
@@ -1481,17 +1469,17 @@ end
 F.pairs = F_pairs
 mt.__index.pairs = F_pairs
 
---[[@@@
-```lua
-F.keys(t, [comp_lt])
-t:keys([comp_lt])
-F.values(t, [comp_lt])
-t:values([comp_lt])
-F.items(t, [comp_lt])
-t:items([comp_lt])
-```
-> returns the list of keys, values or pairs of keys/values (same order than F.pairs).
-@@@]]
+
+
+
+
+
+
+
+
+
+
+
 
 F_keys = function(t, comp_lt)
     comp_lt = comp_lt or key_lt
@@ -1505,7 +1493,7 @@ mt.__index.keys = F_keys
 
 function F.values(t, comp_lt)
     local ks = F_keys(t, comp_lt)
-    local vs = {}
+    local vs = t_create(#ks)
     for i = 1, #ks do vs[i] = t[ks[i]] end
     return setmetatable(vs, mt)
 end
@@ -1513,7 +1501,7 @@ mt.__index.values = F.values
 
 function F.items(t, comp_lt)
     local ks = F_keys(t, comp_lt)
-    local kvs = {}
+    local kvs = t_create(#ks)
     for i = 1, #ks do
         local k = ks[i]
         kvs[i] = setmetatable({k, t[k]}, mt) end
@@ -1521,19 +1509,19 @@ function F.items(t, comp_lt)
 end
 mt.__index.items = F.items
 
---[[------------------------------------------------------------------------@@@
-## Table extraction
-@@@]]
 
---[[@@@
-```lua
-F.head(xs)
-xs:head()
-F.last(xs)
-xs:last()
-```
-> returns the first element (head) or the last element (last) of a list.
-@@@]]
+
+
+
+
+
+
+
+
+
+
+
+
 
 F_head = function(xs) return xs[1] end
 F.head = F_head
@@ -1543,99 +1531,89 @@ F_last = function(xs) return xs[#xs] end
 F.last = F_last
 mt.__index.last = F.last
 
---[[@@@
-```lua
-F.tail(xs)
-xs:tail()
-F.init(xs)
-xs:init()
-```
-> returns the list after the head (tail) or before the last element (init).
-@@@]]
+
+
+
+
+
+
+
+
+
 
 F_tail = function(xs)
-    if #xs == 0 then return nil end
-    local tail = {}
-    for i = 2, #xs do tail[#tail+1] = xs[i] end
+    local tail = t_move(xs, 2, #xs, 1, {})
     return setmetatable(tail, mt)
 end
 F.tail = F_tail
 mt.__index.tail = F_tail
 
 F_init = function(xs)
-    if #xs == 0 then return nil end
-    local init = {}
-    for i = 1, #xs-1 do init[#init+1] = xs[i] end
+    local init = t_move(xs, 1, #xs-1, 1, {})
     return setmetatable(init, mt)
 end
 F.init = F_init
 mt.__index.init = F_init
 
---[[@@@
-```lua
-F.uncons(xs)
-xs:uncons()
-```
-> returns the head and the tail of a list.
-@@@]]
+
+
+
+
+
+
+
 
 function F.uncons(xs) return F_head(xs), F_tail(xs) end
 mt.__index.uncons = F.uncons
 
---[[@@@
-```lua
-F.unpack(xs, [ i, [j] ])
-xs:unpack([ i, [j] ])
-```
-> returns the elements of xs between indices i and j
-@@@]]
+
+
+
+
+
+
+
 
 F.unpack = table.unpack
 mt.__index.unpack = table.unpack
 
---[[@@@
-```lua
-F.take(n, xs)
-xs:take(n)
-```
-> Returns the prefix of xs of length n.
-@@@]]
+
+
+
+
+
+
+
 
 F_take = function(n, xs)
-    local ys = {}
-    for i = 1, n do
-        ys[i] = xs[i]
-    end
+    local ys = t_move(xs, 1, n, 1, {})
     return setmetatable(ys, mt)
 end
 F.take = F_take
 mt.__index.take = function(xs, n) return F_take(n, xs) end
 
---[[@@@
-```lua
-F.drop(n, xs)
-xs:drop(n)
-```
-> Returns the suffix of xs after the first n elements.
-@@@]]
+
+
+
+
+
+
+
 
 F_drop = function(n, xs)
-    local ys = {}
-    for i = n+1, #xs do
-        ys[#ys+1] = xs[i]
-    end
+    local ys = t_move(xs, n+1, #xs, 1, {})
     return setmetatable(ys, mt)
 end
 F.drop = F_drop
 mt.__index.drop = function(xs, n) return F_drop(n, xs) end
 
---[[@@@
-```lua
-F.split_at(n, xs)
-xs:split_at(n)
-```
-> Returns a tuple where first element is xs prefix of length n and second element is the remainder of the list.
-@@@]]
+
+
+
+
+
+
+
 
 do
 
@@ -1647,93 +1625,72 @@ mt.__index.split_at = function(xs, n) return F_split_at(n, xs) end
 
 end
 
---[[@@@
-```lua
-F.take_while(p, xs)
-xs:take_while(p)
-```
-> Returns the longest prefix (possibly empty) of xs of elements that satisfy p.
-@@@]]
+
+
+
+
+
+
+
 
 F_take_while = function(p, xs)
-    local ys = {}
     local i = 1
-    while i <= #xs and p(xs[i]) do
-        ys[i] = xs[i]
-        i = i+1
-    end
+    while i <= #xs and p(xs[i]) do i = i+1 end
+    local ys = t_move(xs, 1, i-1, 1, {})
     return setmetatable(ys, mt)
 end
 F.take_while = F_take_while
 mt.__index.take_while = function(xs, p) return F_take_while(p, xs) end
 
---[[@@@
-```lua
-F.drop_while(p, xs)
-xs:drop_while(p)
-```
-> Returns the suffix remaining after `take_while(p, xs)`{.lua}.
-@@@]]
+
+
+
+
+
+
+
 
 F_drop_while = function(p, xs)
-    local zs = {}
     local i = 1
-    while i <= #xs and p(xs[i]) do
-        i = i+1
-    end
-    while i <= #xs do
-        zs[#zs+1] = xs[i]
-        i = i+1
-    end
+    while i <= #xs and p(xs[i]) do i = i+1 end
+    local zs = t_move(xs, i, #xs, 1, {})
     return setmetatable(zs, mt)
 end
 F.drop_while = F_drop_while
 mt.__index.drop_while = function(xs, p) return F_drop_while(p, xs) end
 
---[[@@@
-```lua
-F.drop_while_end(p, xs)
-xs:drop_while_end(p)
-```
-> Drops the largest suffix of a list in which the given predicate holds for all elements.
-@@@]]
+
+
+
+
+
+
+
 
 F_drop_while_end = function(p, xs)
-    local zs = {}
     local i = #xs
-    while i > 0 and p(xs[i]) do
-        i = i-1
-    end
-    for j = 1, i do
-        zs[j] = xs[j]
-    end
+    while i > 0 and p(xs[i]) do i = i-1 end
+    local zs = t_move(xs, 1, i, 1, {})
     return setmetatable(zs, mt)
 end
 F.drop_while_end = F_drop_while_end
 mt.__index.drop_while_end = function(xs, p) return F_drop_while_end(p, xs) end
 
---[[@@@
-```lua
-F.span(p, xs)
-xs:span(p)
-```
-> Returns a tuple where first element is longest prefix (possibly empty) of xs of elements that satisfy p and second element is the remainder of the list.
-@@@]]
+
+
+
+
+
+
+
 
 do
 
 local function F_span(p, xs)
-    local ys = {}
-    local zs = {}
     local i = 1
-    while i <= #xs and p(xs[i]) do
-        ys[i] = xs[i]
-        i = i+1
-    end
-    while i <= #xs do
-        zs[#zs+1] = xs[i]
-        i = i+1
-    end
+    while i <= #xs and p(xs[i]) do i = i+1 end
+    local ys = t_move(xs, 1, i-1, 1, {})
+    local zs = t_move(xs, i, #xs, 1, {})
     return setmetatable(ys, mt), setmetatable(zs, mt)
 end
 F.span = F_span
@@ -1741,28 +1698,21 @@ mt.__index.span = function(xs, p) return F_span(p, xs) end
 
 end
 
---[[@@@
-```lua
-F.break_(p, xs)
-xs:break_(p)
-```
-> Returns a tuple where first element is longest prefix (possibly empty) of xs of elements that do not satisfy p and second element is the remainder of the list.
-@@@]]
+
+
+
+
+
+
+
 
 do
 
 local function F_break(p, xs)
-    local ys = {}
-    local zs = {}
     local i = 1
-    while i <= #xs and not p(xs[i]) do
-        ys[i] = xs[i]
-        i = i+1
-    end
-    while i <= #xs do
-        zs[#zs+1] = xs[i]
-        i = i+1
-    end
+    while i <= #xs and not p(xs[i]) do i = i+1 end
+    local ys = t_move(xs, 1, i-1, 1, {})
+    local zs = t_move(xs, i, #xs, 1, {})
     return setmetatable(ys, mt), setmetatable(zs, mt)
 end
 F.break_ = F_break
@@ -1770,13 +1720,13 @@ mt.__index.break_ = function(xs, p) return F_break(p, xs) end
 
 end
 
---[[@@@
-```lua
-F.strip_prefix(prefix, xs)
-xs:strip_prefix(prefix)
-```
-> Drops the given prefix from a list.
-@@@]]
+
+
+
+
+
+
+
 
 do
 
@@ -1784,10 +1734,7 @@ local function F_strip_prefix(prefix, xs)
     for i = 1, #prefix do
         if xs[i] ~= prefix[i] then return nil end
     end
-    local ys = {}
-    for i = #prefix+1, #xs do
-        ys[#ys+1] = xs[i]
-    end
+    local ys = t_move(xs, #prefix+1, #xs, 1, {})
     return setmetatable(ys, mt)
 end
 F.strip_prefix = F_strip_prefix
@@ -1795,13 +1742,13 @@ mt.__index.strip_prefix = function(xs, prefix) return F_strip_prefix(prefix, xs)
 
 end
 
---[[@@@
-```lua
-F.strip_suffix(suffix, xs)
-xs:strip_suffix(suffix)
-```
-> Drops the given suffix from a list.
-@@@]]
+
+
+
+
+
+
+
 
 do
 
@@ -1809,10 +1756,7 @@ local function F_strip_suffix(suffix, xs)
     for i = 1, #suffix do
         if xs[#xs-#suffix+i] ~= suffix[i] then return nil end
     end
-    local ys = {}
-    for i = 1, #xs-#suffix do
-        ys[i] = xs[i]
-    end
+    local ys = t_move(xs, 1, #xs-#suffix, 1, {})
     return setmetatable(ys, mt)
 end
 F.strip_suffix = F_strip_suffix
@@ -1820,13 +1764,13 @@ mt.__index.strip_suffix = function(xs, suffix) return F_strip_suffix(suffix, xs)
 
 end
 
---[[@@@
-```lua
-F.group(xs, [comp_eq])
-xs:group([comp_eq])
-```
-> Returns a list of lists such that the concatenation of the result is equal to the argument. Moreover, each sublist in the result contains only equal elements.
-@@@]]
+
+
+
+
+
+
+
 
 function F.group(xs, comp_eq)
     comp_eq = comp_eq or F_op_eq
@@ -1849,59 +1793,53 @@ function F.group(xs, comp_eq)
 end
 mt.__index.group = F.group
 
---[[@@@
-```lua
-F.inits(xs)
-xs:inits()
-```
-> Returns all initial segments of the argument, shortest first.
-@@@]]
+
+
+
+
+
+
+
 
 function F.inits(xs)
-    local yss = {}
+    local yss = t_create(#xs+1)
     for i = 0, #xs do
-        local ys = {}
-        for j = 1, i do
-            ys[j] = xs[j]
-        end
+        local ys = t_move(xs, 1, i, 1, {})
         yss[#yss+1] = setmetatable(ys, mt)
     end
     return setmetatable(yss, mt)
 end
 mt.__index.inits = F.inits
 
---[[@@@
-```lua
-F.tails(xs)
-xs:tails()
-```
-> Returns all final segments of the argument, longest first.
-@@@]]
+
+
+
+
+
+
+
 
 function F.tails(xs)
-    local yss = {}
+    local yss = t_create(#xs+1)
     for i = 1, #xs+1 do
-        local ys = {}
-        for j = i, #xs do
-            ys[#ys+1] = xs[j]
-        end
+        local ys = t_move(xs, i, #xs, 1, {})
         yss[#yss+1] = setmetatable(ys, mt)
     end
     return setmetatable(yss, mt)
 end
 mt.__index.tails = F.tails
 
---[[------------------------------------------------------------------------@@@
-## Predicates
-@@@]]
 
---[[@@@
-```lua
-F.is_prefix_of(prefix, xs)
-prefix:is_prefix_of(xs)
-```
-> Returns `true` iff `xs` starts with `prefix`
-@@@]]
+
+
+
+
+
+
+
+
+
+
 
 F_is_prefix_of = function(prefix, xs)
     for i = 1, #prefix do
@@ -1912,13 +1850,13 @@ end
 F.is_prefix_of = F_is_prefix_of
 mt.__index.is_prefix_of = F_is_prefix_of
 
---[[@@@
-```lua
-F.is_suffix_of(suffix, xs)
-suffix:is_suffix_of(xs)
-```
-> Returns `true` iff `xs` ends with `suffix`
-@@@]]
+
+
+
+
+
+
+
 
 F_is_suffix_of = function(suffix, xs)
     for i = 1, #suffix do
@@ -1929,13 +1867,13 @@ end
 F.is_suffix_of = F_is_suffix_of
 mt.__index.is_suffix_of = F_is_suffix_of
 
---[[@@@
-```lua
-F.is_infix_of(infix, xs)
-infix:is_infix_of(xs)
-```
-> Returns `true` iff `xs` contains `infix`
-@@@]]
+
+
+
+
+
+
+
 
 F_is_infix_of = function(infix, xs)
     for i = 1, #xs-#infix+1 do
@@ -1950,46 +1888,46 @@ end
 F.is_infix_of = F_is_infix_of
 mt.__index.is_infix_of = F_is_infix_of
 
---[[@@@
-```lua
-F.has_prefix(xs, prefix)
-xs:has_prefix(prefix)
-```
-> Returns `true` iff `xs` starts with `prefix`
-@@@]]
+
+
+
+
+
+
+
 
 F.has_prefix = function(xs, prefix) return F_is_prefix_of(prefix, xs) end
 mt.__index.has_prefix = F.has_prefix
 
---[[@@@
-```lua
-F.has_suffix(xs, suffix)
-xs:has_suffix(suffix)
-```
-> Returns `true` iff `xs` ends with `suffix`
-@@@]]
+
+
+
+
+
+
+
 
 F.has_suffix = function(xs, suffix) return F_is_suffix_of(suffix, xs) end
 mt.__index.has_suffix = F.has_suffix
 
---[[@@@
-```lua
-F.has_infix(xs, infix)
-xs:has_infix(infix)
-```
-> Returns `true` iff `xs` caontains `infix`
-@@@]]
+
+
+
+
+
+
+
 
 F.has_infix = function(xs, infix) return F_is_infix_of(infix, xs) end
 mt.__index.has_infix = F.has_infix
 
---[[@@@
-```lua
-F.is_subsequence_of(seq, xs)
-seq:is_subsequence_of(xs)
-```
-> Returns `true` if all the elements of the first list occur, in order, in the second. The elements do not have to occur consecutively.
-@@@]]
+
+
+
+
+
+
+
 
 function  F.is_subsequence_of(seq, xs, comp_eq)
     comp_eq = comp_eq or F_op_eq
@@ -2006,13 +1944,13 @@ function  F.is_subsequence_of(seq, xs, comp_eq)
 end
 mt.__index.is_subsequence_of = F.is_subsequence_of
 
---[[@@@
-```lua
-F.is_submap_of(t1, t2)
-t1:is_submap_of(t2)
-```
-> returns true if all keys in t1 are in t2.
-@@@]]
+
+
+
+
+
+
+
 
 function F.is_submap_of(t1, t2)
     for k, _ in pairs(t1) do
@@ -2022,13 +1960,13 @@ function F.is_submap_of(t1, t2)
 end
 mt.__index.is_submap_of = F.is_submap_of
 
---[[@@@
-```lua
-F.map_contains(t1, t2)
-t1:map_contains(t2)
-```
-> returns true if all keys in t2 are in t1.
-@@@]]
+
+
+
+
+
+
+
 
 function F.map_contains(t1, t2)
     for k, _ in pairs(t2) do
@@ -2038,13 +1976,13 @@ function F.map_contains(t1, t2)
 end
 mt.__index.map_contains = F.map_contains
 
---[[@@@
-```lua
-F.is_proper_submap_of(t1, t2)
-t1:is_proper_submap_of(t2)
-```
-> returns true if all keys in t1 are in t2 and t1 keys and t2 keys are different.
-@@@]]
+
+
+
+
+
+
+
 
 function F.is_proper_submap_of(t1, t2)
     for k, _ in pairs(t1) do
@@ -2057,13 +1995,13 @@ function F.is_proper_submap_of(t1, t2)
 end
 mt.__index.is_proper_submap_of = F.is_proper_submap_of
 
---[[@@@
-```lua
-F.map_strictly_contains(t1, t2)
-t1:map_strictly_contains(t2)
-```
-> returns true if all keys in t2 are in t1.
-@@@]]
+
+
+
+
+
+
+
 
 function F.map_strictly_contains(t1, t2)
     for k, _ in pairs(t2) do
@@ -2076,17 +2014,17 @@ function F.map_strictly_contains(t1, t2)
 end
 mt.__index.map_strictly_contains = F.map_strictly_contains
 
---[[------------------------------------------------------------------------@@@
-## Searching
-@@@]]
 
---[[@@@
-```lua
-F.elem(x, xs, [comp_eq])
-xs:elem(x, [comp_eq])
-```
-> Returns `true` if x occurs in xs (using the optional comp_eq function).
-@@@]]
+
+
+
+
+
+
+
+
+
+
 
 do
 
@@ -2102,13 +2040,13 @@ mt.__index.elem = function(xs, x, comp_eq) return F_elem(x, xs, comp_eq) end
 
 end
 
---[[@@@
-```lua
-F.not_elem(x, xs, [comp_eq])
-xs:not_elem(x, [comp_eq])
-```
-> Returns `true` if x does not occur in xs (using the optional comp_eq function).
-@@@]]
+
+
+
+
+
+
+
 
 do
 
@@ -2124,13 +2062,13 @@ mt.__index.not_elem = function(xs, x, comp_eq) return F_not_elem(x, xs, comp_eq)
 
 end
 
---[[@@@
-```lua
-F.lookup(x, xys, [comp_eq])
-xys:lookup(x, [comp_eq])
-```
-> Looks up a key `x` in an association list (using the optional comp_eq function).
-@@@]]
+
+
+
+
+
+
+
 
 do
 
@@ -2146,13 +2084,13 @@ mt.__index.lookup = function(xys, x, comp_eq) return F_lookup(x, xys, comp_eq) e
 
 end
 
---[[@@@
-```lua
-F.find(p, xs)
-xs:find(p)
-```
-> Returns the leftmost element of xs matching the predicate p.
-@@@]]
+
+
+
+
+
+
+
 
 do
 
@@ -2168,13 +2106,13 @@ mt.__index.find = function(xs, p) return F_find(p, xs) end
 
 end
 
---[[@@@
-```lua
-F.filter(p, xs)
-xs:filter(p)
-```
-> Returns the list of those elements that satisfy the predicate p(x).
-@@@]]
+
+
+
+
+
+
+
 
 local function F_filter(p, xs)
     local ys = {}
@@ -2187,62 +2125,62 @@ end
 F.filter = F_filter
 mt.__index.filter = function(xs, p) return F_filter(p, xs) end
 
---[[@@@
-```lua
-F.filter_eq(y, xs)
-xs:filter_eq(y)
-F.filter_ne(y, xs)
-xs:filter_ne(y)
-F.filter_lt(y, xs)
-xs:filter_lt(y)
-F.filter_le(y, xs)
-xs:filter_le(y)
-F.filter_gt(y, xs)
-xs:filter_gt(y)
-F.filter_ge(y, xs)
-xs:filter_ge(y)
-```
-> Returns the list of those elements that satisfy the predicate
-  F.op.eq(x, y), f.op.ne(x, y), f.op.lt(x, y), f.op.le(x, y), f.op.gt(x, y), f.op.ge(x, y).
-@@@]]
 
---[[@@@
-```lua
-F.filter_ueq(y, xs)
-xs:filter_ueq(y)
-F.filter_une(y, xs)
-xs:filter_une(y)
-F.filter_ult(y, xs)
-xs:filter_ult(y)
-F.filter_ule(y, xs)
-xs:filter_ule(y)
-F.filter_ugt(y, xs)
-xs:filter_ugt(y)
-F.filter_uge(y, xs)
-xs:filter_uge(y)
-```
-> Returns the list of those elements that satisfy the predicate
-  F.op.ueq(x, y), f.op.une(x, y), f.op.ult(x, y), f.op.ule(x, y), f.op.ugt(x, y), f.op.uge(x, y).
-@@@]]
 
---[[@@@
-```lua
-F.filter_keq(y, xs)
-xs:filter_keq(y)
-F.filter_kne(y, xs)
-xs:filter_kne(y)
-F.filter_klt(y, xs)
-xs:filter_klt(y)
-F.filter_kle(y, xs)
-xs:filter_kle(y)
-F.filter_kgt(y, xs)
-xs:filter_kgt(y)
-F.filter_kge(y, xs)
-xs:filter_kge(y)
-```
-> Returns the list of those elements that satisfy the predicate
-  F.op.keq(x, y), f.op.kne(x, y), f.op.klt(x, y), f.op.kle(x, y), f.op.kgt(x, y), f.op.kge(x, y).
-@@@]]
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 for _, op in ipairs{"eq", "ne", "lt", "le", "gt", "ge"} do
     for _, t in ipairs{"", "u", "k"} do
@@ -2252,13 +2190,13 @@ for _, op in ipairs{"eq", "ne", "lt", "le", "gt", "ge"} do
     end
 end
 
---[[@@@
-```lua
-F.filteri(p, xs)
-xs:filteri(p)
-```
-> Returns the list of those elements that satisfy the predicate p(i, x).
-@@@]]
+
+
+
+
+
+
+
 
 do
 
@@ -2275,14 +2213,14 @@ mt.__index.filteri = function(xs, p) return F_filteri(p, xs) end
 
 end
 
---[[@@@
-```lua
-F.filter2t(p, xs)
-xs:filter2t(p)
-```
-> filters the elements of `xs` with `p` and returns the table `{p(xs[1])=xs[1], p(xs[2])=xs[2], ...}`
-> where `p(x)` is a predicate that returns the key for `x` in the returned table (`nil` to reject `x`).
-@@@]]
+
+
+
+
+
+
+
+
 
 do
 
@@ -2300,14 +2238,14 @@ mt.__index.filter2t = function(xs, p) return F_filter2t(p, xs) end
 
 end
 
---[[@@@
-```lua
-F.filteri2t(p, xs)
-xs:filteri2t(p)
-```
-> filters the elements of `xs` with `p` and returns the table `{p(1, xs[1])=xs[1], p(2, xs[2])=xs[2], ...}`
-> where `p(i, x)` is a predicate that returns the key for `x` in the returned table (`nil` to reject `x`).
-@@@]]
+
+
+
+
+
+
+
+
 
 do
 
@@ -2325,13 +2263,13 @@ mt.__index.filteri2t = function(xs, p) return F_filteri2t(p, xs) end
 
 end
 
---[[@@@
-```lua
-F.filtert(p, t)
-t:filtert(p)
-```
-> Returns the table of those values that satisfy the predicate p(v).
-@@@]]
+
+
+
+
+
+
+
 
 do
 
@@ -2347,13 +2285,13 @@ mt.__index.filtert = function(t, p) return F_filtert(p, t) end
 
 end
 
---[[@@@
-```lua
-F.filterk(p, t)
-t:filterk(p)
-```
-> Returns the table of those values that satisfy the predicate p(k, v).
-@@@]]
+
+
+
+
+
+
+
 
 F_filterk = function(p, t)
     local t2 = {}
@@ -2365,16 +2303,16 @@ end
 F.filterk = F_filterk
 mt.__index.filterk = function(t, p) return F_filterk(p, t) end
 
--- filtert2a
--- filterk2a
 
---[[@@@
-```lua
-F.filtert2a(p, t)
-t:filtert2a(p)
-```
-> filters `t` with `p` and returns the array `{t[k1], t[k2], ...}` for all `t[ki]` that satisfy `p(t[ki])`.
-@@@]]
+
+
+
+
+
+
+
+
+
 
 do
 
@@ -2390,13 +2328,13 @@ mt.__index.filtert2a = function(t, p) return F_filtert2a(p, t) end
 
 end
 
---[[@@@
-```lua
-F.filterk2a(f, t)
-t:filterk2a(f)
-```
-> filters `t` with `p` and returns the array `{t[k1], t[k2], ...}` for all `t[ki]` that satisfy `p(ki, t[ki])`.
-@@@]]
+
+
+
+
+
+
+
 
 do
 
@@ -2412,13 +2350,13 @@ mt.__index.filterk2a = function(t, p) return F_filterk2a(p, t) end
 
 end
 
---[[@@@
-```lua
-F.restrict_keys(t, ks)
-t:restrict_keys(ks)
-```
-> Restrict a map to only those keys found in a list.
-@@@]]
+
+
+
+
+
+
+
 
 function F.restrict_keys(t, ks)
     local kset = F_from_set(F_const(true), ks)
@@ -2427,13 +2365,13 @@ function F.restrict_keys(t, ks)
 end
 mt.__index.restrict_keys = F.restrict_keys
 
---[[@@@
-```lua
-F.without_keys(t, ks)
-t:without_keys(ks)
-```
-> Remove all keys in a list from a map.
-@@@]]
+
+
+
+
+
+
+
 
 function F.without_keys(t, ks)
     local kset = F_from_set(F_const(true), ks)
@@ -2442,13 +2380,13 @@ function F.without_keys(t, ks)
 end
 mt.__index.without_keys = F.without_keys
 
---[[@@@
-```lua
-F.partition(p, xs)
-xs:partition(p)
-```
-> Returns the pair of lists of elements which do and do not satisfy the predicate, respectively.
-@@@]]
+
+
+
+
+
+
+
 
 do
 
@@ -2466,13 +2404,13 @@ mt.__index.partition = function(xs, p) return F_partition(p, xs) end
 
 end
 
---[[@@@
-```lua
-F.table_partition(p, t)
-t:table_partition(p)
-```
-> Partition the map according to a predicate. The first map contains all elements that satisfy the predicate, the second all elements that fail the predicate.
-@@@]]
+
+
+
+
+
+
+
 
 do
 
@@ -2488,13 +2426,13 @@ mt.__index.table_partition = function(t, p) return F_table_partition(p, t) end
 
 end
 
---[[@@@
-```lua
-F.table_partition_with_key(p, t)
-t:table_partition_with_key(p)
-```
-> Partition the map according to a predicate. The first map contains all elements that satisfy the predicate, the second all elements that fail the predicate.
-@@@]]
+
+
+
+
+
+
+
 
 do
 
@@ -2510,13 +2448,13 @@ mt.__index.table_partition_with_key = function(t, p) return F_table_partition_wi
 
 end
 
---[[@@@
-```lua
-F.elem_index(x, xs)
-xs:elem_index(x)
-```
-> Returns the index of the first element in the given list which is equal to the query element.
-@@@]]
+
+
+
+
+
+
+
 
 do
 
@@ -2531,13 +2469,13 @@ mt.__index.elem_index = function(xs, x) return F_elem_index(x, xs) end
 
 end
 
---[[@@@
-```lua
-F.elem_indices(x, xs)
-xs:elem_indices(x)
-```
-> Returns the indices of all elements equal to the query element, in ascending order.
-@@@]]
+
+
+
+
+
+
+
 
 do
 
@@ -2553,13 +2491,13 @@ mt.__index.elem_indices = function(xs, x) return F_elem_indices(x, xs) end
 
 end
 
---[[@@@
-```lua
-F.find_index(p, xs)
-xs:find_index(p)
-```
-> Returns the index of the first element in the list satisfying the predicate.
-@@@]]
+
+
+
+
+
+
+
 
 do
 
@@ -2574,13 +2512,13 @@ mt.__index.find_index = function(xs, p) return F_find_index(p, xs) end
 
 end
 
---[[@@@
-```lua
-F.find_indices(p, xs)
-xs:find_indices(p)
-```
-> Returns the indices of all elements satisfying the predicate, in ascending order.
-@@@]]
+
+
+
+
+
+
+
 
 do
 
@@ -2596,19 +2534,19 @@ mt.__index.find_indices = function(xs, p) return F_find_indices(p, xs) end
 
 end
 
---[[------------------------------------------------------------------------@@@
-## Table size
-@@@]]
 
---[[@@@
-```lua
-F.null(xs)
-xs:null()
-F.null(t)
-t:null("t")
-```
-> checks wether a list or a table is empty.
-@@@]]
+
+
+
+
+
+
+
+
+
+
+
+
 
 F_null = function(t)
     return next(t) == nil
@@ -2616,14 +2554,14 @@ end
 F.null = F_null
 mt.__index.null = F_null
 
---[[@@@
-```lua
-#xs
-F.length(xs)
-xs:length()
-```
-> Length of a list.
-@@@]]
+
+
+
+
+
+
+
+
 
 F_length = function(xs)
     return #xs
@@ -2631,13 +2569,13 @@ end
 F.length = F_length
 mt.__index.length = F_length
 
---[[@@@
-```lua
-F.size(t)
-t:size()
-```
-> Size of a table (number of (key, value) pairs).
-@@@]]
+
+
+
+
+
+
+
 
 function F.size(t)
     local n = 0
@@ -2648,40 +2586,40 @@ function F.size(t)
 end
 mt.__index.size = F.size
 
---[[------------------------------------------------------------------------@@@
-## Table transformations
-@@@]]
 
---[[@@@
-```lua
-F.map(f, xs)
-xs:map(f)
-```
-> maps `f` to the elements of `xs` and returns `{f(xs[1]), f(xs[2]), ...}`
-> (`nil` values are ignored)
-@@@]]
+
+
+
+
+
+
+
+
+
+
+
 
 F_map = function(f, xs)
-    local ys = {}
+    local ys = t_create(#xs)
     for i = 1, #xs do ys[#ys+1] = f(xs[i]) end
     return setmetatable(ys, mt)
 end
 F.map = F_map
 mt.__index.map = function(xs, f) return F_map(f, xs) end
 
---[[@@@
-```lua
-F.mapi(f, xs)
-xs:mapi(f)
-```
-> maps `f` to the indices and elements of `xs` and returns `{f(1, xs[1]), f(2, xs[2]), ...}`
-> (`nil` values are ignored)
-@@@]]
+
+
+
+
+
+
+
+
 
 do
 
 local function F_mapi(f, xs)
-    local ys = {}
+    local ys = t_create(#xs)
     for i = 1, #xs do ys[#ys+1] = f(i, xs[i]) end
     return setmetatable(ys, mt)
 end
@@ -2690,15 +2628,15 @@ mt.__index.mapi = function(xs, f) return F_mapi(f, xs) end
 
 end
 
---[[@@@
-```lua
-F.map2t(f, xs)
-xs:map2t(f)
-```
-> maps `f` to the elements of `xs` and returns the table `{fk(xs[1])=fv(xs[1]), fk(xs[2])=fv(xs[2]), ...}`
-> where `f(x)` returns two values `fk(x), fv(x)` used as the keys and values of the returned table.
-> (`nil` values are ignored)
-@@@]]
+
+
+
+
+
+
+
+
+
 
 do
 
@@ -2715,15 +2653,15 @@ mt.__index.map2t = function(xs, f) return F_map2t(f, xs) end
 
 end
 
---[[@@@
-```lua
-F.mapi2t(f, xs)
-xs:mapi2t(f)
-```
-> maps `f` to the indices and elements of `xs` and returns `{fk(1, xs[1])=fv(1, xs[1]), fk(2, xs[2])=fv(2, xs[2]), ...}`
-> where `f(i, x)` returns two values `fk(i, x), fv(i, x)` used as the keys and values of the returned table.
-> (`nil` values are ignored)
-@@@]]
+
+
+
+
+
+
+
+
+
 
 do
 
@@ -2740,14 +2678,14 @@ mt.__index.mapi2t = function(xs, f) return F_mapi2t(f, xs) end
 
 end
 
---[[@@@
-```lua
-F.mapt(f, t)
-t:mapt(f)
-```
-> maps `f` to the values of `t` and returns `{k1=f(t[k1]), k2=f(t[k2]), ...}`
-> (`nil` values are ignored)
-@@@]]
+
+
+
+
+
+
+
+
 
 do
 
@@ -2761,14 +2699,14 @@ mt.__index.mapt = function(t, f) return F_mapt(f, t) end
 
 end
 
---[[@@@
-```lua
-F.mapk(f, t)
-t:mapk(f)
-```
-> maps `f` to the keys and values of `t` and returns `{k1=f(k1, t[k1]), k2=f(k2, t[k2]), ...}`
-> (`nil` values are ignored)
-@@@]]
+
+
+
+
+
+
+
+
 
 do
 
@@ -2782,14 +2720,14 @@ mt.__index.mapk = function(t, f) return F_mapk(f, t) end
 
 end
 
---[[@@@
-```lua
-F.mapt2a(f, t)
-t:mapt2a(f)
-```
-> maps `f` to the values of `t` and returns the array `{f(t[k1]), f(t[k2]), ...}`
-> (`nil` values are ignored)
-@@@]]
+
+
+
+
+
+
+
+
 
 do
 
@@ -2803,14 +2741,14 @@ mt.__index.mapt2a = function(t, f) return F_mapt2a(f, t) end
 
 end
 
---[[@@@
-```lua
-F.mapk2a(f, t)
-t:mapk2a(f)
-```
-> maps `f` to the keys and the values of `t` and returns the array `{f(k1, t[k1]), f(k2, t[k2]), ...}`
-> (`nil` values are ignored)
-@@@]]
+
+
+
+
+
+
+
+
 
 do
 
@@ -2824,35 +2762,35 @@ mt.__index.mapk2a = function(t, f) return F_mapk2a(f, t) end
 
 end
 
---[[@@@
-```lua
-F.reverse(xs)
-xs:reverse()
-```
-> reverses the order of a list
-@@@]]
+
+
+
+
+
+
+
 
 function F.reverse(xs)
-    local ys = {}
+    local ys = t_create(#xs)
     for i = #xs, 1, -1 do ys[#ys+1] = xs[i] end
     return setmetatable(ys, mt)
 end
 mt.__index.reverse = F.reverse
 
---[[@@@
-```lua
-F.transpose(xss)
-xss:transpose()
-```
-> Transposes the rows and columns of its argument.
-@@@]]
+
+
+
+
+
+
+
 
 function F.transpose(xss)
     local N = #xss
     local M = max(t_unpack(F_map(F_length, xss)))
-    local yss = {}
+    local yss = t_create(M)
     for j = 1, M do
-        local ys = {}
+        local ys = t_create(N)
         for i = 1, N do ys[i] = xss[i][j] end
         yss[j] = setmetatable(ys, mt)
     end
@@ -2860,15 +2798,15 @@ function F.transpose(xss)
 end
 mt.__index.transpose = F.transpose
 
---[[@@@
-```lua
-F.update(f, k, t)
-t:update(f, k)
-```
-> Updates the value `x` at `k`. If `f(x)` is nil, the element is deleted. Otherwise the key `k` is bound to the value `f(x)`.
->
-> **Warning**: in-place modification.
-@@@]]
+
+
+
+
+
+
+
+
+
 
 do
 
@@ -2881,15 +2819,15 @@ mt.__index.update = function(t, f, k) return F_update(f, k, t) end
 
 end
 
---[[@@@
-```lua
-F.updatek(f, k, t)
-t:updatek(f, k)
-```
-> Updates the value `x` at `k`. If `f(k, x)` is nil, the element is deleted. Otherwise the key `k` is bound to the value `f(k, x)`.
->
-> **Warning**: in-place modification.
-@@@]]
+
+
+
+
+
+
+
+
+
 
 do
 
@@ -2902,17 +2840,17 @@ mt.__index.updatek = function(t, f, k) return F_updatek(f, k, t) end
 
 end
 
---[[------------------------------------------------------------------------@@@
-## Table transversal
-@@@]]
 
---[[@@@
-```lua
-F.foreach(xs, f)
-xs:foreach(f)
-```
-> calls `f` with the elements of `xs` (`f(xi)` for `xi` in `xs`)
-@@@]]
+
+
+
+
+
+
+
+
+
+
 
 F_foreach = function(xs, f)
     for i = 1, #xs do f(xs[i]) end
@@ -2920,56 +2858,56 @@ end
 F.foreach = F_foreach
 mt.__index.foreach = F_foreach
 
---[[@@@
-```lua
-F.foreachi(xs, f)
-xs:foreachi(f)
-```
-> calls `f` with the indices and elements of `xs` (`f(i, xi)` for `xi` in `xs`)
-@@@]]
+
+
+
+
+
+
+
 
 function F.foreachi(xs, f)
     for i = 1, #xs do f(i, xs[i]) end
 end
 mt.__index.foreachi = F.foreachi
 
---[[@@@
-```lua
-F.foreacht(t, f)
-t:foreacht(f)
-```
-> calls `f` with the values of `t` (`f(v)` for `v` in `t` such that `v = t[k]`)
-@@@]]
+
+
+
+
+
+
+
 
 function F.foreacht(t, f)
     for _, v in F_pairs(t) do f(v) end
 end
 mt.__index.foreacht = F.foreacht
 
---[[@@@
-```lua
-F.foreachk(t, f)
-t:foreachk(f)
-```
-> calls `f` with the keys and values of `t` (`f(k, v)` for (`k`, `v`) in `t` such that `v = t[k]`)
-@@@]]
+
+
+
+
+
+
+
 
 function F.foreachk(t, f)
     for k, v in F_pairs(t) do f(k, v) end
 end
 mt.__index.foreachk = F.foreachk
 
---[[------------------------------------------------------------------------@@@
-## Table reductions (folds)
-@@@]]
 
---[[@@@
-```lua
-F.fold(f, x, xs)
-xs:fold(f, x)
-```
-> Left-associative fold of a list (`f(...f(f(x, xs[1]), xs[2]), ...)`).
-@@@]]
+
+
+
+
+
+
+
+
+
+
 
 do
 
@@ -2984,13 +2922,13 @@ mt.__index.fold = function(xs, fzx, z) return F_fold(fzx, z, xs) end
 
 end
 
---[[@@@
-```lua
-F.foldi(f, x, xs)
-xs:foldi(f, x)
-```
-> Left-associative fold of a list (`f(...f(f(x, 1, xs[1]), 2, xs[2]), ...)`).
-@@@]]
+
+
+
+
+
+
+
 
 do
 
@@ -3005,13 +2943,13 @@ mt.__index.foldi = function(xs, fzx, z) return F_foldi(fzx, z, xs) end
 
 end
 
---[[@@@
-```lua
-F.fold1(f, xs)
-xs:fold1(f)
-```
-> Left-associative fold of a list, the initial value is `xs[1]`.
-@@@]]
+
+
+
+
+
+
+
 
 do
 
@@ -3027,13 +2965,13 @@ mt.__index.fold1 = function(xs, fzx) return F_fold1(fzx, xs) end
 
 end
 
---[[@@@
-```lua
-F.foldt(f, x, t)
-t:foldt(f, x)
-```
-> Left-associative fold of a table (in the order given by F.pairs).
-@@@]]
+
+
+
+
+
+
+
 
 do
 
@@ -3048,13 +2986,13 @@ mt.__index.foldt = function(t, fzx, z) return F_foldt(fzx, z, t) end
 
 end
 
---[[@@@
-```lua
-F.foldk(f, x, t)
-t:foldk(f, x)
-```
-> Left-associative fold of a table (in the order given by F.pairs).
-@@@]]
+
+
+
+
+
+
+
 
 do
 
@@ -3069,13 +3007,13 @@ mt.__index.foldk = function(t, fzx, z) return F_foldk(fzx, z, t) end
 
 end
 
---[[@@@
-```lua
-F.land(bs)
-bs:land()
-```
-> Returns the conjunction of a container of booleans.
-@@@]]
+
+
+
+
+
+
+
 
 function F.land(bs)
     for i = 1, #bs do if not bs[i] then return false end end
@@ -3083,13 +3021,13 @@ function F.land(bs)
 end
 mt.__index.land = F.land
 
---[[@@@
-```lua
-F.lor(bs)
-bs:lor()
-```
-> Returns the disjunction of a container of booleans.
-@@@]]
+
+
+
+
+
+
+
 
 function F.lor(bs)
     for i = 1, #bs do if bs[i] then return true end end
@@ -3097,13 +3035,13 @@ function F.lor(bs)
 end
 mt.__index.lor = F.lor
 
---[[@@@
-```lua
-F.any(p, xs)
-xs:any(p)
-```
-> Determines whether any element of the structure satisfies the predicate.
-@@@]]
+
+
+
+
+
+
+
 
 do
 
@@ -3116,13 +3054,13 @@ mt.__index.any = function(xs, p) return F_any(p, xs) end
 
 end
 
---[[@@@
-```lua
-F.all(p, xs)
-xs:all(p)
-```
-> Determines whether all elements of the structure satisfy the predicate.
-@@@]]
+
+
+
+
+
+
+
 
 do
 
@@ -3135,13 +3073,13 @@ mt.__index.all = function(xs, p) return F_all(p, xs) end
 
 end
 
---[[@@@
-```lua
-F.sum(xs)
-xs:sum()
-```
-> Returns the sum of the numbers of a structure.
-@@@]]
+
+
+
+
+
+
+
 
 function F.sum(xs)
     local s = 0
@@ -3150,13 +3088,13 @@ function F.sum(xs)
 end
 mt.__index.sum = F.sum
 
---[[@@@
-```lua
-F.product(xs)
-xs:product()
-```
-> Returns the product of the numbers of a structure.
-@@@]]
+
+
+
+
+
+
+
 
 function F.product(xs)
     local p = 1
@@ -3165,13 +3103,13 @@ function F.product(xs)
 end
 mt.__index.product = F.product
 
---[[@@@
-```lua
-F.maximum(xs, [comp_lt])
-xs:maximum([comp_lt])
-```
-> The largest element of a non-empty structure, according to the optional comparison function.
-@@@]]
+
+
+
+
+
+
+
 
 function F.maximum(xs, comp_lt)
     if #xs == 0 then return nil end
@@ -3184,13 +3122,13 @@ function F.maximum(xs, comp_lt)
 end
 mt.__index.maximum = F.maximum
 
---[[@@@
-```lua
-F.minimum(xs, [comp_lt])
-xs:minimum([comp_lt])
-```
-> The least element of a non-empty structure, according to the optional comparison function.
-@@@]]
+
+
+
+
+
+
+
 
 F_minimum = function(xs, comp_lt)
     if #xs == 0 then return nil end
@@ -3204,13 +3142,13 @@ end
 F.minimum = F_minimum
 mt.__index.minimum = F_minimum
 
---[[@@@
-```lua
-F.scan(f, x, xs)
-xs:scan(f, x)
-```
-> Similar to `fold` but returns a list of successive reduced values from the left.
-@@@]]
+
+
+
+
+
+
+
 
 do
 
@@ -3227,13 +3165,13 @@ mt.__index.scan = function(xs, fzx, z) return F_scan(fzx, z, xs) end
 
 end
 
---[[@@@
-```lua
-F.scan1(f, xs)
-xs:scan1(f)
-```
-> Like `scan` but the initial value is `xs[1]`.
-@@@]]
+
+
+
+
+
+
+
 
 do
 
@@ -3251,13 +3189,13 @@ mt.__index.scan1 = function(xs, fzx) return F_scan1(fzx, xs) end
 
 end
 
---[[@@@
-```lua
-F.concat_map(f, xs)
-xs:concat_map(f)
-```
-> Map a function over all the elements of a container and concatenate the resulting lists.
-@@@]]
+
+
+
+
+
+
+
 
 do
 
@@ -3269,21 +3207,21 @@ mt.__index.concat_map = function(xs, fx) return F_concat_map(fx, xs) end
 
 end
 
---[[------------------------------------------------------------------------@@@
-## Zipping
-@@@]]
 
---[[@@@
-```lua
-F.zip(xss, [f])
-xss:zip([f])
-```
-> `zip` takes a list of lists and returns a list of corresponding tuples.
-@@@]]
+
+
+
+
+
+
+
+
+
+
 
 F_zip = function(xss, f)
-    local yss = {}
     local ns = F_minimum(F_map(F_length, xss))
+    local yss = t_create(ns)
     if f then
         for i = 1, ns do
             local ys = F_map(function(xs) return xs[i] end, xss)
@@ -3300,45 +3238,88 @@ end
 F.zip = F_zip
 mt.__index.zip = F_zip
 
---[[@@@
-```lua
-F.unzip(xss)
-xss:unzip()
-```
-> Transforms a list of n-tuples into n lists
-@@@]]
+
+
+
+
+
+
+
 
 function F.unzip(xss)
     return t_unpack(F_zip(xss))
 end
 mt.__index.unzip = F.unzip
 
---[[@@@
-```lua
-F.zip_with(f, xss)
-xss:zip_with(f)
-```
-> `zip_with` generalises `zip` by zipping with the function given as the first argument, instead of a tupling function.
-@@@]]
+
+
+
+
+
+
+
 
 function F.zip_with(f, xss) return F_zip(xss, f) end
 mt.__index.zip_with = F_zip
 
---[[------------------------------------------------------------------------@@@
-## Set operations
-@@@]]
 
---[[@@@
-```lua
-F.nub(xs, [comp_eq])
-xs:nub([comp_eq])
-```
-> Removes duplicate elements from a list. In particular, it keeps only the first occurrence of each element, according to the optional comp_eq function.
-@@@]]
+
+
+
+
+
+
+
+
+
+
+
+local function F_cross(xss, f)
+    f = f or function(...) return setmetatable({...}, mt) end
+    local ts = t_create(F_map(F.op.len, xss):product())
+    local function rec(i, t)
+        if i <= #xss then
+            local xs = xss[i]
+            for j = 1, #xs do
+                t[i] = xs[j]
+                rec(i+1, t)
+            end
+        else
+            ts[#ts+1] = f(t_unpack(t))
+        end
+    end
+    rec(1, t_create(#xss))
+    return setmetatable(ts, mt)
+end
+F.cross = F_cross
+mt.__index.cross = F_cross
+
+
+
+
+
+
+
+
+
+function F.cross_with(f, xss) return F_cross(xss, f) end
+mt.__index.cross_with = F_cross
+
+
+
+
+
+
+
+
+
+
+
+
 
 function F.nub(xs, comp_eq)
     comp_eq = comp_eq or F_op_eq
-    local ys = {}
+    local ys = t_create(#xs)
     for i = 1, #xs do
         local x = xs[i]
         local found = false
@@ -3351,30 +3332,23 @@ function F.nub(xs, comp_eq)
 end
 mt.__index.nub = F.nub
 
---[[@@@
-```lua
-F.delete(x, xs, [comp_eq])
-xs:delete(x, [comp_eq])
-```
-> Removes the first occurrence of x from its list argument, according to the optional comp_eq function.
-@@@]]
+
+
+
+
+
+
+
 
 do
 
 local function F_delete(x, xs, comp_eq)
     comp_eq = comp_eq or F_op_eq
-    local ys = {}
+    local ys = t_create(#xs)
     local i = 1
-    while i <= #xs do
-        if comp_eq(xs[i], x) then break end
-        ys[#ys+1] = xs[i]
-        i = i+1
-    end
-    i = i+1
-    while i <= #xs do
-        ys[#ys+1] = xs[i]
-        i = i+1
-    end
+    while i <= #xs and not comp_eq(xs[i], x) do i = i+1 end
+    t_move(xs, 1, i-1, 1, ys)
+    t_move(xs, i+1, #xs, #ys+1, ys)
     return setmetatable(ys, mt)
 end
 F.delete = F_delete
@@ -3382,17 +3356,17 @@ mt.__index.delete = function(xs, x, comp_eq) return F_delete(x, xs, comp_eq) end
 
 end
 
---[[@@@
-```lua
-F.difference(xs, ys, [comp_eq])
-xs:difference(ys, [comp_eq])
-```
-> Returns the list difference. In `difference(xs, ys)`{.lua} the first occurrence of each element of ys in turn (if any) has been removed from xs, according to the optional comp_eq function.
-@@@]]
+
+
+
+
+
+
+
 
 function F.difference(xs, ys, comp_eq)
     comp_eq = comp_eq or F_op_eq
-    local zs = {}
+    local zs = t_create(#xs)
     ys = {t_unpack(ys)}
     for i = 1, #xs do
         local x = xs[i]
@@ -3410,13 +3384,13 @@ function F.difference(xs, ys, comp_eq)
 end
 mt.__index.difference = F.difference
 
---[[@@@
-```lua
-F.union(xs, ys, [comp_eq])
-xs:union(ys, [comp_eq])
-```
-> Returns the list union of the two lists. Duplicates, and elements of the first list, are removed from the the second list, but if the first list contains duplicates, so will the result, according to the optional comp_eq function.
-@@@]]
+
+
+
+
+
+
+
 
 function F.union(xs, ys, comp_eq)
     comp_eq = comp_eq or F_op_eq
@@ -3433,13 +3407,13 @@ function F.union(xs, ys, comp_eq)
 end
 mt.__index.union = F.union
 
---[[@@@
-```lua
-F.intersection(xs, ys, [comp_eq])
-xs:intersection(ys, [comp_eq])
-```
-> Returns the list intersection of two lists. If the first list contains duplicates, so will the result, according to the optional comp_eq function.
-@@@]]
+
+
+
+
+
+
+
 
 function F.intersection(xs, ys, comp_eq)
     comp_eq = comp_eq or F_op_eq
@@ -3456,19 +3430,19 @@ function F.intersection(xs, ys, comp_eq)
 end
 mt.__index.intersection = F.intersection
 
---[[------------------------------------------------------------------------@@@
-## Table operations
-@@@]]
 
---[[@@@
-```lua
-F.merge(ts)
-ts:merge()
-F.table_union(ts)
-ts:table_union()
-```
-> Right-biased union of tables.
-@@@]]
+
+
+
+
+
+
+
+
+
+
+
+
 
 F_merge = function(ts)
     local u = {}
@@ -3483,15 +3457,15 @@ mt.__index.merge = F_merge
 F.table_union = F_merge
 mt.__index.table_union = F_merge
 
---[[@@@
-```lua
-F.merge_with(f, ts)
-ts:merge_with(f)
-F.table_union_with(f, ts)
-ts:table_union_with(f)
-```
-> Right-biased union of tables with a combining function.
-@@@]]
+
+
+
+
+
+
+
+
+
 
 do
 
@@ -3517,15 +3491,15 @@ mt.__index.table_union_with = mt.__index.merge_with
 
 end
 
---[[@@@
-```lua
-F.merge_with_key(f, ts)
-ts:merge_with_key(f)
-F.table_union_with_key(f, ts)
-ts:table_union_with_key(f)
-```
-> Right-biased union of tables with a combining function.
-@@@]]
+
+
+
+
+
+
+
+
+
 
 do
 
@@ -3551,13 +3525,13 @@ mt.__index.table_union_with_key = mt.__index.merge_with_key
 
 end
 
---[[@@@
-```lua
-F.table_difference(t1, t2)
-t1:table_difference(t2)
-```
-> Difference of two maps. Return elements of the first map not existing in the second map.
-@@@]]
+
+
+
+
+
+
+
 
 function F.table_difference(t1, t2)
     local t = {}
@@ -3566,13 +3540,13 @@ function F.table_difference(t1, t2)
 end
 mt.__index.table_difference = F.table_difference
 
---[[@@@
-```lua
-F.table_difference_with(f, t1, t2)
-t1:table_difference_with(f, t2)
-```
-> Difference with a combining function. When two equal keys are encountered, the combining function is applied to the values of these keys.
-@@@]]
+
+
+
+
+
+
+
 
 do
 
@@ -3593,13 +3567,13 @@ mt.__index.table_difference_with = function(t1, f, t2) return F_table_difference
 
 end
 
---[[@@@
-```lua
-F.table_difference_with_key(f, t1, t2)
-t1:table_difference_with_key(f, t2)
-```
-> Union with a combining function.
-@@@]]
+
+
+
+
+
+
+
 
 do
 
@@ -3620,13 +3594,13 @@ mt.__index.table_difference_with_key = function(t1, f, t2) return F_table_differ
 
 end
 
---[[@@@
-```lua
-F.table_intersection(t1, t2)
-t1:table_intersection(t2)
-```
-> Intersection of two maps. Return data in the first map for the keys existing in both maps.
-@@@]]
+
+
+
+
+
+
+
 
 function F.table_intersection(t1, t2)
     local t = {}
@@ -3635,13 +3609,13 @@ function F.table_intersection(t1, t2)
 end
 mt.__index.table_intersection = F.table_intersection
 
---[[@@@
-```lua
-F.table_intersection_with(f, t1, t2)
-t1:table_intersection_with(f, t2)
-```
-> Difference with a combining function. When two equal keys are encountered, the combining function is applied to the values of these keys.
-@@@]]
+
+
+
+
+
+
+
 
 do
 
@@ -3660,13 +3634,13 @@ mt.__index.table_intersection_with = function(t1, f, t2) return F_table_intersec
 
 end
 
---[[@@@
-```lua
-F.table_intersection_with_key(f, t1, t2)
-t1:table_intersection_with_key(f, t2)
-```
-> Union with a combining function.
-@@@]]
+
+
+
+
+
+
+
 
 do
 
@@ -3685,13 +3659,13 @@ mt.__index.table_intersection_with_key = function(t1, f, t2) return F_table_inte
 
 end
 
---[[@@@
-```lua
-F.disjoint(t1, t2)
-t1:disjoint(t2)
-```
-> Check the intersection of two maps is empty.
-@@@]]
+
+
+
+
+
+
+
 
 function F.disjoint(t1, t2)
     for k, _ in pairs(t1) do if t2[k] ~= nil then return false end end
@@ -3699,13 +3673,13 @@ function F.disjoint(t1, t2)
 end
 mt.__index.disjoint = F.disjoint
 
---[[@@@
-```lua
-F.table_compose(t1, t2)
-t1:table_compose(t2)
-```
-> Relate the keys of one map to the values of the other, by using the values of the former as keys for lookups in the latter.
-@@@]]
+
+
+
+
+
+
+
 
 function F.table_compose(t1, t2)
     local t = {}
@@ -3717,12 +3691,12 @@ function F.table_compose(t1, t2)
 end
 mt.__index.table_compose = F.table_compose
 
---[[@@@
-```lua
-F.Nil
-```
-> `F.Nil` is a singleton used to represent `nil` (see `F.patch`)
-@@@]]
+
+
+
+
+
+
 Nil = setmetatable({}, {
     __name = "Nil",
     __call = function(_) return nil end,
@@ -3730,31 +3704,31 @@ Nil = setmetatable({}, {
 })
 F.Nil = Nil
 
---[[@@@
-```lua
-F.patch(t1, t2)
-t1:patch(t2)
-```
-> returns a copy of `t1` where some fields are replaced by values from `t2`.
-Keys not found in `t2` are not modified.
-If `t2` contains `F.Nil` then the corresponding key is removed from `t1`.
-Unmodified subtrees are not cloned but returned as is (common subtrees are shared).
-@@@]]
+
+
+
+
+
+
+
+
+
+
 
 do
 
 local function F_patch(t1, t2)
-    if t2 == nil then return t1 end -- value not patched
-    if t2 == Nil then return nil end -- remove t1
-    if type(t1) ~= "table" then return t2 end -- replace a scalar field by a scalar or a table
-    if type(t2) ~= "table" then return t2 end -- a scalar replaces a scalar or a table
+    if t2 == nil then return t1 end
+    if t2 == Nil then return nil end
+    if type(t1) ~= "table" then return t2 end
+    if type(t2) ~= "table" then return t2 end
     local t = {}
-    -- patch fields from t1 with values from t2
+
     for k, v1 in pairs(t1) do
         local v2 = t2[k]
         t[k] = F_patch(v1, v2)
     end
-    -- add new values from t2
+
     for k, v2 in pairs(t2) do
         local v1 = t1[k]
         if v1 == nil then
@@ -3769,42 +3743,41 @@ mt.__index.patch = F_patch
 
 end
 
---[[------------------------------------------------------------------------@@@
-## Ordered lists
-@@@]]
 
---[[@@@
-```lua
-F.sort(xs, [comp_lt])
-xs:sort([comp_lt])
-```
-> Sorts xs from lowest to highest, according to the optional comp_lt function.
-@@@]]
+
+
+
+
+
+
+
+
+
+
 
 function F.sort(xs, comp_lt)
-    local ys = {}
-    for i = 1, #xs do ys[i] = xs[i] end
+    local ys = t_move(xs, 1, #xs, 1, {})
     t_sort(ys, comp_lt)
     return setmetatable(ys, mt)
 end
 mt.__index.sort = F.sort
 
---[[@@@
-```lua
-F.sort_on(f, xs, [comp_lt])
-xs:sort_on(f, [comp_lt])
-```
-> Sorts a list by comparing the results of a key function applied to each element, according to the optional comp_lt function.
-@@@]]
+
+
+
+
+
+
+
 
 do
 
 local function F_sort_on(f, xs, comp_lt)
     comp_lt = comp_lt or F_op_lt
-    local ys = {}
+    local ys = t_create(#xs)
     for i = 1, #xs do ys[i] = {f(xs[i]), xs[i]} end
     t_sort(ys, function(a, b) return comp_lt(a[1], b[1]) end)
-    local zs = {}
+    local zs = t_create(#xs)
     for i = 1, #ys do zs[i] = ys[i][2] end
     return setmetatable(zs, mt)
 end
@@ -3813,29 +3786,24 @@ mt.__index.sort_on = function(xs, f, comp_lt) return F_sort_on(f, xs, comp_lt) e
 
 end
 
---[[@@@
-```lua
-F.insert(x, xs, [comp_lt])
-xs:insert(x, [comp_lt])
-```
-> Inserts the element into the list at the first position where it is less than or equal to the next element, according to the optional comp_lt function.
-@@@]]
+
+
+
+
+
+
+
 
 do
 
 local function F_insert(x, xs, comp_lt)
     comp_lt = comp_lt or F_op_lt
-    local ys = {}
+    local ys = t_create(#xs+1)
     local i = 1
-    while i <= #xs and not comp_lt(x, xs[i]) do
-        ys[#ys+1] = xs[i]
-        i = i+1
-    end
+    while i <= #xs and not comp_lt(x, xs[i]) do i = i+1 end
+    t_move(xs, 1, i-1, 1, ys)
     ys[#ys+1] = x
-    while i <= #xs do
-        ys[#ys+1] = xs[i]
-        i = i+1
-    end
+    t_move(xs, i, #xs, #ys+1, ys)
     return setmetatable(ys, mt)
 end
 F.insert = F_insert
@@ -3843,17 +3811,17 @@ mt.__index.insert = function(xs, x, comp_lt) return F_insert(x, xs, comp_lt) end
 
 end
 
---[[------------------------------------------------------------------------@@@
-## Miscellaneous functions
-@@@]]
 
---[[@@@
-```lua
-F.subsequences(xs)
-xs:subsequences()
-```
-> Returns the list of all subsequences of the argument.
-@@@]]
+
+
+
+
+
+
+
+
+
+
 
 do
 
@@ -3868,20 +3836,26 @@ mt.__index.subsequences = F_subsequences
 
 end
 
---[[@@@
-```lua
-F.permutations(xs)
-xs:permutations()
-```
-> Returns the list of all permutations of the argument.
-@@@]]
+
+
+
+
+
+
+
+
+local function fact(n)
+    local p = 1
+    for i = 2, n do p = p * i end
+    return p
+end
 
 F_permutations = function(xs)
-    local perms = {}
+    local perms = t_create(fact(#xs))
     local n = #xs
-    xs = F_clone(xs)
+    xs = t_move(xs, 1, #xs, 1, {})
     local function permute(k)
-        if k > n then perms[#perms+1] = F_clone(xs)
+        if k > n then perms[#perms+1] = t_move(xs, 1, #xs, 1, {})
         else
             for i = k, n do
                 xs[k], xs[i] = xs[i], xs[k]
@@ -3896,43 +3870,43 @@ end
 F.permutations = F_permutations
 mt.__index.permutations = F_permutations
 
---[[------------------------------------------------------------------------@@@
-## Functions on strings
-@@@]]
 
---[[@@@
-```lua
-string.chars(s, i, j)
-s:chars(i, j)
-```
-> Returns the list of characters of a string between indices i and j, or the whole string if i and j are not provided.
-@@@]]
+
+
+
+
+
+
+
+
+
+
 
 s_chars = function(s, i, j)
     return F_map(s_char, s_bytes(s, i, j))
 end
 string.chars = s_chars
 
---[[@@@
-```lua
-string.bytes(s, i, j)
-s:bytes(i, j)
-```
-> Returns the list of byte codes of a string between indices i and j, or the whole string if i and j are not provided.
-@@@]]
+
+
+
+
+
+
+
 
 s_bytes = function(s, i, j)
     return setmetatable({s_byte(s, i or 1, j or -1)}, mt)
 end
 string.bytes = s_bytes
 
---[[@@@
-```lua
-string.head(s)
-s:head()
-```
-> Extract the first element of a string.
-@@@]]
+
+
+
+
+
+
+
 
 s_head = function(s)
     if #s == 0 then return nil end
@@ -3940,13 +3914,13 @@ s_head = function(s)
 end
 string.head = s_head
 
---[[@@@
-```lua
-sting.last(s)
-s:last()
-```
-> Extract the last element of a string.
-@@@]]
+
+
+
+
+
+
+
 
 s_last = function(s)
     if #s == 0 then return nil end
@@ -3954,13 +3928,13 @@ s_last = function(s)
 end
 string.last = s_last
 
---[[@@@
-```lua
-string.tail(s)
-s:tail()
-```
-> Extract the elements after the head of a string
-@@@]]
+
+
+
+
+
+
+
 
 s_tail = function(s)
     if #s == 0 then return nil end
@@ -3968,13 +3942,13 @@ s_tail = function(s)
 end
 string.tail = s_tail
 
---[[@@@
-```lua
-string.init(s)
-s:init()
-```
-> Return all the elements of a string except the last one.
-@@@]]
+
+
+
+
+
+
+
 
 s_init = function(s)
     if #s == 0 then return nil end
@@ -3982,53 +3956,53 @@ s_init = function(s)
 end
 string.init = s_init
 
---[[@@@
-```lua
-string.uncons(s)
-s:uncons()
-```
-> Decompose a string into its head and tail.
-@@@]]
+
+
+
+
+
+
+
 
 function string.uncons(s)
     return s_head(s), s_tail(s)
 end
 
---[[@@@
-```lua
-string.null(s)
-s:null()
-```
-> Test whether the string is empty.
-@@@]]
+
+
+
+
+
+
+
 
 function string.null(s)
     return #s == 0
 end
 
---[[@@@
-```lua
-string.length(s)
-s:length()
-```
-> Returns the length of a string.
-@@@]]
+
+
+
+
+
+
+
 
 function string.length(s)
     return #s
 end
 
---[[@@@
-```lua
-string.intersperse(c, s)
-c:intersperse(s)
-```
-> Intersperses a element c between the elements of s.
-@@@]]
+
+
+
+
+
+
+
 
 function string.intersperse(c, s)
     if #s < 2 then return s end
-    local cs = {}
+    local cs = t_create(#s*2)
     for i = 1, #s-1 do
         cs[#cs+1] = s_sub(s, i, i)
         cs[#cs+1] = c
@@ -4037,25 +4011,25 @@ function string.intersperse(c, s)
     return t_concat(cs)
 end
 
---[[@@@
-```lua
-string.intercalate(s, ss)
-s:intercalate(ss)
-```
-> Inserts the string s in between the strings in ss and concatenates the result.
-@@@]]
+
+
+
+
+
+
+
 
 function string.intercalate(s, ss)
     return t_concat(ss, s)
 end
 
---[[@@@
-```lua
-string.subsequences(s)
-s:subsequences()
-```
-> Returns the list of all subsequences of the argument.
-@@@]]
+
+
+
+
+
+
+
 
 local function s_subsequences(s)
     if s=="" then return {""} end
@@ -4065,25 +4039,25 @@ local function s_subsequences(s)
 end
 string.subsequences = s_subsequences
 
---[[@@@
-```lua
-string.permutations(s)
-s:permutations()
-```
-> Returns the list of all permutations of the argument.
-@@@]]
+
+
+
+
+
+
+
 
 function string.permutations(s)
     return F_map(t_concat, F_permutations(s_chars(s)))
 end
 
---[[@@@
-```lua
-string.take(s, n)
-s:take(n)
-```
-> Returns the prefix of s of length n.
-@@@]]
+
+
+
+
+
+
+
 
 s_take = function(s, n)
     if n <= 0 then return "" end
@@ -4091,13 +4065,13 @@ s_take = function(s, n)
 end
 string.take = s_take
 
---[[@@@
-```lua
-string.drop(s, n)
-s:drop(n)
-```
-> Returns the suffix of s after the first n elements.
-@@@]]
+
+
+
+
+
+
+
 
 s_drop = function(s, n)
     if n <= 0 then return s end
@@ -4105,61 +4079,61 @@ s_drop = function(s, n)
 end
 string.drop = s_drop
 
---[[@@@
-```lua
-string.split_at(s, n)
-s:split_at(n)
-```
-> Returns a tuple where first element is s prefix of length n and second element is the remainder of the string.
-@@@]]
+
+
+
+
+
+
+
 
 function string.split_at(s, n)
     return s_take(s, n), s_drop(s, n)
 end
 
---[[@@@
-```lua
-string.take_while(s, p)
-s:take_while(p)
-```
-> Returns the longest prefix (possibly empty) of s of elements that satisfy p.
-@@@]]
+
+
+
+
+
+
+
 
 function string.take_while(s, p)
     return t_concat(F_take_while(p, s_chars(s)))
 end
 
---[[@@@
-```lua
-string.drop_while(s, p)
-s:drop_while(p)
-```
-> Returns the suffix remaining after `s:take_while(p)`{.lua}.
-@@@]]
+
+
+
+
+
+
+
 
 function string.drop_while(s, p)
     return t_concat(F_drop_while(p, s_chars(s)))
 end
 
---[[@@@
-```lua
-string.drop_while_end(s, p)
-s:drop_while_end(p)
-```
-> Drops the largest suffix of a string in which the given predicate holds for all elements.
-@@@]]
+
+
+
+
+
+
+
 
 function string.drop_while_end(s, p)
     return t_concat(F_drop_while_end(p, s_chars(s)))
 end
 
---[[@@@
-```lua
-string.strip_prefix(s, prefix)
-s:strip_prefix(prefix)
-```
-> Drops the given prefix from a string.
-@@@]]
+
+
+
+
+
+
+
 
 function string.strip_prefix(s, prefix)
     local n = #prefix
@@ -4167,13 +4141,13 @@ function string.strip_prefix(s, prefix)
     return nil
 end
 
---[[@@@
-```lua
-string.strip_suffix(s, suffix)
-s:strip_suffix(suffix)
-```
-> Drops the given suffix from a string.
-@@@]]
+
+
+
+
+
+
+
 
 function string.strip_suffix(s, suffix)
     local n = #suffix
@@ -4181,118 +4155,118 @@ function string.strip_suffix(s, suffix)
     return nil
 end
 
---[[@@@
-```lua
-string.inits(s)
-s:inits()
-```
-> Returns all initial segments of the argument, shortest first.
-@@@]]
+
+
+
+
+
+
+
 
 function string.inits(s)
-    local ss = {}
+    local ss = t_create(#s+1)
     for i = 0, #s do
         ss[#ss+1] = s_sub(s, 1, i)
     end
     return setmetatable(ss, mt)
 end
 
---[[@@@
-```lua
-string.tails(s)
-s:tails()
-```
-> Returns all final segments of the argument, longest first.
-@@@]]
+
+
+
+
+
+
+
 
 function string.tails(s)
-    local ss = {}
+    local ss = t_create(#s+1)
     for i = 1, #s+1 do
         ss[#ss+1] = s_sub(s, i)
     end
     return setmetatable(ss, mt)
 end
 
---[[@@@
-```lua
-string.is_prefix_of(prefix, s)
-prefix:is_prefix_of(s)
-```
-> Returns `true` iff the first string is a prefix of the second.
-@@@]]
+
+
+
+
+
+
+
 
 function string.is_prefix_of(prefix, s)
     return s_sub(s, 1, #prefix) == prefix
 end
 
---[[@@@
-```lua
-string.has_prefix(s, prefix)
-s:has_prefix(prefix)
-```
-> Returns `true` iff the second string is a prefix of the first.
-@@@]]
+
+
+
+
+
+
+
 
 function string.has_prefix(s, prefix)
     return s_sub(s, 1, #prefix) == prefix
 end
 
---[[@@@
-```lua
-string.is_suffix_of(suffix, s)
-suffix:is_suffix_of(s)
-```
-> Returns `true` iff the first string is a suffix of the second.
-@@@]]
+
+
+
+
+
+
+
 
 function string.is_suffix_of(suffix, s)
     return s_sub(s, #s-#suffix+1) == suffix
 end
 
---[[@@@
-```lua
-string.has_suffix(s, suffix)
-s:has_suffix(suffix)
-```
-> Returns `true` iff the second string is a suffix of the first.
-@@@]]
+
+
+
+
+
+
+
 
 function string.has_suffix(s, suffix)
     return s_sub(s, #s-#suffix+1) == suffix
 end
 
---[[@@@
-```lua
-string.is_infix_of(infix, s)
-infix:is_infix_of(s)
-```
-> Returns `true` iff the first string is contained, wholly and intact, anywhere within the second.
-@@@]]
+
+
+
+
+
+
+
 
 function string.is_infix_of(infix, s)
     return s_find(s, infix) ~= nil
 end
 
---[[@@@
-```lua
-string.has_infix(s, infix)
-s:has_infix(infix)
-```
-> Returns `true` iff the second string is contained, wholly and intact, anywhere within the first.
-@@@]]
+
+
+
+
+
+
+
 
 function string.has_infix(s, infix)
     return s_find(s, infix) ~= nil
 end
 
---[[@@@
-```lua
-string.matches(s, pattern, [init])
-s:matches(pattern, [init])
-```
-> Returns the list of the captures from `pattern` by iterating on `string.gmatch`.
-  If `pattern` defines two or more captures, the result is a list of list of captures.
-@@@]]
+
+
+
+
+
+
+
+
 
 function string.matches(s, pattern, init)
     local iterator = s_gmatch(s, pattern, init)
@@ -4304,13 +4278,13 @@ function string.matches(s, pattern, init)
     end
 end
 
---[[@@@
-```lua
-string.split(s, sep, maxsplit, plain)
-s:split(sep, maxsplit, plain)
-```
-> Splits a string `s` around the separator `sep`. `maxsplit` is the maximal number of separators. If `plain` is true then the separator is a plain string instead of a Lua string pattern.
-@@@]]
+
+
+
+
+
+
+
 
 s_split = function(s, sep, maxsplit, plain)
     assert(sep and sep ~= "")
@@ -4333,13 +4307,13 @@ s_split = function(s, sep, maxsplit, plain)
 end
 string.split = s_split
 
---[[@@@
-```lua
-string.lines(s)
-s:lines()
-```
-> Splits the argument into a list of lines stripped of their terminating `\n` characters.
-@@@]]
+
+
+
+
+
+
+
 
 function string.lines(s)
     local lines = s_split(s, '\r?\n\r?')
@@ -4347,13 +4321,13 @@ function string.lines(s)
     return setmetatable(lines, mt)
 end
 
---[[@@@
-```lua
-string.words(s)
-s:words()
-```
-> Breaks a string up into a list of words, which were delimited by white space.
-@@@]]
+
+
+
+
+
+
+
 
 function string.words(s)
     local words = s_split(s, '%s+')
@@ -4362,16 +4336,16 @@ function string.words(s)
     return setmetatable(words, mt)
 end
 
---[[@@@
-```lua
-F.unlines(xs)
-xs:unlines()
-```
-> Appends a `\n` character to each input string, then concatenates the results.
-@@@]]
+
+
+
+
+
+
+
 
 function F.unlines(xs)
-    local s = {}
+    local s = t_create(#xs*2)
     for i = 1, #xs do
         s[#s+1] = xs[i]
         s[#s+1] = "\n"
@@ -4380,89 +4354,89 @@ function F.unlines(xs)
 end
 mt.__index.unlines = F.unlines
 
---[[@@@
-```lua
-string.unwords(xs)
-xs:unwords()
-```
-> Joins words with separating spaces.
-@@@]]
+
+
+
+
+
+
+
 
 function F.unwords(xs)
     return t_concat(xs, " ")
 end
 mt.__index.unwords = F.unwords
 
---[[@@@
-```lua
-string.ltrim(s)
-s:ltrim()
-```
-> Removes heading spaces
-@@@]]
+
+
+
+
+
+
+
 
 function string.ltrim(s)
     return (s_match(s, "^%s*(.*)"))
 end
 
---[[@@@
-```lua
-string.rtrim(s)
-s:rtrim()
-```
-> Removes trailing spaces
-@@@]]
+
+
+
+
+
+
+
 
 function string.rtrim(s)
     return (s_match(s, "(.-)%s*$"))
 end
 
---[[@@@
-```lua
-string.trim(s)
-s:trim()
-```
-> Removes heading and trailing spaces
-@@@]]
+
+
+
+
+
+
+
 
 function string.trim(s)
     return (s_match(s, "^%s*(.-)%s*$"))
 end
 
---[[@@@
-```lua
-string.ljust(s, w, [c])
-s:ljust(w)
-```
-> Left-justify `s` by appending spaces (or the character `c`).
-  The result is at least `w` byte long. `s` is not truncated.
-@@@]]
+
+
+
+
+
+
+
+
 
 function string.ljust(s, w, c)
     return s .. s_rep(c or " ", w-#s)
 end
 
---[[@@@
-```lua
-string.rjust(s, w, [c])
-s:rjust(w)
-```
-> Right-justify `s` by prepending spaces (or the character `c`).
-  The result is at least `w` byte long. `s` is not truncated.
-@@@]]
+
+
+
+
+
+
+
+
 
 function string.rjust(s, w, c)
     return s_rep(c or " ", w-#s) .. s
 end
 
---[[@@@
-```lua
-string.center(s, w)
-s:center(w)
-```
-> Center `s` by appending and prepending spaces (or the character `c`).
-  The result is at least `w` byte long. `s` is not truncated.
-@@@]]
+
+
+
+
+
+
+
+
 
 function string.center(s, w, c)
     c = c or " "
@@ -4471,61 +4445,61 @@ function string.center(s, w, c)
     return s_rep(c, l) .. s .. s_rep(c, r)
 end
 
---[[@@@
-```lua
-string.cap(s)
-s:cap()
-```
-> Capitalizes a string. The first character is upper case, other are lower case.
-@@@]]
+
+
+
+
+
+
+
 
 s_cap = function(s)
     return s_upper(s_sub(s, 1, 1)) .. s_lower(s_sub(s, 2))
 end
 string.cap = s_cap
 
---[[------------------------------------------------------------------------@@@
-## Identifier formatting
-@@@]]
+
+
+
 
 local function split_identifier(...)
     local words = {}
     local function add_word(name)
-        -- an upper case letter starts a new word
+
         name = s_gsub(tostring(name), "([^%u])(%u)", "%1_%2")
-        -- split words
+
         for w in s_gmatch(name, "%w+") do words[#words+1] = w end
     end
     F_foreach(F_flatten{...}, add_word)
     return setmetatable(words, mt)
 end
 
---[[@@@
-```lua
-string.lower_snake_case(s)              -- e.g.: hello_world
-string.upper_snake_case(s)              -- e.g.: HELLO_WORLD
-string.lower_camel_case(s)              -- e.g.: helloWorld
-string.upper_camel_case(s)              -- e.g.: HelloWorld
-string.dotted_lower_snake_case(s)       -- e.g.: hello.world
-string.dotted_upper_snake_case(s)       -- e.g.: HELLO.WORLD
 
-F.lower_snake_case(s)                   -- e.g.: hello_world
-F.upper_snake_case(s)                   -- e.g.: HELLO_WORLD
-F.lower_camel_case(s)                   -- e.g.: helloWorld
-F.upper_camel_case(s)                   -- e.g.: HelloWorld
-F.dotted_lower_snake_case(s)            -- e.g.: hello.world
-F.dotted_upper_snake_case(s)            -- e.g.: HELLO.WORLD
 
-s:lower_snake_case()                    -- e.g.: hello_world
-s:upper_snake_case()                    -- e.g.: HELLO_WORLD
-s:lower_camel_case()                    -- e.g.: helloWorld
-s:upper_camel_case()                    -- e.g.: HelloWorld
-s:dotted_lower_snake_case()             -- e.g.: hello.world
-s:dotted_upper_snake_case()             -- e.g.: HELLO.WORLD
-```
-> Convert an identifier using some wellknown naming conventions.
-  `s` can be a string or a list of strings.
-@@@]]
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 function string.lower_snake_case(...)
     return t_concat(F_map(s_lower, split_identifier(...)), "_")
@@ -4569,37 +4543,37 @@ mt.__index.dotted_lower_snake_case = string.dotted_lower_snake_case
 F.dotted_upper_snake_case = string.dotted_upper_snake_case
 mt.__index.dotted_upper_snake_case = string.dotted_upper_snake_case
 
---[[------------------------------------------------------------------------@@@
-## String evaluation
-@@@]]
 
---[[@@@
-```lua
-string.read(s)
-s:read()
-```
-> Convert s to a Lua value (like `F.read`)
-@@@]]
+
+
+
+
+
+
+
+
+
+
 
 string.read = F.read
 
---[[------------------------------------------------------------------------@@@
-## String interpolation
-@@@]]
 
---[[@@@
-```lua
-F.I(t)
-```
-> returns a string interpolator that replaces `$(...)` with
-> the value of `...` in the environment defined by the table `t`.
-> An interpolator can be given another table
-> to build a new interpolator with new values.
->
-> The mod operator (`%`) produces a new interpolator with a custom pattern.
-> E.g. `F.I % "@[]"` is an interpolator that replaces `@[...]` with
-> the value of `...`.
-@@@]]
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 do
 
@@ -4646,20 +4620,20 @@ F.I = setmetatable({env=nil}, interpolator_mt) % "%$()"
 
 end
 
---[[------------------------------------------------------------------------@@@
-## Random array access
 
-@@@]]
 
---[[@@@
-```lua
-F.choose(xs, prng)
-F.choose(xs)    -- using the global PRNG
-xs:choose(prng)
-xs:choose()     -- using the global PRNG
-```
-> returns a random item from `xs`
-@@@]]
+
+
+
+
+
+
+
+
+
+
+
+
 
 function F.choose(xs, prng)
     if prng then
@@ -4670,15 +4644,15 @@ function F.choose(xs, prng)
 end
 mt.__index.choose = F.choose
 
---[[@@@
-```lua
-F.shuffle(xs, prng)
-F.shuffle(xs)   -- using the global PRNG
-xs:shuffle(prng)
-xs:shuffle()    -- using the global PRNG
-```
-> returns a shuffled copy of `xs`
-@@@]]
+
+
+
+
+
+
+
+
+
 
 function F.shuffle(xs, prng)
     if prng then
@@ -4689,42 +4663,42 @@ function F.shuffle(xs, prng)
 end
 mt.__index.shuffle = F.shuffle
 
---[[------------------------------------------------------------------------@@@
-## Schema-based table validation
 
-This function validates the content of a table agains a schema.
 
-A schema is a Lua table with the same structure that the input tables,
-the values being replaced with values of the expected type.
 
-| Expected type     | Specification                                                     | Exemple                   |
-| ----------------- | ----------------------------------------------------------------- | ------------------------- |
-| Boolean           | any boolean                                                       | `true`                    |
-| Number            | any number                                                        | `0`                       |
-| String            | any string                                                        | `"str"`                   |
-| Array             | a table with one element (type of the array items)                | `{ "str" }`               |
-| Structure         | a table with keys (names) and values (types)                      | `{ x=0, y=0 }`            |
-| Enumerated type   | a list with the `"enum"` keyword and the list of values           | `{ "enum", "on", "off" }` |
-| Interval          | a list with the `"range"` keyword and the min and max values      | `{ "range", -10, 10 }`    |
-| Union             | a list with the `"union"` keyword and the list of accepted types  | `{ "union", 0, "str" }`   |
-| Option            | a list with the `"option"` keyword and the optional type          | `{ "option", "str" }`     |
-| Any value         | a list with the `"any"` keyword                                   | `{ "any" }`               |
 
-The optional types can be combined with other types. E.g.: `{ "option", "range", -10, 10 }`.
 
-@@@]]
 
---[[@@@
-```lua
-F.validate(schema, input, [options])
-```
-> returns `true` if `input` is validated by `schema`. Otherwise it returns `false`
-> and a list of failures.
->
-> | Options           | Description                                               | Default value |
-> | ----------------- | --------------------------------------------------------- | ------------- |
-> | `options.strict`  | Strict validation (unspecified fields are not allowed)    | `true`        |
-@@@]]
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 function F.validate(schema, input, options)
 
@@ -4745,7 +4719,7 @@ function F.validate(schema, input, options)
 
     local function walk(t, v, path, errs)
 
-        -- detect missing fields (if not optional)
+
         if v == nil then
             if type(t) ~= "table" or t[1] ~= "option" then
                 errs[#errs+1] = ("%s: missing field"):format(path)
@@ -4755,10 +4729,10 @@ function F.validate(schema, input, options)
 
         if type(t) == "table" and t[1] == "option" then
             t = F.tail(t)
-            if #t == 1 then t = t[1] end ---@diagnostic disable-line: need-check-nil
+            if #t == 1 then t = t[1] end
         end
 
-        -- check atomic types (booleans, numbers and strings)
+
         if type(t) ~= "table" then
             if type(v) ~= type(t) then
                 errs[#errs+1] = ("%s: %s expected"):format(path, type(t))
@@ -4766,12 +4740,12 @@ function F.validate(schema, input, options)
             return
         end
 
-        -- check any type
+
         if t[1] == "any" then
             return
         end
 
-        -- check ranges
+
         if t[1] == "range" then
             local vmin, vmax = t[2], t[3]
             if type(vmin) ~= type(vmax) then
@@ -4784,7 +4758,7 @@ function F.validate(schema, input, options)
             return
         end
 
-        -- check enumerations
+
         if t[1] == "enum" then
             local vs = assert(F.tail(t))
             for _, vi in pairs(vs) do
@@ -4794,7 +4768,7 @@ function F.validate(schema, input, options)
             return
         end
 
-        -- check unions
+
         if t[1] == "union" then
             local ts = assert(F.tail(t))
             for _, ti in pairs(ts) do
@@ -4806,7 +4780,7 @@ function F.validate(schema, input, options)
             return
         end
 
-        -- check array
+
         if t[1] ~= nil then
             if type(v) ~= "table" then
                 errs[#errs+1] = ("%s: shall be an array"):format(path)
@@ -4818,7 +4792,7 @@ function F.validate(schema, input, options)
             return
         end
 
-        -- check table
+
         if type(v) ~= "table" then
             errs[#errs+1] = ("%s: shall be a table"):format(path)
             return
@@ -4842,9 +4816,9 @@ function F.validate(schema, input, options)
 
 end
 
--------------------------------------------------------------------------------
--- module
--------------------------------------------------------------------------------
+
+
+
 
 local reg = debug.getregistry()
 reg.luax_F_mt = mt
@@ -4855,29 +4829,29 @@ return setmetatable(F, {
         return t
     end,
 })
-]==])
-package.preload["argparse"] = lib("luax/argparse.lua", [==[-- The MIT License (MIT)
+]=])
+package.preload["argparse"] = lib("luax/argparse.lua", [==[
 
--- Copyright (c) 2013 - 2018 Peter Melnichenko
---                      2019 Paul Ouellette
---                      2025 Christophe Delord
 
--- Permission is hereby granted, free of charge, to any person obtaining a copy of
--- this software and associated documentation files (the "Software"), to deal in
--- the Software without restriction, including without limitation the rights to
--- use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
--- the Software, and to permit persons to whom the Software is furnished to do so,
--- subject to the following conditions:
 
--- The above copyright notice and this permission notice shall be included in all
--- copies or substantial portions of the Software.
 
--- THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
--- IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
--- FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
--- COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
--- IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
--- CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 local function deep_update(t1, t2)
    for k, v in pairs(t2) do
@@ -4891,11 +4865,11 @@ local function deep_update(t1, t2)
    return t1
 end
 
--- A property is a tuple {name, callback}.
--- properties.args is number of properties that can be set as arguments
--- when calling an object.
+
+
+
 local function class(prototype, properties, parent)
-   -- Class is the metatable of its instances.
+
    local cl = {}
    cl.__index = cl
 
@@ -4908,7 +4882,7 @@ local function class(prototype, properties, parent)
    if properties then
       local names = {}
 
-      -- Create setter methods and fill set of property names.
+
       for _, property in ipairs(properties) do
          local name, callback = property[1], property[2]
 
@@ -4924,9 +4898,9 @@ local function class(prototype, properties, parent)
       end
 
       function cl.__call(self, ...)
-         -- When calling an object, if the first argument is a table,
-         -- interpret keys as property names, else delegate arguments
-         -- to corresponding setters in order.
+
+
+
          if type((...)) == "table" then
             for name, value in pairs((...)) do
                if names[name] then
@@ -4953,13 +4927,13 @@ local function class(prototype, properties, parent)
       end
    end
 
-   -- If indexing class fails, fallback to its parent.
+
    local class_metatable = {}
    class_metatable.__index = parent
 
    function class_metatable.__call(self, ...)
-      -- Calling a class returns its instance.
-      -- Arguments are delegated to the instance.
+
+
       local object = deep_update({}, self.__prototype)
       setmetatable(object, self)
       return object(...)
@@ -4990,13 +4964,13 @@ local multiname = {"name", function(self, value)
       self._name = self._name or alias
       table.insert(self._aliases, alias)
       table.insert(self._public_aliases, alias)
-      -- If alias contains '_', accept '-' also.
+
       if alias:find("_", 1, true) then
          table.insert(self._aliases, (alias:gsub("_", "-")))
       end
    end
 
-   -- Do not set _name as with other properties.
+
    return true
 end}
 
@@ -5341,7 +5315,7 @@ function Argument:_get_action()
    return action, init
 end
 
--- Returns placeholder for `narg`-th argument.
+
 function Argument:_get_argname(narg)
    local argname = self._argname or self:_get_default_argname()
 
@@ -5372,7 +5346,7 @@ function Option:_get_default_argname()
    end
 end
 
--- Returns labels to be shown in the help message.
+
 function Argument:_get_label_lines()
    if self._choices then
       return {self:_get_choices_list()}
@@ -5385,7 +5359,7 @@ function Option:_get_label_lines()
    local argument_list = self:_get_argument_list()
 
    if #argument_list == 0 then
-      -- Don't put aliases for simple flags like `-h` on different lines.
+
       return {table.concat(self._public_aliases, ", ")}
    end
 
@@ -5562,16 +5536,16 @@ function Parser:get_usage()
       end
    end
 
-   -- Normally options are before positional arguments in usage messages.
-   -- However, vararg options should be after, because they can't be reliable used
-   -- before a positional argument.
-   -- Mutexes come into play, too, and are shown as soon as possible.
-   -- Overall, output usages in the following order:
-   -- 1. Mutexes that don't have positional arguments or vararg options.
-   -- 2. Options that are not in any mutexes and are not vararg.
-   -- 3. Positional arguments - on their own or as a part of a mutex.
-   -- 4. Remaining mutexes.
-   -- 5. Remaining options.
+
+
+
+
+
+
+
+
+
+
 
    local elements_in_mutexes = {}
    local added_elements = {}
@@ -5638,9 +5612,9 @@ function Parser:get_usage()
       end
    end
 
-   -- Add usages for positional arguments, together with one mutex containing them, if they are in a mutex.
+
    for _, argument in ipairs(self._arguments) do
-      -- Pick a mutex as a part of which to show this argument, take the first one that's still available.
+
       local mutex
 
       if elements_in_mutexes[argument] then
@@ -5698,32 +5672,32 @@ local function split_lines(s)
 end
 
 local function autowrap_line(line, max_length)
-   -- Algorithm for splitting lines is simple and greedy.
+
    local result_lines = {}
 
-   -- Preserve original indentation of the line, put this at the beginning of each result line.
-   -- If the first word looks like a list marker ('*', '+', or '-'), add spaces so that starts
-   -- of the second and the following lines vertically align with the start of the second word.
+
+
+
    local indentation = line:match("^ *")
 
    if line:find("^ *[%*%+%-]") then
       indentation = indentation .. " " .. line:match("^ *[%*%+%-]( *)")
    end
 
-   -- Parts of the last line being assembled.
+
    local line_parts = {}
 
-   -- Length of the current line.
+
    local line_length = 0
 
-   -- Index of the next character to consider.
+
    local index = 1
 
    while true do
       local word_start, word_finish, word = line:find("([^ ]+)", index)
 
       if not word_start then
-         -- Ignore trailing spaces, if any.
+
          break
       end
 
@@ -5731,12 +5705,12 @@ local function autowrap_line(line, max_length)
       index = word_finish + 1
 
       if (#line_parts == 0) or (line_length + #preceding_spaces + #word <= max_length) then
-         -- Either this is the very first word or it fits as an addition to the current line, add it.
-         table.insert(line_parts, preceding_spaces) -- For the very first word this adds the indentation.
+
+         table.insert(line_parts, preceding_spaces)
          table.insert(line_parts, word)
          line_length = line_length + #preceding_spaces + #word
       else
-         -- Does not fit, finish current line and put the word into a new one.
+
          table.insert(result_lines, table.concat(line_parts))
          line_parts = {indentation, word}
          line_length = #indentation + #word
@@ -5748,16 +5722,16 @@ local function autowrap_line(line, max_length)
    end
 
    if #result_lines == 0 then
-      -- Preserve empty lines.
+
       result_lines[1] = ""
    end
 
    return result_lines
 end
 
--- Automatically wraps lines within given array,
--- attempting to limit line length to `max_length`.
--- Existing line splits are preserved.
+
+
+
 local function autowrap(lines, max_length)
    local result_lines = {}
 
@@ -5778,9 +5752,9 @@ function Parser:_get_element_help(element)
 
    local result_lines = {}
 
-   -- All label lines should have the same length (except the last one, it has no comma).
-   -- If too long, start description after all the label lines.
-   -- Otherwise, combine label and description lines.
+
+
+
 
    local usage_margin_len = self:_inherit_property("help_usage_margin", 3)
    local usage_margin = (" "):rep(usage_margin_len)
@@ -5868,10 +5842,10 @@ function Parser:get_help()
       table.insert(blocks, description)
    end
 
-   -- 1. Put groups containing arguments first, then other arguments.
-   -- 2. Put remaining groups containing options, then other options.
-   -- 3. Put remaining groups containing commands, then other commands.
-   -- Assume that an element can't be in several groups.
+
+
+
+
    local groups_by_type = {
       [Argument] = {},
       [Option] = {},
@@ -6909,7 +6883,7 @@ function Parser:error(msg)
    os.exit(1)
 end
 
--- Compatibility with strict.lua and other checkers:
+
 local default_cmdline = rawget(_G, "arg") or {}
 
 function Parser:_parse(args, error_handler)
@@ -6953,8 +6927,8 @@ end})
 
 return argparse
 ]==])
-package.preload["cbor"] = lib("luax/cbor.lua", [[-- Concise Binary Object Representation (CBOR)
--- RFC 7049
+package.preload["cbor"] = lib("luax/cbor.lua", [[
+
 
 local function softreq(pkg, field)
 	local ok, mod = pcall(require, pkg);
@@ -7001,7 +6975,7 @@ local b_rshift = softreq("bit32", "rshift") or softreq("bit", "rshift") or
 	dostring "return function(a,b) return a >> b end" or
 	function (a, b) return m_max(0, m_floor(a / (2 ^ b))); end;
 
--- sanity check
+
 if s_pack and s_pack(">I2", 0) ~= "\0\0" then
 	s_pack = nil;
 end
@@ -7009,7 +6983,7 @@ if s_unpack and s_unpack(">I2", "\1\2\3\4") ~= 0x102 then
 	s_unpack = nil;
 end
 
-local _ENV = nil; -- luacheck: ignore 211
+local _ENV = nil;
 
 local encoder = {};
 
@@ -7017,10 +6991,10 @@ local function encode(obj, opts)
 	return encoder[type(obj)](obj, opts);
 end
 
--- Major types 0, 1 and length encoding for others
+
 local function integer(num, m)
 	if m == 0 and num < 0 then
-		-- negative integer, major type 1
+
 		num, m = - num - 1, 32;
 	end
 	if num < 24 then
@@ -7088,16 +7062,16 @@ local function tagged(tag, value)
 	return setmetatable({ tag = tag, value = value }, tagged_mt);
 end
 
-local null = simple(22, "null"); -- explicit null
-local undefined = simple(23, "undefined"); -- undefined or nil
+local null = simple(22, "null");
+local undefined = simple(23, "undefined");
 local BREAK = simple(31, "break", "\255");
 
--- Number types dispatch
+
 function encoder.number(num)
 	return encoder[m_type(num)](num);
 end
 
--- Major types 0, 1
+
 function encoder.integer(num)
 	if num < 0 then
 		return integer(-1 - num, 32);
@@ -7105,9 +7079,9 @@ function encoder.integer(num)
 	return integer(num, 0);
 end
 
--- Major type 7
+
 function encoder.float(num)
-	if num ~= num then -- NaN shortcut
+	if num ~= num then
 		return "\251\127\255\255\255\255\255\255\255";
 	end
 	local sign = (num > 0 or 1 / num > 0) and 0 or 1;
@@ -7147,17 +7121,17 @@ if s_pack then
 end
 
 
--- Major type 2 - byte strings
+
 function encoder.bytestring(s)
 	return integer(#s, 64) .. s;
 end
 
--- Major type 3 - UTF-8 strings
+
 function encoder.utf8string(s)
 	return integer(#s, 96) .. s;
 end
 
--- Lua strings are byte strings
+
 encoder.string = encoder.bytestring;
 
 function encoder.boolean(bool)
@@ -7186,14 +7160,14 @@ function encoder.table(t, opts)
 		end
 	end
     local custom_pairs = opts and opts.pairs or pairs
-	-- the table is encoded as an array iff when we iterate over it,
-	-- we see successive integer keys starting from 1.  The lua
-	-- language doesn't actually guarantee that this will be the case
-	-- when we iterate over a table with successive integer keys, but
-	-- due an implementation detail in PUC Rio Lua, this is what we
-	-- usually observe.  See the Lua manual regarding the # (length)
-	-- operator.  In the case that this does not happen, we will fall
-	-- back to a map with integer keys, which becomes a bit larger.
+
+
+
+
+
+
+
+
 	local array, map, i, p = { integer(#t, 128) }, { "\191" }, 1, 2;
 	local is_array = true;
 	for k, v in custom_pairs(t) do
@@ -7206,12 +7180,12 @@ function encoder.table(t, opts)
 		map[p], p = encode(k, opts), p + 1;
 		map[p], p = encoded_v, p + 1;
 	end
-	-- map[p] = "\255";
+
 	map[1] = integer(i - 1, 160);
 	return t_concat(is_array and array or map);
 end
 
--- Array or dict-only encoders, which can be set as __tocbor metamethod
+
 function encoder.array(t, opts)
 	local array = { };
 	for i, v in ipairs(t) do
@@ -7228,15 +7202,15 @@ function encoder.map(t, opts)
 		map[p], p = encode(v, opts), p + 1;
 		len = len + 1;
 	end
-	-- map[p] = "\255";
+
 	map[1] = integer(len, 160);
 	return t_concat(map);
 end
-encoder.dict = encoder.map; -- COMPAT
+encoder.dict = encoder.map;
 
 function encoder.ordered_map(t, opts)
 	local map = {};
-	if not t[1] then -- no predefined order
+	if not t[1] then
         local custom_pairs = opts and opts.pairs or pairs
 		local i = 0;
 		for k in custom_pairs(t) do
@@ -7255,8 +7229,8 @@ encoder["function"] = function ()
 	error "can't encode function";
 end
 
--- Decoder
--- Reads from a file-handle like object
+
+
 local function read_bytes(fh, len)
 	return fh:read(len);
 end
@@ -7315,11 +7289,11 @@ end
 
 local function read_unicode_string(fh, mintyp)
 	return read_string(fh, mintyp);
-	-- local str = read_string(fh, mintyp);
-	-- if have_utf8 and not utf8.len(str) then
-		-- TODO How to handle this?
-	-- end
-	-- return str;
+
+
+
+
+
 end
 
 local function read_array(fh, mintyp, opts)
@@ -7375,10 +7349,10 @@ end
 local function read_half_float(fh)
 	local exponent = read_byte(fh);
 	local fraction = read_byte(fh);
-	local sign = exponent < 128 and 1 or -1; -- sign is highest bit
+	local sign = exponent < 128 and 1 or -1;
 
-	fraction = fraction + (exponent * 256) % 1024; -- copy two(?) bits from exponent to fraction
-	exponent = b_rshift(exponent, 2) % 32; -- remove sign bit and two low bits from fraction;
+	fraction = fraction + (exponent * 256) % 1024;
+	exponent = b_rshift(exponent, 2) % 32;
 
 	if exponent == 0 then
 		return sign * m_ldexp(fraction, -24);
@@ -7394,7 +7368,7 @@ end
 local function read_float(fh)
 	local exponent = read_byte(fh);
 	local fraction = read_byte(fh);
-	local sign = exponent < 128 and 1 or -1; -- sign is highest bit
+	local sign = exponent < 128 and 1 or -1;
 	exponent = exponent * 2 % 256 + b_rshift(fraction, 7);
 	fraction = fraction % 128;
 	fraction = fraction * 256 + read_byte(fh);
@@ -7414,7 +7388,7 @@ end
 local function read_double(fh)
 	local exponent = read_byte(fh);
 	local fraction = read_byte(fh);
-	local sign = exponent < 128 and 1 or -1; -- sign is highest bit
+	local sign = exponent < 128 and 1 or -1;
 
 	exponent = exponent %  128 * 16 + b_rshift(fraction, 4);
 	fraction = fraction % 16;
@@ -7478,9 +7452,9 @@ decoder[5] = read_map;
 decoder[6] = read_semantic;
 decoder[7] = read_simple;
 
--- opts.more(n) -> want more data
--- opts.simple -> decode simple value
--- opts[int] -> tagged decoder
+
+
+
 local function decode(s, opts)
 	local fh = {};
 	local pos = 1;
@@ -7510,7 +7484,7 @@ local function decode(s, opts)
 		return ret;
 	end
 
-	function fh:write(bytes) -- luacheck: no self
+	function fh:write(bytes)
 		s = s .. bytes;
 		if pos > 256 then
 			s = s:sub(pos + 1);
@@ -7523,54 +7497,54 @@ local function decode(s, opts)
 end
 
 return {
-	-- en-/decoder functions
+
 	encode = encode;
 	decode = decode;
 	decode_file = read_object;
 
-	-- tables of per-type en-/decoders
+
 	type_encoders = encoder;
 	type_decoders = decoder;
 
-	-- special treatment for tagged values
+
 	tagged_decoders = tagged_decoders;
 
-	-- constructors for annotated types
+
 	simple = simple;
 	tagged = tagged;
 
-	-- pre-defined simple values
+
 	null = null;
 	undefined = undefined;
 };
---@LIB
+
 ]])
-package.preload["complex"] = lib("luax/complex.lua", [=[--[[
-This file is part of luax.
+package.preload["complex"] = lib("luax/complex.lua", [[
 
-luax is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
 
-luax is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
 
-You should have received a copy of the GNU General Public License
-along with luax.  If not, see <https://www.gnu.org/licenses/>.
 
-For further information about luax you can visit
-https://codeberg.org/cdsoft/luax
---]]
 
---@LIB
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 local has_complex, complex = pcall(require, "_complex")
 
 if not has_complex then
 
-    -- see https://github.com/krakow10/Complex-Number-Library/blob/master/Lua/Complex.lua
+
 
     local mathx = require "mathx"
 
@@ -7587,7 +7561,7 @@ if not has_complex then
 
     local mt = {__index={}}
 
-    ---@diagnostic disable:unused-vararg
+
     local function ni(f) return function(...) error(f.." not implemented") end end
 
     local forget <const> = 1e-14
@@ -7789,33 +7763,35 @@ if not has_complex then
 end
 
 return complex
-]=])
-package.preload["crypt"] = lib("luax/crypt.lua", [=[--[[
-This file is part of luax.
+]])
+package.preload["crypt"] = lib("luax/crypt.lua", [[
 
-luax is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
 
-luax is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
 
-You should have received a copy of the GNU General Public License
-along with luax.  If not, see <https://www.gnu.org/licenses/>.
 
-For further information about luax you can visit
-https://codeberg.org/cdsoft/luax
---]]
 
--- Load crypt.lua to add new methods to strings
---@LOAD=_
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 local has_crypt, crypt = pcall(require, "_crypt")
 
 local F = require "F"
+
+local t_move = table.move
 
 if not has_crypt then
 
@@ -7823,6 +7799,7 @@ if not has_crypt then
 
     local math = math
     local random = math.random
+    local ceil = math.ceil
 
     local clock = os.clock
     local time = os.time
@@ -7835,10 +7812,11 @@ if not has_crypt then
 
     local concat = table.concat
     local tunpack = table.unpack
+    local t_create = table.create
 
     local tonumber = tonumber
 
-    -- FNV-1a
+
     local fnv1a_32_init = 0x811c9dc5
     local fnv1a_32_prime = 1<<24 | 1<<8 | 0x93
     local function fnv1a_32(hash, bs)
@@ -7984,7 +7962,7 @@ if not has_crypt then
                h15, h14, h13, h12, h11, h10, h9, h8, h7, h6, h5, h4, h3, h2, h1, h0
     end
 
-    -- Random number generator
+
 
     local prng_mt = {__index={}}
 
@@ -8059,7 +8037,7 @@ if not has_crypt then
     prng_mt.__index.float = pcg_float
 
     local function pcg_str(self, n)
-        local bs = {}
+        local bs = t_create(n+4)
         for i = 1, n, 4 do
             local r = pcg_int(self)
             bs[i  ] = char((r>>(0*8))&0xff)
@@ -8071,7 +8049,7 @@ if not has_crypt then
     end
     prng_mt.__index.str = pcg_str
 
-    -- global random number generator
+
     local _rng = crypt.prng()
 
     function crypt.seed(seed, incr) return _rng:seed(seed, incr) end
@@ -8082,7 +8060,7 @@ if not has_crypt then
 
     function crypt.str(n) return _rng:str(n) end
 
-    -- Hexadecimal encoding
+
 
     function crypt.hex(s)
         return (gsub(s, '.', function(c) return format("%02x", byte(c)) end))
@@ -8092,9 +8070,9 @@ if not has_crypt then
         return (gsub(s, '..', function(h) return char(tonumber(h, 16)) end))
     end
 
-    -- Base64 encoding
 
-    -- see <https://en.wikipedia.org/wiki/Base64>
+
+
 
     local base64_map = { [0] =
         'A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P','Q','R','S','T','U','V','W','X','Y','Z',
@@ -8108,7 +8086,7 @@ if not has_crypt then
     base64_rev[byte'='] = 0
 
     function crypt.base64(s)
-        local tokens = {}
+        local tokens = t_create(ceil(#s*4/3+4))
         local remainder = #s % 3
         for i = 1, #s-remainder, 3 do
             local a, b, c = byte(s, i, i+2)
@@ -8140,7 +8118,7 @@ if not has_crypt then
     end
 
     function crypt.unbase64(s)
-        local tokens = {}
+        local tokens = t_create(ceil(#s*3/4))
         for i = 1, #s, 4 do
             local a, b, c, d = byte(s, i, i+3)
             local u24 = (base64_rev[a] << (3*6))
@@ -8159,7 +8137,7 @@ if not has_crypt then
         return crypt.unbase64(s:gsub("-", "+"):gsub("_", "/"))
     end
 
-    -- CRC32 hash
+
 
     local crc32_table = { [0]=
         0x00000000, 0x77073096, 0xee0e612c, 0x990951ba, 0x076dc419, 0x706af48f, 0xe963a535, 0x9e6495a3,
@@ -8204,7 +8182,7 @@ if not has_crypt then
         return crc ~ 0xFFFFFFFF
     end
 
-    -- CRC64 hash
+
 
     local crc64_table = { [0]=
         0x0000000000000000, 0xb32e4cbe03a75f6f, 0xf4843657a840a05b, 0x47aa7ae9abe7ff34,
@@ -8281,12 +8259,12 @@ if not has_crypt then
         return crc ~ 0xFFFFFFFFFFFFFFFF
     end
 
-    -- ARC4 encryption
+
 
     function crypt.arc4(input, key, drop)
         assert(type(key) == "string", "arc4 key shall be a string")
         drop = drop or 768
-        local S = {}
+        local S = t_create(255, 1)
         for i = 0, 255 do S[i] = i end
         local j = 0
         if #key > 0 then
@@ -8302,7 +8280,7 @@ if not has_crypt then
             j = (j + S[i]) % 256
             S[i], S[j] = S[j], S[i]
         end
-        local output = {}
+        local output = t_create(#input)
         for k = 1, #input do
             i = (i + 1) % 256
             j = (j + S[i]) % 256
@@ -8340,14 +8318,14 @@ if not has_crypt then
 
     crypt.hash = crypt.hash64
 
-    -- SHA-1
+
     function crypt.sha1(message)
 
         local unpack = string.unpack
 
         local function rotl(w, n) return ((w << n) | (w >> (32 - n))) & 0xFFFFFFFF end
 
-        -- Padding: bit '1' follwed by '0' upto 448 bits (mod 512)
+
         local padding, mod = "\x80", (#message + 1) % 64
         padding = padding .. ("\x00"):rep(56 - mod + (mod > 56 and 64 or 0))
 
@@ -8359,9 +8337,9 @@ if not has_crypt then
         local h3 = 0x10325476
         local h4 = 0xC3D2E1F0
 
-        -- 512 bit blocks
+
         for chunk_start = 1, #bytes, 64 do
-            local w = {}
+            local w = t_create(79, 1)
             for i = 0, 15 do
                 w[i] = unpack(">I4", bytes, chunk_start + i * 4)
             end
@@ -8369,7 +8347,7 @@ if not has_crypt then
                 w[i] = rotl(w[i-3] ~ w[i-8] ~ w[i-14] ~ w[i-16], 1)
             end
 
-            -- block hash
+
             local a, b, c, d, e = h0, h1, h2, h3, h4
             local function round(i, f, k)
                 a, b, c, d, e = (rotl(a, 5) + f + e + k + w[i]) & 0xFFFFFFFF, a, rotl(b, 30), c, d
@@ -8379,7 +8357,7 @@ if not has_crypt then
             for i = 40, 59 do round(i, (b & c) | (b & d) | (c & d), 0x8F1BBCDC) end
             for i = 60, 79 do round(i, b ~ c ~ d,                   0xCA62C1D6) end
 
-            -- update global hash
+
             h0 = (h0 + a) & 0xFFFFFFFF
             h1 = (h1 + b) & 0xFFFFFFFF
             h2 = (h2 + c) & 0xFFFFFFFF
@@ -8387,12 +8365,12 @@ if not has_crypt then
             h4 = (h4 + e) & 0xFFFFFFFF
         end
 
-        -- Final hexa digest
+
         return (">I4I4I4I4I4"):pack(h0, h1, h2, h3, h4):hex()
 
     end
 
-    -- SHA-256
+
     function crypt.sha256(message)
 
         local K = {
@@ -8428,23 +8406,22 @@ if not has_crypt then
         local function sigma0(x)    return rotr(x,  7) ~ rotr(x, 18) ~ u32(x >>  3) end
         local function sigma1(x)    return rotr(x, 17) ~ rotr(x, 19) ~ u32(x >> 10) end
 
-        local H = {}
-        for i = 1, #H0 do H[i] = H0[i] end
+        local H = t_move(H0, 1, #H0, 1, {})
 
         local msgLen = #message
         local bitLen = msgLen * 8
 
-        -- #padded + 8 shall be 0 (mod 64), i.e. pad to a multiple of 64 - 8
+
         local padLen = (55 - msgLen) % 64
         local padded = table.concat {
             message,
-            "\x80",                 -- padding: 0x80
-            ("\x00"):rep(padLen),   --          zeros
-            (">I8"):pack(bitLen),   --          64 bit big-endian length
+            "\x80",
+            ("\x00"):rep(padLen),
+            (">I8"):pack(bitLen),
         }
 
         for offset = 1, #padded, 64 do
-            local W = {}
+            local W = t_create(64)
             for i = 1, 16 do
                 W[i] = (">I4"):unpack(padded, offset + (i - 1) * 4)
             end
@@ -8475,18 +8452,18 @@ if not has_crypt then
 
 end
 
---[[------------------------------------------------------------------------@@@
-## Random array access
 
-@@@]]
 
---[[@@@
-```lua
-prng:choose(xs)
-crypt.choose(xs)    -- using the global PRNG
-```
-> returns a random item from `xs`
-@@@]]
+
+
+
+
+
+
+
+
+
+
 
 local prng_mt = getmetatable(crypt.prng())
 
@@ -8498,62 +8475,62 @@ function crypt.choose(xs)
     return xs[crypt.int(1, #xs)]
 end
 
---[[@@@
-```lua
-prng:shuffle(xs)
-crypt.shuffle(xs)    -- using the global PRNG
-```
-> returns a shuffled copy of `xs`
-@@@]]
+
+
+
+
+
+
+
 
 function prng_mt.__index:shuffle(xs)
-    local ys = F.clone(xs)
+    local ys = t_move(xs, 1, #xs, 1, {})
     for i = 1, #ys-1 do
         local j = self:int(i, #ys)
         ys[i], ys[j] = ys[j], ys[i]
     end
-    return ys
+    return F(ys)
 end
 
 function crypt.shuffle(xs)
-    local ys = F.clone(xs)
+    local ys = t_move(xs, 1, #xs, 1, {})
     for i = 1, #ys-1 do
         local j = crypt.int(i, #ys)
         ys[i], ys[j] = ys[j], ys[i]
     end
-    return ys
+    return F(ys)
 end
 
---[[------------------------------------------------------------------------@@@
-## String methods
 
-Some functions of the `crypt` package are added to the string module:
 
-@@@]]
 
---[[@@@
-```lua
-s:hex()             == crypt.hex(s)
-s:unhex()           == crypt.unhex(s)
-s:base64()          == crypt.base64(s)
-s:unbase64()        == crypt.unbase64(s)
-s:base64url()       == crypt.base64url(s)
-s:unbase64url()     == crypt.unbase64url(s)
-s:crc32()           == crypt.crc32(s)
-s:crc64()           == crypt.crc64(s)
-s:arc4(key, drop)   == crypt.arc4(s, key, drop)
-s:unarc4(key, drop) == crypt.unarc4(s, key, drop)
-s:hash()            == crypt.hash(s)
-s:hash32()          == crypt.hash32(s)
-s:hash64()          == crypt.hash64(s)
-s:hash128()         == crypt.hash128(s)
-s:sha1()            == crypt.sha1(s)
-s:sha256()          == crypt.sha256(s)
-s:hash256()         == crypt.hash256(s)
-s:hash512()         == crypt.hash512(s)
-s:hash1024()        == crypt.hash1024(s)
-```
-@@@]]
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 string.hex          = crypt.hex
 string.unhex        = crypt.unhex
@@ -8576,51 +8553,52 @@ string.crc32        = crypt.crc32
 string.crc64        = crypt.crc64
 
 return crypt
-]=])
-package.preload["curl"] = lib("luax/curl.lua", [=[--[[
-This file is part of luax.
+]])
+package.preload["curl"] = lib("luax/curl.lua", [[
 
-luax is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
 
-luax is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
 
-You should have received a copy of the GNU General Public License
-along with luax.  If not, see <https://www.gnu.org/licenses/>.
 
-For further information about luax you can visit
-https://codeberg.org/cdsoft/luax
---]]
 
---@LIB
 
---[[------------------------------------------------------------------------@@@
-# Simple curl interface
 
-```lua
-local curl = require "curl"
-```
 
-`curl` provides functions to execute curl.
-curl must be installed separately.
 
-@@@]]
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 local curl = {
     http = {},
 }
 
 local F = require "F"
+local fs = require "fs"
 local sh = require "sh"
 
---[[------------------------------------------------------------------------@@@
-## curl command line
-@@@]]
+
+
+
 
 local errs = {
     [  0] = "Success. The operation completed successfully according to the instructions.",
@@ -8711,20 +8689,20 @@ local errs = {
     [ 99] = "Poll or select returned fatal error.",
     [100] = "A value or data field grew larger than allowed.",
 
-    -- This error is returned by the shell, not curl
+
     [127] = "curl: command not found",
 }
 
---[[@@@
-```lua
-curl.request(...)
-```
-> Execute `curl` with arguments `...` and returns the output of `curl` (`stdout`).
-> Arguments can be a nested list (it will be flattened).
-> In case of error, `curl` returns `nil`, an error message and an error code
-> (see [curl man page](https://curl.se/docs/manpage.html)).
 
-@@@]]
+
+
+
+
+
+
+
+
+
 
 function curl.request(...)
     local res, _, err = sh("curl", ...)
@@ -8732,75 +8710,75 @@ function curl.request(...)
     return res
 end
 
---[[@@@
-```lua
-curl(...)
-```
-> Like `curl.request(...)` with some default options:
->
-> - `--silent`: silent mode
-> - `--show-error`: show an error message if it fails
-> - `--location`: follow redirections
 
-@@@]]
+
+
+
+
+
+
+
+
+
+
 
 local default_curl_options = {
-    "-s",   --silent
-    "-S",   --show-error
-    "-L",   --location (follow redirections)
+    "-s",
+    "-S",
+    "-L",
 }
 
 setmetatable(curl, { __call = function(_, ...) return curl.request(default_curl_options, ...) end })
 
---[[------------------------------------------------------------------------@@@
-## curl HTTP requests
 
-`curl.http` is meant to be a simple replacement of LuaSocket/LuaSec and OpenSSL.
-It can issue HTTP(S) requests using `curl`.
 
-@@@]]
+
+
+
+
+
 
 local DEFAULT_USER_AGENT = "LuaX/"..require"luax-version".version
 local global_user_agent = DEFAULT_USER_AGENT
 
---[[@@@
-```lua
-curl.http.set_user_agent([user_agent])
-```
-> Define the default User-Agent header used by HTTP requests.
-> If no `user_agent` is given, the default value is used (`LuaX/X.Y`).
-@@@]]
+
+
+
+
+
+
+
 function curl.http.set_user_agent(ua)
     global_user_agent = ua or DEFAULT_USER_AGENT
 end
 
---[[@@@
-```lua
-curl.http.request(method, url, [options])
-```
-> Issue a generic HTTP(S) request, using the method `method` to the target URL `url`.
-> `options` is an optional table:
->
-> - `options.headers`: header table (key names are normalized: `_` is replaced by `-` and words are capitalized)
-> - `options.body`: body of the request (e.g. for `POST` requests)
-> - `options.output_file`: filename where the response data is saved
-> - `options.user_agent`: user agent specific to this request
->
-> It returns a table with the following fields:
->
-> - `ok`: `true` if the requests is successful (i.e. the status is `2XX`)
-> - `status`: HTTP status code
-> - `status_msg`: HTTP status message (if any)
-> - `headers`: response header table with normalized keys (`-` replaced with `_`, all lower case)
->
-> In case of errorn it returns `nil` and an error message.
-@@@]]
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 local function http_ok(code) return code >= 200 and code < 300 end
 
 local function q(s)
-    s = ("%q"):format(s) -- escape special chars
-    s = s:gsub("%$", "\\$") -- escape $ to avoid unwanted interpolations
+    s = ("%q"):format(s)
+    s = s:gsub("%$", "\\$")
     return s
 end
 
@@ -8818,21 +8796,21 @@ function curl.http.request(method, url, options)
     headers["User-Agent"] = headers["User-Agent"] or user_agent
 
     local response, error_message = curl.request {
-        "-L",                           --location
-        "-s",                           --silent
-        "-i",                           --show-headers
-        "-X", method:upper(), url,      --request
+        "-L",
+        "-s",
+        "-i",
+        "-X", method:upper(), url,
         F.mapk2a(function(k, v)
-            return { "-H", q(('%s: %s'):format(k, v)) } --header
+            return { "-H", q(('%s: %s'):format(k, v)) }
         end, headers),
-        body and { "-d", q(body) } or {},               --data
+        body and { "-d", q(body) } or {},
     }
     if not response then return nil, error_message end
 
     local status_line, headers_str, response_body = response:match("^(.-)\r\n(.-)\r\n\r\n(.*)$")
     if not status_line then return nil, "curl: Unexpected reply format" end
 
-    local _, status_code, status_msg = status_line:split(" ", 2):unpack() -- HTTP/X.Y 200 msg...
+    local _, status_code, status_msg = status_line:split(" ", 2):unpack()
     status_code = tonumber(status_code)
 
     local response_headers = {}
@@ -8861,103 +8839,103 @@ function curl.http.request(method, url, options)
     }
 end
 
---[[@@@
-```lua
-curl.http.get(url, [options])
-```
-> Issue a `GET` requests using `http.request`.
-@@@]]
+
+
+
+
+
+
 function curl.http.get(url, options)
     return curl.http.request("GET", url, options)
 end
 
---[[@@@
-```lua
-curl.http.head(url, [options])
-```
-> Issue a `HEAD` requests using `http.request`.
-@@@]]
+
+
+
+
+
+
 function curl.http.head(url, options)
     return curl.http.request("HEAD", url, options)
 end
 
---[[@@@
-```lua
-curl.http.post(url, body, [options])
-```
-> Issue a `POST` requests using `http.request`.
-@@@]]
+
+
+
+
+
+
 function curl.http.post(url, body, options)
     return curl.http.request("POST", url, F.merge{options or {}, {body=body}})
 end
 
---[[@@@
-```lua
-curl.http.put(url, body, [options])
-```
-> Issue a `PUT` requests using `http.request`.
-@@@]]
+
+
+
+
+
+
 function curl.http.put(url, body, options)
     return curl.http.request("PUT", url, F.merge{options or {}, {body=body}})
 end
 
---[[@@@
-```lua
-curl.http.delete(url, [options])
-```
-> Issue a `DELETE` requests using `http.request`.
-@@@]]
+
+
+
+
+
+
 function curl.http.delete(url, options)
     return curl.http.request("DELETE", url, options)
 end
 
---[[@@@
-```lua
-curl.http.connect(url, [options])
-```
-> Issue a `CONNECT` requests using `http.request`.
-@@@]]
+
+
+
+
+
+
 function curl.http.connect(url, options)
     return curl.http.request("CONNECT", url, options)
 end
 
---[[@@@
-```lua
-http.options(url, [options])
-```
-> Issue a `OPTIONS` requests using `http.request`.
-@@@]]
+
+
+
+
+
+
 function curl.http.options(url, options)
     return curl.http.request("OPTIONS", url, options)
 end
 
---[[@@@
-```lua
-curl.http.trace(url, [options])
-```
-> Issue a `TRACE` requests using `http.request`.
-@@@]]
+
+
+
+
+
+
 function curl.http.trace(url, options)
     return curl.http.request("TRACE", url, options)
 end
 
---[[@@@
-```lua
-curl.http.patch(url, body, [options])
-```
-> Issue a `PATCH` requests using `http.request`.
-@@@]]
+
+
+
+
+
+
 function curl.http.patch(url, body, options)
     return curl.http.request("PATCH", url, F.merge{options or {}, {body=body}})
 end
 
---[[@@@
-```lua
-curl.http.download(url, output_file, [options])
-```
-> Issue a `GET` requests using `http.request` and store the response into `output_file`.
-> It returns `true` if the download is successful.
-@@@]]
+
+
+
+
+
+
+
 function curl.http.download(url, output_file, options)
     local response, err = curl.http.request("GET", url, F.merge{options or {}, {output_file=output_file}})
     if not response then return nil, err end
@@ -8965,43 +8943,43 @@ function curl.http.download(url, output_file, options)
     return true
 end
 
---[[@@@
-```lua
-curl(...)
-```
-> Shortcut to `curl.request(...)`.
-@@@]]
+
+
+
+
+
+
 
 setmetatable(curl.http, { __call = function(self, ...) return self.request(...) end })
 
 return curl
-]=])
-package.preload["fs"] = lib("luax/fs.lua", [=[--[[
-This file is part of luax.
+]])
+package.preload["fs"] = lib("luax/fs.lua", [[
 
-luax is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
 
-luax is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
 
-You should have received a copy of the GNU General Public License
-along with luax.  If not, see <https://www.gnu.org/licenses/>.
 
-For further information about luax you can visit
-https://codeberg.org/cdsoft/luax
---]]
 
---[[------------------------------------------------------------------------@@@
-## Additional functions (Lua)
-@@@]]
 
--- Load fs.lua to add new methods to strings
---@LOAD=_
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 local has_fs, fs = pcall(require, "_fs")
 
@@ -9258,7 +9236,7 @@ if not has_fs then
         return sh.run("mkdir", "-p", path)
     end
 
-    function fs.ls(dir, dotted) ---@diagnostic disable-line: unused-local (hidden files not supported in the Lua implementation)
+    function fs.ls(dir, dotted)
         dir = dir or "."
         local base = dir:basename()
         local path = dir:dirname()
@@ -9329,34 +9307,34 @@ if not has_fs then
 
 end
 
---[[@@@
-```lua
-fs.join(...)
-```
-> return a path name made of several path components
-> (separated by `fs.sep`).
-> If a component is absolute, the previous components are removed.
-@@@]]
+
+
+
+
+
+
+
+
 
 function fs.join(...)
-    if __PANDOC__ then return pandoc.path.join(F.flatten{...}) end
+    local function clean_path(p)
+
+        return (p : gsub("[/\\]+", fs.sep) : gsub("[/\\]+$", ""))
+    end
     local function add_path(ps, p)
         if p:match("^"..fs.sep) then return F{p} end
         ps[#ps+1] = p
         return ps
     end
-    return F{...}
-        :flatten()
-        :fold(add_path, F{})
-        :str(fs.sep)
+    return clean_path(F.flatten{...}:fold(add_path, F{}):str(fs.sep))
 end
 
---[[@@@
-```lua
-fs.splitpath(path)
-```
-> return a list of path components.
-@@@]]
+
+
+
+
+
+
 
 function fs.splitpath(path)
     if path == "" then return F{} end
@@ -9365,12 +9343,12 @@ function fs.splitpath(path)
     return components
 end
 
---[[@@@
-```lua
-fs.findpath(name)
-```
-> returns the full path of `name` if `name` is found in `$PATH` or `nil`.
-@@@]]
+
+
+
+
+
+
 
 function fs.findpath(name)
     local function exists_in(path) return fs.is_file(fs.join(path, name)) end
@@ -9381,12 +9359,12 @@ function fs.findpath(name)
     return nil, name..": not found in $PATH"
 end
 
---[[@@@
-```lua
-fs.rmdir(path)
-```
-> deletes the directory `path` and its content recursively.
-@@@]]
+
+
+
+
+
+
 
 function fs.rmdir(path)
     if __PANDOC__ then
@@ -9397,25 +9375,25 @@ function fs.rmdir(path)
     return fs.rm(path)
 end
 
---[[@@@
-```lua
-fs.walk([path], [{reverse=true|false, links=true|false, cross=true|false}])
-```
-> returns a list listing directory and
-> file names in `path` and its subdirectories (the default path is the current
-> directory).
->
-> Options:
->
-> - `stat`: returns the list of stat results instead of just filenames
-> - `reverse`: the list is built in a reverse order
->   (suitable for recursive directory removal)
-> - `cross`: walk across several devices
-> - `func`: function applied to the current file or directory.
->   `func` takes two parameters (path of the file or directory and the stat object returned by `fs.stat`)
->   and returns a boolean (to continue or not walking recursively through the subdirectories)
->   and the value to add to the list.
-@@@]]
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 function fs.walk(path, options)
     options = options or {}
@@ -9481,12 +9459,12 @@ function fs.walk(path, options)
     return F.concat(reverse and {acc_files, acc_dirs} or {acc_dirs, acc_files})
 end
 
---[[@@@
-```lua
-fs.with_tmpfile(f)
-```
-> calls `f(tmp)` where `tmp` is the name of a temporary file.
-@@@]]
+
+
+
+
+
+
 
 function fs.with_tmpfile(f)
     if __PANDOC__ then
@@ -9495,34 +9473,34 @@ function fs.with_tmpfile(f)
         end)
     end
     local tmp = fs.tmpfile()
-    local ret = {f(tmp)}
+    local ret = table.pack(f(tmp))
     fs.rm(tmp)
     return table.unpack(ret)
 end
 
---[[@@@
-```lua
-fs.with_tmpdir(f)
-```
-> calls `f(tmp)` where `tmp` is the name of a temporary directory.
-@@@]]
+
+
+
+
+
+
 
 function fs.with_tmpdir(f)
     if __PANDOC__ then
         return pandoc.system.with_temporary_directory("luax", f)
     end
     local tmp = fs.tmpdir()
-    local ret = {f(tmp)}
+    local ret = table.pack(f(tmp))
     fs.rmdir(tmp)
     return table.unpack(ret)
 end
 
---[[@@@
-```lua
-fs.with_dir(path, f)
-```
-> changes the current working directory to `path` and calls `f()`.
-@@@]]
+
+
+
+
+
+
 
 function fs.with_dir(path, f)
     if __PANDOC__ then
@@ -9531,22 +9509,22 @@ function fs.with_dir(path, f)
     if fs.chdir then
         local old = fs.getcwd()
         fs.chdir(path)
-        local ret = {f(path)}
+        local ret = table.pack(f(path))
         fs.chdir(old)
         return table.unpack(ret)
     end
     error "fs.with_dir not implemented"
 end
 
---[[@@@
-```lua
-fs.expand(path, [vars])
-```
-> returns the expanded path
-> where `"~"` at the beginning of the path is replaced by the home directory of the current user
-> and `$XXX` or `${XXX}` is replaced by the environment variable `XXX`.
-> Variable values can also be taken from the optional `vars` table.
-@@@]]
+
+
+
+
+
+
+
+
+
 
 local function expanduser(path)
     local home = os.getenv(sys.os == "windows" and "USERPROFILE" or "HOME")
@@ -9567,12 +9545,12 @@ function fs.expand(path, vars)
     return expandvars(expanduser(path), vars)
 end
 
---[[@@@
-```lua
-fs.read(filename)
-```
-> returns the content of the text file `filename`.
-@@@]]
+
+
+
+
+
+
 
 function fs.read(name)
     local f<close>, oerr = io.open(name, "r")
@@ -9580,12 +9558,12 @@ function fs.read(name)
     return f:read("a")
 end
 
---[[@@@
-```lua
-fs.write(filename, ...)
-```
-> write `...` to the text file `filename`.
-@@@]]
+
+
+
+
+
+
 
 function fs.write(name, ...)
     local content = F{...}:flatten():str()
@@ -9594,12 +9572,12 @@ function fs.write(name, ...)
     return f:write(content)
 end
 
---[[@@@
-```lua
-fs.read_bin(filename)
-```
-> returns the content of the binary file `filename`.
-@@@]]
+
+
+
+
+
+
 
 function fs.read_bin(name)
     local f<close>, oerr = io.open(name, "rb")
@@ -9607,12 +9585,12 @@ function fs.read_bin(name)
     return f:read("a")
 end
 
---[[@@@
-```lua
-fs.write_bin(filename, ...)
-```
-> write `...` to the binary file `filename`.
-@@@]]
+
+
+
+
+
+
 
 function fs.write_bin(name, ...)
     local content = F{...}:flatten():str()
@@ -9621,31 +9599,31 @@ function fs.write_bin(name, ...)
     return f:write(content)
 end
 
---[[------------------------------------------------------------------------@@@
-## String methods
 
-Some functions of the `fs` package are added to the string module:
 
-@@@]]
 
---[[@@@
-```lua
-path:stat()             == fs.stat(path)
-path:inode()            == fs.inode(path)
-path:basename()         == fs.basename(path)
-path:dirname()          == fs.dirname(path)
-path:splitext()         == fs.splitext(path)
-path:ext()              == fs.ext(path)
-path:chext()            == fs.chext(path)
-path:realpath()         == fs.realpath(path)
-path:readlink()         == fs.readlink(path)
-path:absname()          == fs.absname(path)
-path1 / path2           == fs.join(path1, path2)
-path:is_file()          == fs.is_file(path)
-path:is_dir()           == fs.is_dir(path)
-path:findpath()         == fs.findpath(path)
-```
-@@@]]
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 string.stat             = fs.stat
 string.inode            = fs.inode
@@ -9665,28 +9643,28 @@ string.findpath         = fs.findpath
 getmetatable("").__div  = fs.join
 
 return fs
-]=])
-package.preload["imath"] = lib("luax/imath.lua", [=[--[[
-This file is part of luax.
+]])
+package.preload["imath"] = lib("luax/imath.lua", [[
 
-luax is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
 
-luax is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
 
-You should have received a copy of the GNU General Public License
-along with luax.  If not, see <https://www.gnu.org/licenses/>.
 
-For further information about luax you can visit
-https://codeberg.org/cdsoft/luax
---]]
 
---@LIB
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 local has_imath, imath = pcall(require, "_imath")
 
@@ -9698,7 +9676,7 @@ if not has_imath then
 
     local F = require "F"
 
-    ---@diagnostic disable:unused-vararg
+
     local function ni(f) return function(...) error(f.." not implemented") end end
 
     local floor = math.floor
@@ -9736,7 +9714,7 @@ if not has_imath then
         assert(type(n) == "string")
         n = n:gsub("[ _]", "")
         local sign = 1
-        local d = 1 -- current digit index
+        local d = 1
         if n:sub(d, d) == "+" then d = d+1
         elseif n:sub(d, d) == "-" then sign = -1; d = d+1
         end
@@ -9826,7 +9804,7 @@ if not has_imath then
     end
 
     local function int_cmp(a, b)
-        if #a == 0 and #b == 0 then return 0 end -- 0 == -0
+        if #a == 0 and #b == 0 then return 0 end
         if a.s ~= b.s then return a.s > b.s and 1 or -1 end
         if #a ~= #b then return #a > #b and a.s or -a.s end
         for i = #a, 1, -1 do
@@ -9875,7 +9853,7 @@ if not has_imath then
             if c[i] < 0 then c[i], carry = c[i] + RADIX, 1
             else carry = 0 end
         end
-        assert(carry == 0) -- should be true if |A| >= |B|
+        assert(carry == 0)
         c.s = (cmp >= 0) and a.s or -a.s
         int_trim(c)
         return c
@@ -9928,32 +9906,32 @@ if not has_imath then
         assert(not int_iszero(b), "Division by zero")
         if int_abscmp(a, b) < 0 then return int_zero, int_abs(a) end
 
-        if #b == 1 then -- short division
+        if #b == 1 then
             local q, r = int_shortdiv(a, b[1])
             return q, int(r)
         end
 
-        -- Knuth algorithm (D)
-        local n = #b        -- size of the divider
-        local m = #a - n    -- size of the quotient
-        -- D1: normalization
+
+        local n = #b
+        local m = #a - n
+
         local d = RADIX // (b[n] + 1)
         local u = mul_scalar(a, d)
         local v = mul_scalar(b, d)
-        while #u < m+n+1 do u[#u+1] = 0 end -- u shall contain m+n+1 digits
+        while #u < m+n+1 do u[#u+1] = 0 end
         local vn = v[n]
         local vn1 = v[n-1]
         local q = int()
         for j = 1, m+1 do q[j] = 0 end
-        -- D2-D7: main loop
+
         for j = m, 0, -1 do
-            -- D3: estimate q̂
+
             local idx = j + n + 1
             local uj, uj1, uj2 = u[idx] or 0, u[idx-1] or 0, u[idx-2] or 0
             local num = uj*RADIX + uj1
             local qhat = num // vn
             local rhat = num % vn
-            -- Correction 1: is q̂ >= RADIX or q̂*v[n-1] > RADIX*rhat + u[j+n-1]
+
             while true do
                 if qhat >= RADIX then
                     qhat = RADIX-1
@@ -9964,7 +9942,7 @@ if not has_imath then
                 rhat = rhat + vn
                 if rhat >= RADIX then break end
             end
-            -- D4: substract q̂ * v shifted by u
+
             local borrow = 0
             for i = 1, n do
                 local p = qhat * v[i]
@@ -9978,9 +9956,9 @@ if not has_imath then
             end
             local top = u[j+n+1] - borrow
             u[j+n+1] = top
-            -- D5: quotient digit
+
             q[j+1] = qhat
-            -- D6: substract top
+
             if top < 0 then
                 q[j+1] = qhat - 1
                 local carry = 0
@@ -9991,7 +9969,7 @@ if not has_imath then
                 u[j+n+1] = (u[j+n+1] + carry) % RADIX
             end
         end
-        -- D8: remainder denormalization
+
         local r_norm = {}
         for i = 1, n do r_norm[i] = u[i] end
         local rem_carry = 0
@@ -10013,7 +9991,7 @@ if not has_imath then
         return q, r
     end
 
-    -- sqrt: integral Newton-Raphson iteration
+
     local function int_sqrt(a)
         assert(a.s >= 0, "Square root of a negative number")
         if int_iszero(a) then return int_zero end
@@ -10197,98 +10175,98 @@ if not has_imath then
 end
 
 return imath
-]=])
-package.preload["import"] = lib("luax/import.lua", [=[--[[
-This file is part of luax.
+]])
+package.preload["import"] = lib("luax/import.lua", [[
 
-luax is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
 
-luax is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
 
-You should have received a copy of the GNU General Public License
-along with luax.  If not, see <https://www.gnu.org/licenses/>.
 
-For further information about luax you can visit
-https://codeberg.org/cdsoft/luax
---]]
 
---@LIB
 
---[[------------------------------------------------------------------------@@@
-# import: import Lua scripts into tables
 
-```lua
-local import = require "import"
-```
 
-The import module can be used to manage simple configuration files,
-configuration parameters being global variables defined in the configuration file.
 
-```lua
-local conf = import("myconf.lua", [env])
-```
-> Evaluates `"myconf.lua"` in a new table and returns this table.
-> All files are tracked in `package.modpath`.
->
-> The execution environment inherits from `env` (or `_ENV` if `env` is not defined).
-@@@]]
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 return function(fname, env)
     local mod = setmetatable({}, {__index = env or _ENV})
     assert(loadfile(fname, "t", mod))()
     return mod
 end
-]=])
-package.preload["json"] = lib("luax/json.lua", [===[-- Module options:
+]])
+package.preload["json"] = lib("luax/json.lua", [[
 local always_use_lpeg = false
 local register_global_module_table = false
 local global_module_name = 'json'
 
---[==[
-
-David Kolf's JSON module for Lua 5.1 - 5.5
-
-Version 2.10
 
 
-For the documentation see the corresponding readme.txt or visit
-<http://dkolf.de/dkjson-lua/>.
-
-You can contact the author by sending an e-mail to 'david' at the
-domain 'dkolf.de'.
 
 
-Copyright (C) 2010-2026 David Heiko Kolf
 
-Permission is hereby granted, free of charge, to any person obtaining
-a copy of this software and associated documentation files (the
-"Software"), to deal in the Software without restriction, including
-without limitation the rights to use, copy, modify, merge, publish,
-distribute, sublicense, and/or sell copies of the Software, and to
-permit persons to whom the Software is furnished to do so, subject to
-the following conditions:
 
-The above copyright notice and this permission notice shall be
-included in all copies or substantial portions of the Software.
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
-EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
-NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS
-BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN
-ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
-CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
 
---]==]
 
--- global dependencies:
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 local pairs, type, tostring, tonumber, getmetatable, setmetatable =
       pairs, type, tostring, tonumber, getmetatable, setmetatable
 local error, require, pcall, select = error, require, pcall, select
@@ -10311,11 +10289,11 @@ if register_global_module_table then
   end
 end
 
-local _ENV = nil -- blocking globals in Lua 5.2 and later
+local _ENV = nil
 
 pcall (function()
-  -- Enable access to blocked metatables.
-  -- Don't worry, this module doesn't change anything in them.
+
+
   local debmeta = require "debug".getmetatable
   if debmeta then getmetatable = debmeta end
 end)
@@ -10343,7 +10321,7 @@ local function isarray (tbl)
     end
   end
   if max > 10 and max > arraylen and max > n * 2 then
-    return false -- don't create an array with too many holes
+    return false
   end
   return true, max
 end
@@ -10374,7 +10352,7 @@ local function escapeutf8 (uchar)
   if value <= 0xffff then
     return strformat ("\\u%.4x", value)
   elseif value <= 0x10ffff then
-    -- encode as UTF-16 surrogate pair
+
     value = value - 0x10000
     local highsur, lowsur = 0xD800 + floor (value/0x400), 0xDC00 + (value % 0x400)
     return strformat ("\\u%.4x\\u%.4x", highsur, lowsur)
@@ -10384,9 +10362,9 @@ local function escapeutf8 (uchar)
 end
 
 local function fsub (str, pattern, repl)
-  -- gsub always builds a new string in a buffer, even when no match
-  -- exists. First using find should be more efficient when most strings
-  -- don't contain the pattern.
+
+
+
   if strfind (str, pattern) then
     return gsub (str, pattern, repl)
   else
@@ -10395,7 +10373,7 @@ local function fsub (str, pattern, repl)
 end
 
 local function quotestring (value)
-  -- based on the regexp "escapable" in https://github.com/douglascrockford/JSON-js
+
   value = fsub (value, "[%z\1-\31\"\\\127]", escapeutf8)
   if strfind (value, "[\194\216\220\225\226\239]") then
     value = fsub (value, "\194[\128-\159\173]", escapeutf8)
@@ -10420,12 +10398,12 @@ local function replace(str, o, n)
   end
 end
 
--- locale independent num2str and str2num functions
+
 local decpoint, numfilter
 
 local function updatedecpoint ()
   decpoint = strmatch(tostring(0.5), "([^05+])")
-  -- build a filter that can be used to remove group separators
+
   numfilter = "[^0-9%-%+eE" .. gsub(decpoint, "[%^%$%(%)%%%.%[%]%*%+%-%?]", "%%%0") .. "]+"
 end
 
@@ -10458,7 +10436,7 @@ function json.addnewline (state)
   end
 end
 
-local encode2 -- forward declaration
+local encode2
 
 local function addpair (key, value, prev, indent, level, buffer, buflen, tables, globalorder, state)
   local kt = type (key)
@@ -10472,10 +10450,10 @@ local function addpair (key, value, prev, indent, level, buffer, buflen, tables,
   if indent then
     buflen = addnewline2 (level, buffer, buflen)
   end
-  -- When Lua is compiled with LUA_NOCVTN2S this will fail when
-  -- numbers are mixed into the keys of the table. JSON keys are always
-  -- strings, so this would be an implicit conversion too and the failure
-  -- is intentional.
+
+
+
+
   buffer[buflen+1] = quotestring (key)
   buffer[buflen+2] = ":"
   return encode2 (value, indent, level, buffer, buflen + 2, tables, globalorder, state)
@@ -10510,7 +10488,7 @@ end
 encode2 = function (value, indent, level, buffer, buflen, tables, globalorder, state)
   local valtype = type (value)
   local valmeta = getmetatable (value)
-  valmeta = type (valmeta) == 'table' and valmeta -- only tables
+  valmeta = type (valmeta) == 'table' and valmeta
   local valtojson = valmeta and valmeta.__tojson
   if valtojson then
     if tables[value] then
@@ -10528,7 +10506,7 @@ encode2 = function (value, indent, level, buffer, buflen, tables, globalorder, s
   elseif valtype == 'number' then
     local s
     if value ~= value or value >= huge or -value >= huge then
-      -- This is the behaviour of the original JSON implementation.
+
       s = "null"
     else
       s = num2str (value)
@@ -10552,7 +10530,7 @@ encode2 = function (value, indent, level, buffer, buflen, tables, globalorder, s
       isa = false
     end
     local msg
-    if isa then -- JSON array
+    if isa then
       buflen = buflen + 1
       buffer[buflen] = "["
       for i = 1, n do
@@ -10565,7 +10543,7 @@ encode2 = function (value, indent, level, buffer, buflen, tables, globalorder, s
       end
       buflen = buflen + 1
       buffer[buflen] = "]"
-    else -- JSON object
+    else
       local prev = false
       buflen = buflen + 1
       buffer[buflen] = "{"
@@ -10581,21 +10559,21 @@ encode2 = function (value, indent, level, buffer, buflen, tables, globalorder, s
             used[k] = true
             buflen, msg = addpair (k, v, prev, indent, level, buffer, buflen, tables, globalorder, state)
             if not buflen then return nil, msg end
-            prev = true -- add a seperator before the next element
+            prev = true
           end
         end
         for k,v in pairs (value) do
           if not used[k] then
             buflen, msg = addpair (k, v, prev, indent, level, buffer, buflen, tables, globalorder, state)
             if not buflen then return nil, msg end
-            prev = true -- add a seperator before the next element
+            prev = true
           end
         end
-      else -- unordered
+      else
         for k,v in pairs (value) do
           buflen, msg = addpair (k, v, prev, indent, level, buffer, buflen, tables, globalorder, state)
           if not buflen then return nil, msg end
-          prev = true -- add a seperator before the next element
+          prev = true
         end
       end
       if indent then
@@ -10656,13 +10634,13 @@ local function scanwhite (str, pos)
     pos = strmatch (str, "%s*()", pos)
     local n1, n2, n3 = strbyte (str, pos, pos + 2)
     if n1 == 239 and n2 == 187 and n3 == 191 then
-      -- UTF-8 Byte Order Mark
+
       pos = pos + 3
     elseif n1 == 47 then
-      if n2 == 47 then -- "//"
+      if n2 == 47 then
         pos = strfind (str, "[\n\r]", pos + 2)
         if not pos then return nil end
-      elseif n2 == 42 then -- "/*"
+      elseif n2 == 42 then
         pos = strfind (str, "*/", pos + 2)
         if not pos then return nil end
         pos = pos + 2
@@ -10716,7 +10694,7 @@ local function scanstring (str, pos)
       n = n + 1
       buffer[n] = strsub (str, lastpos, nextpos - 1)
     end
-    if strbyte (str, nextpos) == 34 then -- '"'
+    if strbyte (str, nextpos) == 34 then
       lastpos = nextpos + 1
       break
     else
@@ -10727,14 +10705,14 @@ local function scanstring (str, pos)
         if value then
           local value2
           if 0xD800 <= value and value <= 0xDBff then
-            -- we have the high surrogate of UTF-16. Check if there is a
-            -- low surrogate escaped nearby to combine them.
+
+
             if strsub (str, nextpos + 6, nextpos + 7) == "\\u" then
               value2 = tonumber (strsub (str, nextpos + 8, nextpos + 11), 16)
               if value2 and 0xDC00 <= value2 and value2 <= 0xDFFF then
                 value = (value - 0xD800)  * 0x400 + (value2 - 0xDC00) + 0x10000
               else
-                value2 = nil -- in case it was out of range for a low surrogate
+                value2 = nil
               end
             end
           end
@@ -10765,7 +10743,7 @@ local function scanstring (str, pos)
   end
 end
 
-local scanvalue -- forward declaration
+local scanvalue
 
 local function scanobject (str, startpos, nullval, objectmeta, arraymeta)
   local tbl = setmetatable ({}, objectmeta)
@@ -10775,9 +10753,9 @@ local function scanobject (str, startpos, nullval, objectmeta, arraymeta)
     local char
     pos, char = scanwhite (str, pos)
     local key, err
-    if char == 34 then -- '"'
+    if char == 34 then
       key, pos, err = scanstring (str, pos)
-    elseif char == 125 then -- "}"
+    elseif char == 125 then
       return tbl, pos + 1
     elseif not pos then
       return unterminated (str, "object", startpos)
@@ -10787,7 +10765,7 @@ local function scanobject (str, startpos, nullval, objectmeta, arraymeta)
     if err then return nil, pos, err end
 
     char = strbyte (str, pos)
-    if char ~= 58 then -- ":"
+    if char ~= 58 then
       pos, char = scanwhite (str, pos)
       if char ~= 58 then
         return nil, pos, "missing colon at " .. loc (str, pos)
@@ -10802,7 +10780,7 @@ local function scanobject (str, startpos, nullval, objectmeta, arraymeta)
     tbl[key] = val
 
     char = strbyte (str, pos)
-    if char == 44 then -- ","
+    if char == 44 then
       pos = pos + 1
     else
       pos, char = scanwhite (str, pos)
@@ -10824,7 +10802,7 @@ local function scanarray (str, startpos, nullval, objectmeta, arraymeta)
     local char
     pos, char = scanwhite (str, pos)
 
-    if char == 93 then -- "]"
+    if char == 93 then
       return tbl, pos + 1
     elseif not pos then
       return unterminated (str, "array", startpos)
@@ -10837,7 +10815,7 @@ local function scanarray (str, startpos, nullval, objectmeta, arraymeta)
     tbl[n] = val
 
     char = strbyte (str, pos)
-    if char == 44 then -- ","
+    if char == 44 then
       pos = pos + 1
     else
       pos, char = scanwhite (str, pos)
@@ -10880,19 +10858,19 @@ scanvalue = function (str, pos, nullval, objectmeta, arraymeta)
   local c
   pos, c = scanwhite (str, pos)
 
-  if c == 34 then -- '"'
+  if c == 34 then
     return scanstring (str, pos)
-  elseif c == 123 then -- "{"
+  elseif c == 123 then
     return scanobject (str, pos, nullval, objectmeta, arraymeta)
-  elseif c == 91 then -- "["
+  elseif c == 91 then
     return scanarray (str, pos, nullval, objectmeta, arraymeta)
-  elseif c == 45 or (c >= 48 and c <= 57) then -- "-", "0"..."9"
+  elseif c == 45 or (c >= 48 and c <= 57) then
     return scannumber (str, pos)
-  elseif c == 116 then -- "t"
+  elseif c == 116 then
     return scanliteral (str, pos, "true", true)
-  elseif c == 102 then -- "f"
+  elseif c == 102 then
     return scanliteral (str, pos, "false", false)
-  elseif c == 110 then -- "n"
+  elseif c == 110 then
     return scanliteral (str, pos, "null", nullval)
   elseif not pos then
     return nil, strlen (str) + 1, "no valid JSON value (reached the end)"
@@ -10974,8 +10952,8 @@ function json.use_lpeg ()
   local SimpleValue = Number + String + Constant
   local ArrayContent, ObjectContent
 
-  -- The functions parsearray and parseobject parse only a single value/pair
-  -- at a time and store them directly to avoid hitting the LPeg limits.
+
+
   local function parsearray (str, pos, nullval, state)
     local obj, cont
     local start = pos
@@ -11044,7 +11022,7 @@ function json.use_lpeg ()
     end
   end
 
-  -- cache result of this function:
+
   json.use_lpeg = function () return jsonlpeg end
   jsonlpeg.use_lpeg = json.use_lpeg
 
@@ -11056,28 +11034,28 @@ if always_use_lpeg then
 end
 
 return json
-]===])
-package.preload["lar"] = lib("luax/lar.lua", [=[--[[
-This file is part of luax.
+]])
+package.preload["lar"] = lib("luax/lar.lua", [[
 
-luax is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
 
-luax is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
 
-You should have received a copy of the GNU General Public License
-along with luax.  If not, see <https://www.gnu.org/licenses/>.
 
-For further information about luax you can visit
-https://codeberg.org/cdsoft/luax
---]]
 
---@LIB
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 local F = require "F"
 local cbor = require "cbor"
@@ -11085,24 +11063,24 @@ local crypt = require "crypt"
 local lz4 = require "lz4"
 local lzip = require "lzip"
 
---[[------------------------------------------------------------------------@@@
-## Lua Archive
-@@@]]
 
---[[@@@
-```lua
-local lar = require "lar"
-```
 
-`lar` is a simple archive format for Lua values (e.g. Lua tables).
-It contains a Lua value:
 
-- serialized with `cbor`
-- compressed with `lz4` or `lzip`
-- encrypted with `arc4`
 
-The Lua value is only encrypted if a key is provided.
-@@@]]
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 local lar = {}
 
 local MAGIC = "!<LuaX archive>"
@@ -11125,24 +11103,24 @@ local function find_options(x)
     return compression_options[1]
 end
 
---[[@@@
-```lua
-lar.lar(lua_value, [opt])
-```
-> Returns a string with `lua_value` serialized, compressed and encrypted.
->
-> Options:
->
-> - `opt.compress`: compression algorithm (`"lzip"` by default):
->
->     - `"none"`: no compression
->     - `"lz4"`: compression with LZ4 (default compression level)
->     - `"lz4-#"`: compression with LZ4 (compression level `#` with `#` between 0 and 12)
->     - `"lzip"`: compression with lzip (default compression level)
->     - `"lzip-#"`: compression with lzip (compression level `#` with `#` between 0 and 9)
->
-> - `opt.key`: encryption key (no encryption by default)
-@@@]]
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 function lar.lar(lua_value, lar_opt)
     lar_opt = lar_opt or {}
@@ -11157,16 +11135,16 @@ function lar.lar(lua_value, lar_opt)
     return data .. string.pack("<I8", data:crc64())
 end
 
---[[@@@
-```lua
-lar.unlar(archive, [opt])
-```
-> Returns the Lua value contained in a serialized, compressed and encrypted string.
->
-> Options:
->
-> - `opt.key`: encryption key (no encryption by default)
-@@@]]
+
+
+
+
+
+
+
+
+
+
 
 function lar.unlar(archive, opt)
     opt = opt or {}
@@ -11185,28 +11163,28 @@ function lar.unlar(archive, opt)
 end
 
 return lar
-]=])
-package.preload["linenoise"] = lib("luax/linenoise.lua", [=[--[[
-This file is part of luax.
+]])
+package.preload["linenoise"] = lib("luax/linenoise.lua", [[
 
-luax is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
 
-luax is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
 
-You should have received a copy of the GNU General Public License
-along with luax.  If not, see <https://www.gnu.org/licenses/>.
 
-For further information about luax you can visit
-https://codeberg.org/cdsoft/luax
---]]
 
---@LIB
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 local has_linenoise, linenoise = pcall(require, "_linenoise")
 if has_linenoise then return linenoise end
@@ -11215,47 +11193,99 @@ local read = require "term".prompt
 local function nop() return nop end
 
 return setmetatable({read=read}, {__index=nop})
-]=])
-package.preload["luax-debug"] = lib("luax/luax-debug.lua", [==[--[[
-This file is part of luax.
+]])
+package.preload["luax-compat"] = lib("luax/luax-compat.lua", [[
 
-luax is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
 
-luax is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
 
-You should have received a copy of the GNU General Public License
-along with luax.  If not, see <https://www.gnu.org/licenses/>.
 
-For further information about luax you can visit
-https://codeberg.org/cdsoft/luax
---]]
 
---@LOAD=_
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+local function lua54()
+
+    local mathx = require "mathx"
+
+
+
+
+
+    math.frexp = mathx.frexp
+    math.ldexp = mathx.ldexp
+
+
+
+
+
+
+    table.create = function(nseq, nrec) return {} end
+
+end
+
+local function lua55()
+end
+
+if _VERSION == "Lua 5.4" then return lua54() end
+if _VERSION == "Lua 5.5" then return lua55() end
+
+io.stderr:write(_VERSION, ": unsupported Lua version\n")
+]])
+package.preload["luax-debug"] = lib("luax/luax-debug.lua", [[
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 local F = require "F"
 
--- This module adds some functions to the debug package.
 
---[=[-----------------------------------------------------------------------@@@
-# debug
 
-The standard Lua package `debug` is added some functions to help debugging.
-@@@]=]
 
---[[@@@
-```lua
-debug.locals(level)
-```
-> table containing the local variables at a given level `level`.
-  The default level is the caller level (1).
-  If `level` is a function, `locals` returns the names of the function parameters.
-@@@]]
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 function debug.locals(level)
     local vars = F{}
@@ -11285,59 +11315,59 @@ function debug.locals(level)
 end
 
 return debug
-]==])
-package.preload["luax-package"] = lib("luax/luax-package.lua", [==[--[[
-This file is part of luax.
+]])
+package.preload["luax-package"] = lib("luax/luax-package.lua", [[
 
-luax is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
 
-luax is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
 
-You should have received a copy of the GNU General Public License
-along with luax.  If not, see <https://www.gnu.org/licenses/>.
 
-For further information about luax you can visit
-https://codeberg.org/cdsoft/luax
---]]
 
---@LOAD=_
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 local F = require "F"
 
 local package  = require "package"
 
--- inspired by https://stackoverflow.com/questions/60283272/how-to-get-the-exact-path-to-the-script-that-was-loaded-in-lua
 
--- This module wraps package searchers in a function that tracks package paths.
--- The paths are stored in package.modpath, which can be used to generate dependency files
--- for [ypp](https://codeberg.org/cdsoft/luax) or [panda](https://codeberg.org/cdsoft/panda).
 
---[=[-----------------------------------------------------------------------@@@
-# package
 
-The standard Lua package `package` is added some information about packages loaded by LuaX.
-@@@]=]
 
---[[@@@
-```lua
-package.modpath      -- { module_name = module_path }
-```
-> table containing the names of the loaded packages and their actual paths.
->
-> `package.modpath` contains the names of the packages loaded by `require`, `dofile`, `loadfile`, `import`
-> and `toml.parse`.
 
-```lua
-package.track(name, [path])     -- package.modpath[name] = path or name
-```
-> add `name` to `package.modpath`.
-@@@]]
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 package.modpath = F{}
 
@@ -11374,7 +11404,7 @@ loadfile = wrap(loadfile)
 local toml = require "toml"
 local _toml_parse = toml.parse
 
----@diagnostic disable-next-line: duplicate-set-field
+
 toml.parse = function(filename, options)
     if not options or not options.load_from_string then
         package.track(filename)
@@ -11383,63 +11413,91 @@ toml.parse = function(filename, options)
 end
 
 return package
-]==])
-package.preload["luax-targets"] = lib("luax/luax-targets.lua", [=[--[[
-This file is part of luax.
+]])
+package.preload["luax-targets"] = lib("luax/luax-targets.lua", [[
 
-luax is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
 
-luax is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
 
-You should have received a copy of the GNU General Public License
-along with luax.  If not, see <https://www.gnu.org/licenses/>.
 
-For further information about luax you can visit
-https://codeberg.org/cdsoft/luax
---]]
 
---@LIB
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 local F = require "F"
 
---[[ Target definitions:
 
-Field       Description                         Value
------------ ----------------------------------- -------------------------------------------------------------
-name        LuaX target name                    "OS"-"ARCH"[-musl]
-machine     architecture name                   uname -m on Linux/MacOS, %PROCESSOR_ARCHITECTURE% on Windows
-kernel      OS kernel                           uname -s on Linux/MacOS, %OS% on Windows
-os          OS name known by LuaX               linux, macos, windows
-arch        architecture name known by LuaX     x86_64, aarch64
-libc        C library name                      gnu, musl, none
-exe         executable file extension           .exe on Windows
-so          shared library file extension       .so, .dylib, .dll
 
---]]
+
+
+
+
+
+
+
+
+
+
+
+
 
 return F{
+
     {name="linux-x86_64",       machine="x86_64",  kernel="Linux",      os="linux",   arch="x86_64",  libc="gnu",   exe="",     so=".so"   },
     {name="linux-x86_64-musl",  machine="x86_64",  kernel="Linux",      os="linux",   arch="x86_64",  libc="musl",  exe="",     so=".so"   },
     {name="linux-aarch64",      machine="aarch64", kernel="Linux",      os="linux",   arch="aarch64", libc="gnu",   exe="",     so=".so"   },
     {name="linux-aarch64-musl", machine="aarch64", kernel="Linux",      os="linux",   arch="aarch64", libc="musl",  exe="",     so=".so"   },
+
+    {name="linux-x86",          machine="i686",    kernel="Linux",      os="linux",   arch="x86",     libc="gnu",   exe="",     so=".so"   },
+    {name="linux-x86-musl",     machine="i686",    kernel="Linux",      os="linux",   arch="x86",     libc="musl",  exe="",     so=".so"   },
+
     {name="macos-x86_64",       machine="x86_64",  kernel="Darwin",     os="macos",   arch="x86_64",  libc="none",  exe="",     so=".dylib"},
     {name="macos-aarch64",      machine="arm64",   kernel="Darwin",     os="macos",   arch="aarch64", libc="none",  exe="",     so=".dylib"},
+
     {name="windows-x86_64",     machine="AMD64",   kernel="Windows_NT", os="windows", arch="x86_64",  libc="gnu",   exe=".exe", so=".dll"  },
     {name="windows-aarch64",    machine="ARM64",   kernel="Windows_NT", os="windows", arch="aarch64", libc="gnu",   exe=".exe", so=".dll"  },
 }
-]=])
-package.preload["luax-version"] = lib("luax/luax-version.lua", [[local version = "10.6.6"
+]])
+package.preload["luax-version"] = lib("luax/luax-version.lua", [[
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+local version = "10.9.4"
 local year = 2026
 local url = "codeberg.org/cdsoft/luax"
 local author = "Christophe Delord"
-
---@LIB
 
 return setmetatable({
     version = version,
@@ -11450,28 +11508,28 @@ return setmetatable({
     __tostring = function() return "LuaX "..version end,
 })
 ]])
-package.preload["lz4"] = lib("luax/lz4.lua", [=[--[[
-This file is part of luax.
+package.preload["lz4"] = lib("luax/lz4.lua", [[
 
-luax is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
 
-luax is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
 
-You should have received a copy of the GNU General Public License
-along with luax.  If not, see <https://www.gnu.org/licenses/>.
 
-For further information about luax you can visit
-https://codeberg.org/cdsoft/luax
---]]
 
--- Load lz4.lua to add new methods to strings
---@LOAD=_
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 local has_lz4, lz4 = pcall(require, "_lz4")
 
@@ -11506,46 +11564,46 @@ if not has_lz4 then
 
 end
 
---[[------------------------------------------------------------------------@@@
-## String methods
 
-The `lz4` functions are also available as `string` methods:
-@@@]]
 
---[[@@@
-```lua
-s:lz4()         == lz4.lz4(s)
-s:unlz4()       == lz4.unlz4(s)
-```
-@@@]]
+
+
+
+
+
+
+
+
+
+
 
 string.lz4      = lz4.lz4
 string.unlz4    = lz4.unlz4
 
 return lz4
-]=])
-package.preload["lzip"] = lib("luax/lzip.lua", [=[--[[
-This file is part of luax.
+]])
+package.preload["lzip"] = lib("luax/lzip.lua", [[
 
-luax is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
 
-luax is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
 
-You should have received a copy of the GNU General Public License
-along with luax.  If not, see <https://www.gnu.org/licenses/>.
 
-For further information about luax you can visit
-https://codeberg.org/cdsoft/luax
---]]
 
--- Load lzip.lua to add new methods to strings
---@LOAD=_
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 local has_lzip, lzip = pcall(require, "_lzip")
 
@@ -11582,45 +11640,45 @@ if not has_lzip then
 
 end
 
---[[------------------------------------------------------------------------@@@
-## String methods
 
-The `lzip` functions are also available as `string` methods:
-@@@]]
 
---[[@@@
-```lua
-s:lzip()        == lzip.lzip(s)
-s:unlzip()      == lzip.unlzip(s)
-```
-@@@]]
+
+
+
+
+
+
+
+
+
+
 
 string.lzip     = lzip.lzip
 string.unlzip   = lzip.unlzip
 
 return lzip
-]=])
-package.preload["mathx"] = lib("luax/mathx.lua", [=[--[[
-This file is part of luax.
+]])
+package.preload["mathx"] = lib("luax/mathx.lua", [[
 
-luax is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
 
-luax is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
 
-You should have received a copy of the GNU General Public License
-along with luax.  If not, see <https://www.gnu.org/licenses/>.
 
-For further information about luax you can visit
-https://codeberg.org/cdsoft/luax
---]]
 
---@LIB
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 local has_mathx, mathx = pcall(require, "_mathx")
 if has_mathx then return mathx end
@@ -11641,7 +11699,7 @@ local unpack = string.unpack
 
 local inf <const> = 1/0
 
----@diagnostic disable:unused-vararg
+
 local function ni(f) return function(...) error(f.." not implemented") end end
 
 local function sign(x) return x < 0 and -1 or 1 end
@@ -11736,28 +11794,28 @@ mathx.nan = math.abs(0/0)
 mathx.pi = math.pi
 
 return mathx
-]=])
-package.preload["ps"] = lib("luax/ps.lua", [=[--[[
-This file is part of luax.
+]])
+package.preload["ps"] = lib("luax/ps.lua", [[
 
-luax is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
 
-luax is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
 
-You should have received a copy of the GNU General Public License
-along with luax.  If not, see <https://www.gnu.org/licenses/>.
 
-For further information about luax you can visit
-https://codeberg.org/cdsoft/luax
---]]
 
---@LIB
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 local has_ps, ps = pcall(require, "_ps")
 
@@ -11765,55 +11823,53 @@ if not has_ps then
 
     ps = {}
 
+    local pack, unpack = table.pack, table.unpack
+    local clock = os.clock
+
     function ps.sleep(n)
         io.popen("sleep "..tostring(n)):close()
     end
 
     ps.time = os.time
 
-    ps.clock = os.clock
+    ps.clock = clock
 
-    function ps.profile(func)
-        local clock = ps.clock
-        local ok, dt = pcall(function()
-            local t0 = clock()
-            func()
-            local t1 = clock()
-            return t1 - t0
-        end)
-        if ok then
-            return dt
+    function ps.profile(func, ...)
+        local t0 = clock()
+        local results = pack(pcall(func, ...))
+        local t1 = clock()
+        if results[1] then
+            return t1 - t0, unpack(results, 2, results.n)
         else
-            return ok, dt
+            return results[1], results[2]
         end
-
     end
 
 end
 
 return ps
-]=])
-package.preload["qmath"] = lib("luax/qmath.lua", [=[--[[
-This file is part of luax.
+]])
+package.preload["qmath"] = lib("luax/qmath.lua", [[
 
-luax is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
 
-luax is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
 
-You should have received a copy of the GNU General Public License
-along with luax.  If not, see <https://www.gnu.org/licenses/>.
 
-For further information about luax you can visit
-https://codeberg.org/cdsoft/luax
---]]
 
---@LIB
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 local has_qmath, qmath = pcall(require, "_qmath")
 
 if not has_qmath then
@@ -11940,18 +11996,18 @@ if not has_qmath then
 
 end
 
---[[@@@
-## qmath additional functions
-@@@]]
 
---[[@@@
-```lua
-q = qmath.torat(x, [eps])
-```
-approximates a floating point number `x` with a rational value.
-The rational number `q` is an approximation of `x` such that $|q - x| < eps$.
-The default `eps` value is $10^{-6}$.
-@@@]]
+
+
+
+
+
+
+
+
+
+
+
 
 local rat = qmath.new
 local abs = math.abs
@@ -11979,28 +12035,28 @@ function qmath.torat(x, eps)
 end
 
 return qmath
-]=])
-package.preload["readline"] = lib("luax/readline.lua", [=[--[[
-This file is part of luax.
+]])
+package.preload["readline"] = lib("luax/readline.lua", [[
 
-luax is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
 
-luax is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
 
-You should have received a copy of the GNU General Public License
-along with luax.  If not, see <https://www.gnu.org/licenses/>.
 
-For further information about luax you can visit
-https://codeberg.org/cdsoft/luax
---]]
 
---@LIB
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 local has_readline, readline = pcall(require, "_readline")
 if has_readline then return readline end
@@ -12009,18 +12065,18 @@ local read = require "term".prompt
 local function nop() return nop end
 
 return setmetatable({read=read}, {__index=nop})
-]=])
-package.preload["serpent"] = lib("luax/serpent.lua", [=[local n, v = "serpent", "0.303" -- (C) 2012-18 Paul Kulchenko; MIT License
+]])
+package.preload["serpent"] = lib("luax/serpent.lua", [=[local n, v = "serpent", "0.303"
 local c, d = "Paul Kulchenko", "Lua serializer and pretty printer"
 local snum = {[tostring(1/0)]='1/0 --[[math.huge]]',[tostring(-1/0)]='-1/0 --[[-math.huge]]',[tostring(0/0)]='0/0'}
 local badtype = {thread = true, userdata = true, cdata = true}
 local getmetatable = debug and debug.getmetatable or getmetatable
-local pairs = function(t) return next, t end -- avoid using __pairs in Lua 5.2+
+local pairs = function(t) return next, t end
 local keyword, globals, G = {}, {}, (_G or _ENV)
 for _,k in ipairs({'and', 'break', 'do', 'else', 'elseif', 'end', 'false',
   'for', 'function', 'goto', 'if', 'in', 'local', 'global', 'nil', 'not', 'or', 'repeat',
   'return', 'then', 'true', 'until', 'while'}) do keyword[k] = true end
-for k,v in pairs(G) do globals[v] = k end -- build func to name mapping
+for k,v in pairs(G) do globals[v] = k end
 for _,g in ipairs({'coroutine', 'debug', 'io', 'math', 'string', 'table', 'os'}) do
   for k,v in pairs(type(G[g]) == 'table' and G[g] or {}) do if v==v then globals[v] = g..'.'..k end end end
 
@@ -12033,12 +12089,12 @@ local function s(t, opts)
   local numformat = opts.numformat or "%.17g"
   local seen, sref, syms, symn = {}, {'local '..iname..'={}'}, {}, 0
   local function gensym(val) return '_'..(tostring(tostring(val)):gsub("[^%w]",""):gsub("(%d%w+)",
-    -- tostring(val) is needed because __tostring may return a non-string value
+
     function(s) if not syms[s] then symn = symn+1; syms[s] = symn end return tostring(syms[s]) end)) end
   local function safestr(s) return type(s) == "number" and (huge and snum[tostring(s)] or numformat:format(s))
-    or type(s) ~= "string" and tostring(s) -- escape NEWLINE/010 and EOF/026
+    or type(s) ~= "string" and tostring(s)
     or ("%q"):format(s):gsub("\010","n"):gsub("\026","\\026") end
-  -- handle radix changes in some locales
+
   if opts.fixradix and (".1f"):format(1.2) ~= "1.2" then
     local origsafestr = safestr
     safestr = function(s) return type(s) == "number"
@@ -12048,16 +12104,16 @@ local function s(t, opts)
   local function comment(s,l) return comm and (l or 0) < comm and ' --[['..select(2, pcall(tostring, s))..']]' or '' end
   local function globerr(s,l) return globals[s] and globals[s]..comment(s,l) or not fatal
     and safestr(select(2, pcall(tostring, s))) or error("Can't serialize "..tostring(s)) end
-  local function safename(path, name) -- generates foo.bar, foo[3], or foo['b a r']
+  local function safename(path, name)
     local n = name == nil and '' or name
     local plain = type(n) == "string" and n:match("^[%l%u_][%w_]*$") and not keyword[n]
     local safe = plain and n or '['..safestr(n)..']'
     return (path or '')..(plain and path and '.' or '')..safe, safe end
-  local alphanumsort = type(opts.sortkeys) == 'function' and opts.sortkeys or function(k, o, n) -- k=keys, o=originaltable, n=padding
+  local alphanumsort = type(opts.sortkeys) == 'function' and opts.sortkeys or function(k, o, n)
     local maxn, to = tonumber(n) or 12, {number = 'a', string = 'b'}
     local function padnum(d) return ("%0"..tostring(maxn).."d"):format(tonumber(d)) end
     table.sort(k, function(a,b)
-      -- sort numeric keys first: k[key] is not nil for numerical keys
+
       return (k[a] ~= nil and 0 or to[type(a)] or 'z')..(tostring(a):gsub("%d+",padnum))
            < (k[b] ~= nil and 0 or to[type(b)] or 'z')..(tostring(b):gsub("%d+",padnum)) end) end
   local function val2str(t, name, indent, insref, path, plainindex, level)
@@ -12066,47 +12122,47 @@ local function s(t, opts)
     local tag = plainindex and
       ((type(name) == "number") and '' or name..space..'='..space) or
       (name ~= nil and sname..space..'='..space or '')
-    if seen[t] then -- already seen this element
+    if seen[t] then
       sref[#sref+1] = spath..space..'='..space..seen[t]
       return tag..'nil'..comment('ref', level)
     end
-    -- protect from those cases where __tostring may fail
+
     if type(mt) == 'table' and metatostring ~= false then
       local to, tr = pcall(function() return mt.__tostring(t) end)
       local so, sr = pcall(function() return mt.__serialize(t) end)
-      if (to or so) then -- knows how to serialize itself
+      if (to or so) then
         seen[t] = insref or spath
         t = so and sr or tr
         ttype = type(t)
-      end -- new value falls through to be serialized
+      end
     end
     if ttype == "table" then
       if level >= maxl then return tag..'{}'..comment('maxlvl', level) end
       seen[t] = insref or spath
-      if next(t) == nil then return tag..'{}'..comment(t, level) end -- table empty
+      if next(t) == nil then return tag..'{}'..comment(t, level) end
       if maxlen and maxlen < 0 then return tag..'{}'..comment('maxlen', level) end
       local maxn, o, out = math.min(#t, maxnum or #t), {}, {}
       for key = 1, maxn do o[key] = key end
       if not maxnum or #o < maxnum then
-        local n = #o -- n = n + 1; o[n] is much faster than o[#o+1] on large tables
+        local n = #o
         for key in pairs(t) do
           if o[key] ~= key then n = n + 1; o[n] = key end
         end
       end
       if maxnum and #o > maxnum then o[maxnum+1] = nil end
       if opts.sortkeys and #o > maxn then alphanumsort(o, t, opts.sortkeys) end
-      local sparse = sparse and #o > maxn -- disable sparsness if only numeric keys (shorter output)
+      local sparse = sparse and #o > maxn
       for n, key in ipairs(o) do
         local value, ktype, plainindex = t[key], type(key), n <= maxn and not sparse
-        if opts.valignore and opts.valignore[value] -- skip ignored values; do nothing
+        if opts.valignore and opts.valignore[value]
         or opts.keyallow and not opts.keyallow[key]
         or opts.keyignore and opts.keyignore[key]
-        or opts.valtypeignore and opts.valtypeignore[type(value)] -- skipping ignored value types
-        or sparse and value == nil then -- skipping nils; do nothing
+        or opts.valtypeignore and opts.valtypeignore[type(value)]
+        or sparse and value == nil then
         elseif ktype == 'table' or ktype == 'function' or badtype[ktype] then
           if not seen[key] and not globals[key] then
             sref[#sref+1] = 'placeholder'
-            local sname = safename(iname, gensym(key)) -- iname is table for local variables
+            local sname = safename(iname, gensym(key))
             sref[#sref] = val2str(key,sname,indent,sname,iname,true)
           end
           sref[#sref+1] = 'placeholder'
@@ -12134,10 +12190,10 @@ local function s(t, opts)
       local ok, res = pcall(string.dump, t)
       local func = ok and "(load("..safestr(res)..",'@serialized'))"..comment(t, level)
       return tag..(func or globerr(t, level))
-    else return tag..safestr(t) end -- handle all other types
+    else return tag..safestr(t) end
   end
   local sepr = indent and "\n" or ";"..space
-  local body = val2str(t, name, indent) -- this call also populates sref
+  local body = val2str(t, name, indent)
   local tail = #sref>1 and table.concat(sref, sepr)..sepr or ''
   local warn = opts.comment and #sref>1 and space.."--[[incomplete output with shared/self-references skipped]]" or ''
   return not name and body..warn or "do local "..body..sepr..tail.."return "..name..sepr.."end"
@@ -12161,39 +12217,39 @@ return { _NAME = n, _COPYRIGHT = c, _DESCRIPTION = d, _VERSION = v, serialize = 
   dump = function(a, opts) return s(a, merge({name = '_', compact = true, sparse = true}, opts)) end,
   line = function(a, opts) return s(a, merge({sortkeys = true, comment = true}, opts)) end,
   block = function(a, opts) return s(a, merge({indent = '  ', sortkeys = true, comment = true}, opts)) end }
---@LIB
+
 ]=])
-package.preload["sh"] = lib("luax/sh.lua", [=[--[[
-This file is part of luax.
+package.preload["sh"] = lib("luax/sh.lua", [[
 
-luax is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
 
-luax is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
 
-You should have received a copy of the GNU General Public License
-along with luax.  If not, see <https://www.gnu.org/licenses/>.
 
-For further information about luax you can visit
-https://codeberg.org/cdsoft/luax
---]]
 
---@LIB
 
---[[------------------------------------------------------------------------@@@
-## Shell
-@@@]]
 
---[[@@@
-```lua
-local sh = require "sh"
-```
-@@@]]
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 local sh = {}
 
 local F = require "F"
@@ -12201,26 +12257,26 @@ local sys = require "sys"
 
 local __WINDOWS__ = sys.os == "windows"
 
---[[@@@
-```lua
-sh.run(...)
-```
-> Runs the command `...` with `os.execute`.
-@@@]]
+
+
+
+
+
+
 
 function sh.run(...)
     local cmd = F.flatten{...}:unwords()
     return os.execute(cmd)
 end
 
---[[@@@
-```lua
-sh.read(...)
-```
-> Runs the command `...` with `io.popen`.
-> When `sh.read` succeeds, it returns the content of stdout.
-> Otherwise it returns the error identified by `io.popen`.
-@@@]]
+
+
+
+
+
+
+
+
 
 function sh.read(...)
     local cmd = F.flatten{...}:unwords()
@@ -12235,13 +12291,13 @@ function sh.read(...)
     end
 end
 
---[[@@@
-```lua
-sh.write(...)(data)
-```
-> Runs the command `...` with `io.popen` and feeds `stdin` with `data`.
-> `sh.write` returns the same values returned by `os.execute`.
-@@@]]
+
+
+
+
+
+
+
 
 function sh.write(...)
     local cmd = F.flatten{...}:unwords()
@@ -12256,14 +12312,14 @@ function sh.write(...)
     end
 end
 
---[[@@@
-```lua
-sh.pipe(...)(data)
-```
-> Runs the command `...` with `io.popen` and feeds `stdin` with `data`.
-> When `sh.pipe` succeeds, it returns the content of stdout.
-> Otherwise it returns the error identified by `io.popen`.
-@@@]]
+
+
+
+
+
+
+
+
 
 function sh.pipe(...)
     local cmd = F.flatten{...}
@@ -12280,59 +12336,59 @@ function sh.pipe(...)
     end
 end
 
---[[@@@
-``` lua
-sh(...)
-```
-> `sh` can be called as a function. `sh(...)` is a shortcut to `sh.read(...)`.
-@@@]]
+
+
+
+
+
+
 setmetatable(sh, {
     __call = function(_, ...) return sh.read(...) end,
 })
 
 return sh
-]=])
-package.preload["strict"] = lib("luax/strict.lua", [=[--[[
-This file is part of luax.
+]])
+package.preload["strict"] = lib("luax/strict.lua", [[
 
-luax is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
 
-luax is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
 
-You should have received a copy of the GNU General Public License
-along with luax.  If not, see <https://www.gnu.org/licenses/>.
 
-For further information about luax you can visit
-https://codeberg.org/cdsoft/luax
---]]
 
---[[------------------------------------------------------------------------@@@
-# strict: checks uses of undeclared global variables
 
-The `strict` module checks uses of undeclared global variables.
-All global variables must be 'declared' through a regular assignment
-(even assigning nil will do) in a main chunk before being used
-anywhere or assigned to inside a function.
 
-`strict` is distributed under the Lua license: <http://www.lua.org/license.html>
 
-```lua
-require "strict"
-```
 
-This module is `strict.lua` from <https://www.lua.org/extras/>
-adpated for LuaX.
 
-This module not loaded by default since some global variables are tested when LuaX start but may not be defined.
-@@@]]
 
---@LIB
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 local getinfo, error, rawset, rawget = debug.getinfo, error, rawset, rawget
 
@@ -12366,28 +12422,28 @@ mt.__index = function (t, n)
   end
   return rawget(t, n)
 end
-]=])
-package.preload["sys"] = lib("luax/sys.lua", [=[--[[
-This file is part of luax.
+]])
+package.preload["sys"] = lib("luax/sys.lua", [[
 
-luax is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
 
-luax is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
 
-You should have received a copy of the GNU General Public License
-along with luax.  If not, see <https://www.gnu.org/licenses/>.
 
-For further information about luax you can visit
-https://codeberg.org/cdsoft/luax
---]]
 
---@LIB
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 local has_sys, sys = pcall(require, "_sys")
 
@@ -12402,10 +12458,10 @@ if not has_sys then
     local kernel, machine
 
     if package.config:sub(1, 1) == "/" then
-        -- Search for a Linux-like target
+
         kernel, machine = io.popen("uname -s -m", "r") : read "a" : match "(%S+)%s+(%S+)"
     else
-        -- Search for a Windows target
+
         kernel, machine = os.getenv "OS", os.getenv "PROCESSOR_ARCHITECTURE"
     end
 
@@ -12437,41 +12493,47 @@ if not has_sys then
 end
 
 return sys
-]=])
-package.preload["tar"] = lib("luax/tar.lua", [=[--[[
-This file is part of luax.
+]])
+package.preload["tar"] = lib("luax/tar.lua", [[
 
-luax is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
 
-luax is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
 
-You should have received a copy of the GNU General Public License
-along with luax.  If not, see <https://www.gnu.org/licenses/>.
 
-For further information about luax you can visit
-https://codeberg.org/cdsoft/luax
---]]
 
---@LIB
 
---[[------------------------------------------------------------------------@@@
-# Minimal tar file support
 
-```lua
-local tar = require "tar"
-```
 
-The `tar` module can read and write tar archives.
-Only files, directories and symbolic links are supported.
-@@@]]
 
--- https://fr.wikipedia.org/wiki/Tar_%28informatique%29
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 local tar = {}
 
@@ -12567,22 +12629,22 @@ local function parse(archive, i)
     }
 end
 
---[[@@@
-```lua
-tar.tar(files, [xform])
-```
-> returns a string that can be saved as a tar file.
-> `files` is a list of file names or `stat` like structures.
-> `stat` structures shall contain these fields:
->
-> - `name`: file name
-> - `mtime`: last modification time
-> - `content`: file content (the default value is the actual content of the file `name`).
->
-> **Note**: these structures can also be produced by `fs.stat`.
->
-> `xform` is an optional function used to transform filenames in the archive.
-@@@]]
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 function tar.tar(files, xform)
     xform = xform or F.id
@@ -12767,14 +12829,14 @@ function tar.tar(files, xform)
 
 end
 
---[[@@@
-```lua
-tar.untar(archive, [xform])
-```
-> returns a list of files (`stat` like structures with a `content` field).
->
-> `xform` is an optional function used to transform filenames in the archive.
-@@@]]
+
+
+
+
+
+
+
+
 
 function tar.untar(archive, xform)
     xform = xform or F.id
@@ -12805,12 +12867,12 @@ function tar.untar(archive, xform)
     return files
 end
 
---[[@@@
-```lua
-tar.chain(xforms)
-```
-> returns a filename transformation function that applies all functions from `funcs`.
-@@@]]
+
+
+
+
+
+
 
 function tar.chain(funcs)
     return function(x)
@@ -12822,14 +12884,14 @@ function tar.chain(funcs)
     end
 end
 
---[[@@@
-```lua
-tar.strip(x)
-```
-> returns a transformation function that removes part of the beginning of a filename.
-> If `x` is a number, the function removes `x` path components in the filename.
-> If `x` is a string, the function removes `x` at the beginning of the filename.
-@@@]]
+
+
+
+
+
+
+
+
 
 function tar.strip(x)
     if type(x) == "number" then
@@ -12851,12 +12913,12 @@ function tar.strip(x)
     end
 end
 
---[[@@@
-```lua
-tar.add(p)
-```
-> returns a transformation function that adds `p` at the beginning of a filename.
-@@@]]
+
+
+
+
+
+
 
 function tar.add(p)
     local prefix = path_components(p)
@@ -12866,54 +12928,54 @@ function tar.add(p)
     end
 end
 
---[[@@@
-```lua
-tar.xform(x, y)
-```
-> returns a transformation function that chains `tar.strip(x)` and `tar.add(y)`.
-@@@]]
+
+
+
+
+
+
 
 function tar.xform(x, y)
     return tar.chain { tar.strip(x), tar.add(y) }
 end
 
 return tar
-]=])
-package.preload["term"] = lib("luax/term.lua", [=[--[[
-This file is part of luax.
+]])
+package.preload["term"] = lib("luax/term.lua", [[
 
-luax is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
 
-luax is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
 
-You should have received a copy of the GNU General Public License
-along with luax.  If not, see <https://www.gnu.org/licenses/>.
 
-For further information about luax you can visit
-https://codeberg.org/cdsoft/luax
---]]
 
---[[------------------------------------------------------------------------@@@
-# Terminal
 
-`term` provides some functions to deal with the terminal in a quite portable way.
-It is heavily inspired by:
 
-- [lua-term](https://github.com/hoelzro/lua-term/): Terminal operations for Lua
-- [nocurses](https://github.com/osch/lua-nocurses/): A terminal screen manipulation library
 
-```lua
-local term = require "term"
-```
-@@@]]
 
---@LIB
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 local has_term, term = pcall(require, "_term")
 
@@ -12952,36 +13014,36 @@ end
 local ESC <const> = '\027'
 local CSI <const> = ESC..'['
 
---[[------------------------------------------------------------------------@@@
-## Colors
 
-The table `term.color` contain objects that can be used to build
-colorized strings with ANSI sequences.
 
-An object `term.color.X` can be used:
 
-- as a string
-- as a function
-- in combination with other color attributes
 
-``` lua
--- change colors in a string
-" ... " .. term.color.X .. " ... "
 
--- change colors for a string and reset colors at the end of the string
-term.color.X("...")
 
--- build a complex color with attributes
-local c = term.color.red + term.color.italic + term.color.oncyan
-```
-> The user can disable the color support (e.g. when not running on a terminal):
->
-> ``` lua
-> if not term.isatty(io.stdout) then
->     term.color.disable()
-> end
-> ```
-@@@]]
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 local color_mt, color_reset
 local color_enable = true
@@ -12991,62 +13053,66 @@ color_mt = {
     __call = function(self, s) return color_enable and self..s..color_reset or s end,
     __add = function(self, other) return setmetatable({value=self.value..other}, color_mt) end,
 }
-local function color(value) return setmetatable({value=CSI..tostring(value).."m"}, color_mt) end
+local function color(value) return setmetatable({value=CSI..value.."m"}, color_mt) end
+local function rgb(r,g,b) return setmetatable({value=CSI.."38;2;"..r..";"..g..";"..b.."m"}, color_mt) end
+local function onrgb(r,g,b) return setmetatable({value=CSI.."48;2;"..r..";"..g..";"..b.."m"}, color_mt) end
 local function enable(en) color_enable = en==nil or en end
 local function disable() color_enable = false end
---                                @@@| `term.color` field     | Description                          |@@@
---                                @@@| ---------------------- | ------------------------------------ |@@@
+
+
 term.color = {
-    -- attributes               --@@@| *Attributes*           |                                      |@@@
-    reset       = color(0),     --@@@| `reset`                | reset the colors                     |@@@
-    clear       = color(0),     --@@@| `clear`                | same as reset                        |@@@
-    default     = color(0),     --@@@| `default`              | same as reset                        |@@@
-    bright      = color(1),     --@@@| `bright`               | bold or more intense                 |@@@
-    bold        = color(1),     --@@@| `bold`                 | same as bold                         |@@@
-    dim         = color(2),     --@@@| `dim`                  | thiner or less intense               |@@@
-    italic      = color(3),     --@@@| `italic`               | italic (sometimes inverse or blink)  |@@@
-    underline   = color(4),     --@@@| `underline`            | underlined                           |@@@
-    blink       = color(5),     --@@@| `blink`                | slow blinking (less than 150 bpm)    |@@@
-    fast        = color(6),     --@@@| `fast`                 | fast blinking (more than 150 bpm)    |@@@
-    reverse     = color(7),     --@@@| `reverse`              | swap foreground and background       |@@@
-    hidden      = color(8),     --@@@| `hidden`               | hidden text                          |@@@
-    strike      = color(9),     --@@@| `strike`               | strike or crossed-out                |@@@
-    -- foreground               --@@@| *Foreground colors*    |                                      |@@@
-    black       = color(30),    --@@@| `black`                | black foreground                     |@@@
-    red         = color(31),    --@@@| `red`                  | red foreground                       |@@@
-    green       = color(32),    --@@@| `green`                | green foreground                     |@@@
-    yellow      = color(33),    --@@@| `yellow`               | yellow foreground                    |@@@
-    blue        = color(34),    --@@@| `blue`                 | blue foreground                      |@@@
-    magenta     = color(35),    --@@@| `magenta`              | magenta foreground                   |@@@
-    cyan        = color(36),    --@@@| `cyan`                 | cyan foreground                      |@@@
-    white       = color(37),    --@@@| `white`                | white foreground                     |@@@
-    -- background               --@@@| *Background colors*    |                                      |@@@
-    onblack     = color(40),    --@@@| `onblack`              | black background                     |@@@
-    onred       = color(41),    --@@@| `onred`                | red background                       |@@@
-    ongreen     = color(42),    --@@@| `ongreen`              | green background                     |@@@
-    onyellow    = color(43),    --@@@| `onyellow`             | yellow background                    |@@@
-    onblue      = color(44),    --@@@| `onblue`               | blue background                      |@@@
-    onmagenta   = color(45),    --@@@| `onmagenta`            | magenta background                   |@@@
-    oncyan      = color(46),    --@@@| `oncyan`               | cyan background                      |@@@
-    onwhite     = color(47),    --@@@| `onwhite`              | white background                     |@@@
-    -- enable/disable           --@@@| *Control functions*    |                                      |@@@
-    enable      = enable,       --@@@| `enable(b)`            | enable colors if `b` is `true` or `nil` (default) |@@@
-    disable     = disable,      --@@@| `disable`              | disable colors                       |@@@
+
+    reset       = color(0),
+    clear       = color(0),
+    default     = color(0),
+    bright      = color(1),
+    bold        = color(1),
+    dim         = color(2),
+    italic      = color(3),
+    underline   = color(4),
+    blink       = color(5),
+    fast        = color(6),
+    reverse     = color(7),
+    hidden      = color(8),
+    strike      = color(9),
+
+    black       = color(30),
+    red         = color(31),
+    green       = color(32),
+    yellow      = color(33),
+    blue        = color(34),
+    magenta     = color(35),
+    cyan        = color(36),
+    white       = color(37),
+    rgb         = rgb,
+
+    onblack     = color(40),
+    onred       = color(41),
+    ongreen     = color(42),
+    onyellow    = color(43),
+    onblue      = color(44),
+    onmagenta   = color(45),
+    oncyan      = color(46),
+    onwhite     = color(47),
+    onrgb       = onrgb,
+
+    enable      = enable,
+    disable     = disable,
 }
 
 color_reset = term.color.reset
 
---[[------------------------------------------------------------------------@@@
-## Cursor
 
-The table `term.cursor` contains functions to change the shape of the cursor:
 
-``` lua
--- turns the cursor into a blinking vertical thin bar
-term.cursor.bar_blink()
-```
 
-@@@]]
+
+
+
+
+
+
+
+
 
 local function cursor(shape)
     shape = CSI..shape..' q'
@@ -13055,22 +13121,22 @@ local function cursor(shape)
     end
 end
 
---                                  @@@| `term.cursor` field      | Description                 |@@@
---                                  @@@| ------------------------ | --------------------------- |@@@
+
+
 term.cursor = {
-    reset           = cursor(0),  --@@@| `reset`                  | reset to the initial shape  |@@@
-    block_blink     = cursor(1),  --@@@| `block_blink`            | blinking block cursor       |@@@
-    block           = cursor(2),  --@@@| `block`                  | fixed block cursor          |@@@
-    underline_blink = cursor(3),  --@@@| `underline_blink`        | blinking underline cursor   |@@@
-    underline       = cursor(4),  --@@@| `underline`              | fixed underline cursor      |@@@
-    bar_blink       = cursor(5),  --@@@| `bar_blink`              | blinking bar cursor         |@@@
-    bar             = cursor(6),  --@@@| `bar`                    | fixed bar cursor            |@@@
+    reset           = cursor(0),
+    block_blink     = cursor(1),
+    block           = cursor(2),
+    underline_blink = cursor(3),
+    underline       = cursor(4),
+    bar_blink       = cursor(5),
+    bar             = cursor(6),
 }
 
---[[------------------------------------------------------------------------@@@
-## Terminal
 
-@@@]]
+
+
+
 
 local function f(fmt)
     return function(h, ...)
@@ -13082,79 +13148,79 @@ local function f(fmt)
     end
 end
 
---[[@@@
-``` lua
-term.reset()
-```
-> resets the colors and the cursor shape.
-@@@]]
-term.reset    = f(color_reset..     -- reset colors
-                  CSI.."0 q"..      -- reset cursor shape
-                  CSI..'?25h'       -- restore cursor
+
+
+
+
+
+
+term.reset    = f(color_reset..
+                  CSI.."0 q"..
+                  CSI..'?25h'
                  )
 
---[[@@@
-``` lua
-term.clear()
-term.clearline()
-term.cleareol()
-term.clearend()
-```
-> clears the terminal, the current line, the end of the current line or from the cursor to the end of the terminal.
-@@@]]
+
+
+
+
+
+
+
+
+
 term.clear       = f(CSI..'1;1H'..CSI..'2J')
 term.clearline   = f(CSI..'2K'..CSI..'E')
 term.cleareol    = f(CSI..'K')
 term.clearend    = f(CSI..'J')
 
---[[@@@
-``` lua
-term.pos(row, col)
-```
-> moves the cursor to the line `row` and the column `col`.
-@@@]]
+
+
+
+
+
+
 term.pos         = f(CSI..'%d;%dH')
 
---[[@@@
-``` lua
-term.save_pos()
-term.restore_pos()
-```
-> saves and restores the position of the cursor.
-@@@]]
+
+
+
+
+
+
+
 term.save_pos    = f(CSI..'s')
 term.restore_pos = f(CSI..'u')
 
---[[@@@
-``` lua
-term.up([n])
-term.down([n])
-term.right([n])
-term.left([n])
-```
-> moves the cursor by `n` characters up, down, right or left.
-@@@]]
+
+
+
+
+
+
+
+
+
 term.up          = f(CSI..'%d;A')
 term.down        = f(CSI..'%d;B')
 term.right       = f(CSI..'%d;C')
 term.left        = f(CSI..'%d;D')
 
---[[------------------------------------------------------------------------@@@
-## Prompt
 
-The prompt function is a basic prompt implementation
-to display a prompt and get user inputs.
 
-The use of [rlwrap](https://github.com/hanslub42/rlwrap)
-is highly recommended for a better user experience on Linux.
-@@@]]
 
---[[@@@
-```lua
-s = term.prompt(p)
-```
-> prints `p` and waits for a user input
-@@@]]
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 function term.prompt(p)
     if p and term.isatty(io.stdin) then
@@ -13164,18 +13230,18 @@ function term.prompt(p)
     return io.stdin:read "l"
 end
 
---[[------------------------------------------------------------------------@@@
-## Title
 
-Set the terminal title.
-@@@]]
 
---[[@@@
-```lua
-term.title(t)
-```
-> sets the terminal title.
-@@@]]
+
+
+
+
+
+
+
+
+
+
 
 function term.title(t)
     if term.isatty(io.stdout) then
@@ -13184,9 +13250,8 @@ function term.title(t)
     end
 end
 
-
 return term
-]=])
+]])
 package.preload["toml"] = lib("luax/toml.lua", [=[
 
 
@@ -14729,46 +14794,46 @@ end
 
 return tinytoml
 ]=])
-package.preload["tomlx"] = lib("luax/tomlx.lua", [=[--[[
-This file is part of luax.
+package.preload["tomlx"] = lib("luax/tomlx.lua", [[
 
-luax is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
 
-luax is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
 
-You should have received a copy of the GNU General Public License
-along with luax.  If not, see <https://www.gnu.org/licenses/>.
 
-For further information about luax you can visit
-https://codeberg.org/cdsoft/luax
---]]
 
---@LIB
 
---[[------------------------------------------------------------------------@@@
-# tomlx
 
-`tomlx` is a layer on top of `toml` ([tinytoml](https://github.com/FourierTransformer/tinytoml)).
 
-It uses Lua as a macro language to transform values.
-Macros are string values starting with `=`.
-The expression following `=` is a Lua expression which value replaces the macro in the table.
 
-The evaluation environment contains two specific symbols:
 
-- `__up`: environment one level above the current level
-- `__root`: root level of the environment levels
 
-```lua
-local tomlx = require "tomlx"
-```
-@@@]]
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 local tomlx = {}
 
@@ -14796,10 +14861,10 @@ local function chain_and_uplink(env1, env2)
     return env
 end
 
---[[@@@
-The default environment contains the global variables (`_G`)
-and some LuaX modules (`crypt`, `F`, `fs`, `sh`).
-@@@]]
+
+
+
+
 
 local default_env = chain({
     crypt = require "crypt",
@@ -14847,82 +14912,82 @@ local function input_options(options, load_from_string)
     return F.patch(options or {}, {load_from_string=load_from_string})
 end
 
---[[@@@
-```lua
-tomlx.read(filename, [options])
-```
-> calls `toml.parse` to parse a TOML file.
-> Options are optional
-> and described in the [tinytoml documentation](https://github.com/FourierTransformer/tinytoml?tab=readme-ov-file#parsing-toml).
-> tomlx adds the env option (`options.env`) to define the initial evaluation environment.
-> The table returned by `tinytoml` is then processed to evaluate `tomlx` macros.
-@@@]]
+
+
+
+
+
+
+
+
+
+
 function tomlx.read(filename, options)
     local t = toml.parse(filename, input_options(options, false))
     return process(t, root_env(t, options), pattern(options))
 end
 
---[[@@@
-```lua
-tomlx.decode(s, [options])
-```
-> calls `toml.parse` to parse a TOML string.
-> Options are optional
-> and described in the [tinytoml documentation](https://github.com/FourierTransformer/tinytoml?tab=readme-ov-file#parsing-toml).
-> tomlx adds the env option (`options.env`) to define the initial evaluation environment.
-> The table returned by `tinytoml` is then processed to evaluate `tomlx` macros.
-@@@]]
+
+
+
+
+
+
+
+
+
+
 function tomlx.decode(s, options)
     local t = toml.parse(s, input_options(options, true))
     return process(t, root_env(t, options), pattern(options))
 end
 
---[[@@@
-```lua
-tomlx.encode(s, [options])
-```
-> calls `toml.encode` to encode a Lua table into a TOML string.
-> Options are optional
-> and described in the [tinytoml documentation](https://github.com/FourierTransformer/tinytoml?tab=readme-ov-file#encoding-toml).
-@@@]]
+
+
+
+
+
+
+
+
 function tomlx.encode(t, options)
     return toml.encode(t, options)
 end
 
---[[@@@
-```lua
-tomlx.write(filename, t, [options])
-```
-> calls `toml.encode` to encode a Lua table into a TOML string
-> and save it the file `filename`.
-> Options are optional
-> and described in the [tinytoml documentation](https://github.com/FourierTransformer/tinytoml?tab=readme-ov-file#encoding-toml).
-@@@]]
+
+
+
+
+
+
+
+
+
 function tomlx.write(filename, t, options)
     fs.write(filename, toml.encode(t, options))
 end
 
---[[@@@
-```lua
-tomlx.validate(schema, filename, [options])
-```
-> returns `true` if `filename` is validated by `schema`. Otherwise it returns `false`
-> and a list of failures.
->
-> The `schema` file is a TOML file used to validate the TOML file `filename`.
-> Both files are read with `tomlx.read` and the corresponding tables are validated with `F.validate`.
->
-> Options (the `option` table) contains options for `tomlx.read` and `F.validate`.
-@@@]]
+
+
+
+
+
+
+
+
+
+
+
+
 function tomlx.validate(schema, filename, options)
     return F.validate(tomlx.read(schema, options), tomlx.read(filename, options), options)
 end
 
 return tomlx
-]=])
-package.preload["yaml"] = lib("luax/yaml.lua", [[-------------------------------------------------------------------------------
--- tinyyaml - YAML subset parser
--------------------------------------------------------------------------------
+]])
+package.preload["yaml"] = lib("luax/yaml.lua", [[
+
+
 
 local table = table
 local string = string
@@ -14948,8 +15013,8 @@ local UNESCAPES = {
   r = "\x0d",     e = "\x1b", ['\\'] = '\\',
 };
 
--------------------------------------------------------------------------------
--- utils
+
+
 local function select(list, pred)
   local selected = {}
   for i = 0, #list do
@@ -14977,9 +15042,9 @@ local function trim(str)
   return smatch(str, "^%s*(.-)%s*$")
 end
 
--------------------------------------------------------------------------------
--- Implementation.
---
+
+
+
 local class = {__meta={}}
 function class.__meta.__call(cls, ...)
   local self = setmetatable({}, cls)
@@ -15071,7 +15136,7 @@ local function countindent(line)
 end
 
 local Parser = {
-  timestamps=true,-- parse timestamps as objects instead of strings
+  timestamps=true,
 }
 
 function Parser:parsestring(line, stopper)
@@ -15085,7 +15150,7 @@ function Parser:parsestring(line, stopper)
     if not i then
       return nil, line
     end
-    -- Unescape repeated single quotes.
+
     while i < #line and ssub(line, i+1, i+1) == "'" do
       i = sfind(line, "'", i + 2, true)
       if not i then
@@ -15123,10 +15188,10 @@ function Parser:parsestring(line, stopper)
     end
     return buf, ssub(line, i+1)
   end
-  if q == '{' or q == '[' then  -- flow style
+  if q == '{' or q == '[' then
     return nil, line
   end
-  if q == '|' or q == '>' then  -- block
+  if q == '|' or q == '>' then
     return nil, line
   end
   if q == '-' or q == ':' then
@@ -15167,7 +15232,7 @@ local function equalsline(line, needle)
 end
 
 local function compactifyemptylines(lines)
-  -- Appends empty lines as "\n" to the end of the nearest preceding non-empty line
+
   local compactified = {}
   local lastline = {}
   for i = 1, #lines do
@@ -15191,7 +15256,7 @@ end
 
 local function checkdupekey(map, key)
   if rawget(map, key) ~= nil then
-    -- print("found a duplicate key '"..key.."' in line: "..line)
+
     local suffix = 1
     while rawget(map, key..'_'..suffix) do
       suffix = suffix + 1
@@ -15228,15 +15293,15 @@ function Parser:parseflowstyle(line, lines)
       local value = tremove(stack)
       if value.t == ':' or value.t == '{' or value.t == '[' then error() end
       if stack[#stack].t == ':' then
-        -- map
+
         local key = tremove(stack)
         key.v = checkdupekey(stack[#stack].v, key.v)
         stack[#stack].v[key.v] = value.v
       elseif stack[#stack].t == '{' then
-        -- set
+
         stack[#stack].v[value.v] = true
       elseif stack[#stack].t == '[' then
-        -- seq
+
         tinsert(stack[#stack].v, value.v)
       end
       line = ssub(line, 2)
@@ -15384,8 +15449,8 @@ end
 
 function Parser:parsescalar(line, lines, indent)
   line = trim(line)
-  line = gsub(line, '^%s*#.*$', '')  -- comment only -> ''
-  line = gsub(line, '^%s*', '')  -- trim head spaces
+  line = gsub(line, '^%s*#.*$', '')
+  line = gsub(line, '^%s*', '')
 
   if line == '' or line == '~' then
     return null
@@ -15399,13 +15464,13 @@ function Parser:parsescalar(line, lines, indent)
   end
 
   local s, _ = self:parsestring(line)
-  -- startswith quote ... string
-  -- not startswith quote ... maybe string
+
+
   if s and (startswith(line, '"') or startswith(line, "'")) then
     return s
   end
 
-  if startswith('!', line) then  -- unexpected tagchar
+  if startswith('!', line) then
     error('unsupported line: '..line)
   end
 
@@ -15424,8 +15489,8 @@ function Parser:parsescalar(line, lines, indent)
     return self:parseblockstylestring(line, lines, indent)
   end
 
-  -- Regular unquoted string
-  line = gsub(line, '%s*#.*$', '')  -- trim tail comment
+
+  line = gsub(line, '%s*#.*$', '')
   local v = line
   if v == 'null' or v == 'Null' or v == 'NULL'then
     return null
@@ -15442,7 +15507,7 @@ function Parser:parsescalar(line, lines, indent)
   elseif v == '.nan' or v == '.NaN' or v == '.NAN' then
     return 0 / 0
   elseif sfind(v, '^[%+%-]?[0-9]+$') or sfind(v, '^[%+%-]?[0-9]+%.$')then
-    return tonumber(v)  -- : int
+    return tonumber(v)
   elseif sfind(v, '^[%+%-]?[0-9]+%.[0-9]+$') then
     return tonumber(v)
   end
@@ -15455,7 +15520,7 @@ function Parser:parseseq(line, lines, indent)
     error()
   end
   while #lines > 0 do
-    -- Check for a new document
+
     line = lines[1]
     if startswith(line, '---') then
       while #lines > 0 and not startswith(lines, '---') do
@@ -15464,7 +15529,7 @@ function Parser:parseseq(line, lines, indent)
       return seq
     end
 
-    -- Check the indent level
+
     local level = countindent(line)
     if level < indent then
       return seq
@@ -15482,30 +15547,30 @@ function Parser:parseseq(line, lines, indent)
     local rest = ssub(line, j+1)
 
     if sfind(rest, '^[^\'\"%s]*:%s*$') or sfind(rest, '^[^\'\"%s]*:%s+.') then
-      -- Inline nested hash
-      -- There are two patterns need to match as inline nested hash
-      --   first one should have no other characters except whitespace after `:`
-      --   and the second one should have characters besides whitespace after `:`
-      --
-      --  value:
-      --    - foo:
-      --        bar: 1
-      --
-      -- and
-      --
-      --  value:
-      --    - foo: bar
-      --
-      -- And there is one pattern should not be matched, where there is no space after `:`
-      --   in below, `foo:bar` should be parsed into a single string
-      --
-      -- value:
-      --   - foo:bar
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
       local indent2 = j
       lines[1] = string.rep(' ', indent2)..rest
       tinsert(seq, self:parsemap('', lines, indent2))
     elseif sfind(rest, '^%-%s+') then
-      -- Inline nested seq
+
       local indent2 = j
       lines[1] = string.rep(' ', indent2)..rest
       tinsert(seq, self:parseseq('', lines, indent2))
@@ -15519,14 +15584,14 @@ function Parser:parseseq(line, lines, indent)
         local nextline = lines[1]
         local indent2 = countindent(nextline)
         if indent2 == indent then
-          -- Null seqay entry
+
           tinsert(seq, null)
         else
           tinsert(seq, self:parseseq('', lines, indent2))
         end
       else
-        -- - # comment
-        --   key: value
+
+
         local nextline = lines[1]
         local indent2 = countindent(nextline)
         tinsert(seq, self:parsemap('', lines, indent2))
@@ -15534,7 +15599,7 @@ function Parser:parseseq(line, lines, indent)
     elseif line == "*" then
       error("did not find expected alphabetic or numeric character")
     elseif rest then
-      -- Array entry with a value
+
       local nextline = lines[1]
       local indent2 = countindent(nextline)
       tremove(lines, 1)
@@ -15550,7 +15615,7 @@ function Parser:parseset(line, lines, indent)
   end
   local set = setmetatable({}, types.set)
   while #lines > 0 do
-    -- Check for a new document
+
     line = lines[1]
     if startswith(line, '---') then
       while #lines > 0 and not startswith(lines, '---') do
@@ -15559,7 +15624,7 @@ function Parser:parseset(line, lines, indent)
       return set
     end
 
-    -- Check the indent level
+
     local level = countindent(line)
     if level < indent then
       return set
@@ -15577,7 +15642,7 @@ function Parser:parseset(line, lines, indent)
     local rest = ssub(line, j+1)
 
     if sfind(rest, '^[^\'\"%s]*:') then
-      -- Inline nested hash
+
       local indent2 = j
       lines[1] = string.rep(' ', indent2)..rest
       set[self:parsemap('', lines, indent2)] = true
@@ -15590,7 +15655,7 @@ function Parser:parseset(line, lines, indent)
       if sfind(lines[1], '^%s*%?') then
         local indent2 = countindent(lines[1])
         if indent2 == indent then
-          -- Null array entry
+
           set[null] = true
         else
           set[self:parseseq('', lines, indent2)] = true
@@ -15613,7 +15678,7 @@ function Parser:parsemap(line, lines, indent)
   end
   local map = setmetatable({}, types.map)
   while #lines > 0 do
-    -- Check for a new document
+
     line = lines[1]
     if line == end_symbol or line == end_break_symbol then
       for i, _ in ipairs(lines) do
@@ -15629,7 +15694,7 @@ function Parser:parsemap(line, lines, indent)
       return map
     end
 
-    -- Check the indent level
+
     local level, _ = countindent(line)
     if level < indent then
       return map
@@ -15637,11 +15702,11 @@ function Parser:parsemap(line, lines, indent)
       error("found bad indenting in line: ".. line)
     end
 
-    -- Find the key
+
     local key
     local s, rest = self:parsestring(line)
 
-    -- Quoted keys
+
     if s and startswith(rest, ':') then
       local sc = self:parsescalar(s, {}, 0)
       if sc and type(sc) ~= 'string' then
@@ -15658,7 +15723,7 @@ function Parser:parsemap(line, lines, indent)
     line = ltrim(line)
 
     if ssub(line, 1, 1) == '!' then
-      -- ignore type
+
       local rh = ltrim(ssub(line, 3))
       local typename = smatch(rh, '^!?[^%s]+')
       line = ltrim(ssub(rh, #typename+1))
@@ -15669,7 +15734,7 @@ function Parser:parsemap(line, lines, indent)
       line = ltrim(line)
       map[key] = self:parsescalar(line, lines, indent)
     else
-      -- An indent
+
       tremove(lines, 1)
       if #lines == 0 then
         map[key] = null
@@ -15684,7 +15749,7 @@ function Parser:parsemap(line, lines, indent)
       else
         local indent2 = countindent(lines[1])
         if indent >= indent2 then
-          -- Null hash entry
+
           map[key] = null
         else
           map[key] = self:parsemap('', lines, indent2)
@@ -15696,7 +15761,7 @@ function Parser:parsemap(line, lines, indent)
 end
 
 
--- : (list<str>)->dict
+
 function Parser:parsedocuments(lines)
   lines = compactifyemptylines(lines)
 
@@ -15706,10 +15771,10 @@ function Parser:parsedocuments(lines)
   local in_document = false
   while #lines > 0 do
     local line = lines[1]
-    -- Do we have a document header?
+
     local docright;
     if sfind(line, '^%-%-%-') then
-      -- Handle scalar documents
+
       docright = ssub(line, 4)
       tremove(lines, 1)
       in_document = true
@@ -15720,31 +15785,31 @@ function Parser:parsedocuments(lines)
         tinsert(root, self:parsescalar(docright, lines))
       end
     elseif #lines == 0 or startswith(line, '---') then
-      -- A naked document
+
       tinsert(root, null)
       while #lines > 0 and not sfind(lines[1], '---') do
         tremove(lines, 1)
       end
       in_document = false
-    -- XXX The final '-+$' is to look for -- which ends up being an
-    -- error later.
+
+
     elseif not in_document and #root > 0 then
-      -- only the first document can be explicit
+
       error('parse error: '..line)
     elseif sfind(line, '^%s*%-') then
-      -- An array at the root
+
       tinsert(root, self:parseseq('', lines, 0))
     elseif sfind(line, '^%s*[^%s]') then
-      -- A hash at the root
+
       local level = countindent(line)
       tinsert(root, self:parsemap('', lines, level))
     else
-      -- Shouldn't get here.  @lines have whitespace-only lines
-      -- stripped, and previous match is a line with any
-      -- non-whitespace.  So this clause should only be reachable via
-      -- a perlbug where \s is not symmetric with \S
 
-      -- uncoverable statement
+
+
+
+
+
       error('parse error: '..line)
     end
   end
@@ -15755,7 +15820,7 @@ function Parser:parsedocuments(lines)
   return root
 end
 
---- Parse yaml string into table.
+
 function Parser:parse(source)
   local lines = {}
   for line in string.gmatch(source .. '\n', '(.-)\r?\n') do
@@ -15780,40 +15845,41 @@ return {
   version = 0.1,
   parse = parse,
 }
---@LIB
+
 ]])
-package.preload["_PANDA_VERSION"] = lib(".build/src/_PANDA_VERSION.lua", [=[return [[0.9.3]] --@LOAD]=])
+package.preload["_PANDA_VERSION"] = lib(".build/src/_PANDA_VERSION.lua", [=[return [[0.9.4]]]=])
 require "F"
 require "crypt"
 require "fs"
+require "luax-compat"
 require "luax-debug"
 require "luax-package"
 require "lz4"
 require "lzip"
 _ENV["_PANDA_VERSION"] = require "_PANDA_VERSION"
-return lib("src/panda.lua", [=[-- vim: set ts=4 sw=4 foldmethod=marker :
+return lib("src/panda.lua", [[
 
---[[
-    This file is part of Panda.
 
-    Panda is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
 
-    Panda is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
-    along with Panda.  If not, see <https://www.gnu.org/licenses/>.
 
-    For further information about Panda you can visit
-    https://codeberg.org/cdsoft/panda
---]]
 
--- @MAIN @LIB
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 local pandoc = require "pandoc"
 local utils = pandoc.utils
@@ -15839,24 +15905,24 @@ end
 
 local filters = {}
 
--- User Lua environment {{{
 
--- The global environment _G is used to execute Lua filters
+
+
 
 _G.pandoc = pandoc
 _G.utils = utils
 _G.input_file = PANDOC_STATE.input_files[1]
 _G.output_file = PANDOC_STATE.output_file
 
--- }}}
 
--- {{{ Trace
+
+
 local function trace(name, object)
     io.stderr:write(("%s: %s\n"):format(name, F.show(object, {indent=4})))
 end
--- }}}
 
--- {{{ Tools
+
+
 
 local function has_class(item, class)
     return item.attr and item.attr.classes:find(class)
@@ -15891,16 +15957,16 @@ local function expand_path(path)
     end
 end
 
--- }}}
 
--- {{{ Forward declarations
 
-local track_file -- forward declaration of the dependency tracking function
+
+
+local track_file
 local include_codeblock
 
--- }}}
 
--- {{{ Variable expansion
+
+
 
 local var_pattern = "{{([%w_%.]-)}}"
 local var_pattern_esc = "%%7B%%7B([%w_%.]-)%%7D%%7D"
@@ -15931,10 +15997,10 @@ local function read_vars_in_block(block)
 end
 
 local function eval(expr)
-    -- first search for expr in _G
-    -- (some global variables, e.g. diagram render definitions, may have dots in their names)
+
+
     if _G[expr] ~= nil then return utils.stringify(_G[expr]) end
-    -- evaluate expr in _G
+
     local chunk = load("return "..expr, expr, "t", _G)
     if not chunk then return end
     local ok, val = pcall(chunk)
@@ -15962,9 +16028,9 @@ local function expand_str(el)
     while i <= #el.text do
         local j, k = string.find(el.text, var_pattern, i)
         if j then
-            -- i..j-1 => Str before the variable name
+
             if j > i then items:insert(pandoc.Str(string.sub(el.text, i, j-1))) end
-            -- j..k => variable name
+
             local var = string.sub(el.text, j+2, k-2)
             local value = eval(var)
             if value then
@@ -16020,9 +16086,9 @@ local function expand_codeblock(block)
     end
 end
 
--- }}}
 
--- Dependencies {{{
+
+
 
 local deps = F{}
 
@@ -16046,9 +16112,9 @@ track_file = function(filename)
     return assert(fs.read(filename), filename..": file not found")
 end
 
--- }}}
 
--- Conditional blocks, commented blocks {{{
+
+
 
 local function conditional(empty)
     return function(block)
@@ -16070,7 +16136,7 @@ local function conditional(empty)
                 block.attr = clean_attr({"if"}, attributes_to_clean, block.attr)
                 return block
             else
-                return empty, false -- return pandoc.Null
+                return empty, false
             end
         end
     end
@@ -16082,9 +16148,9 @@ local function comment(block)
     end
 end
 
--- }}}
 
--- {{{ File inclusion
+
+
 
 local function apply_pattern(pattern, format, content)
     if pattern then
@@ -16172,14 +16238,14 @@ include_codeblock = function(block)
     end
 end
 
--- }}}
 
--- {{{ Documentation extraction
+
+
 
 local function extract_doc(block)
     local filename = get_attr(block, "doc")
     if filename then
-        local input_format = nil -- only markdown supported here
+        local input_format = nil
         local shift = tonumber(get_attr(block, "shift"))
         local from = get_attr(block, "from") or "@@@"
         local to = get_attr(block, "to") or "@@@"
@@ -16190,9 +16256,9 @@ local function extract_doc(block)
     end
 end
 
--- }}}
 
--- {{{ Scripts
+
+
 
 local function make_script_cmd(cmd, arg, ext)
     arg = arg..ext
@@ -16215,7 +16281,7 @@ local scripttypes = {
 }
 
 local function script_ext(cmd)
-    local ext = cmd:match("%%s(%.%w+)") -- extension given by the command line
+    local ext = cmd:match("%%s(%.%w+)")
     if ext then return ext end
     for _, scripttype in ipairs(scripttypes) do
         if cmd:match(scripttype.cmd) then return scripttype.ext end
@@ -16255,9 +16321,9 @@ local function script(conf)
     end
 end
 
--- }}}
 
--- {{{ Diagrams
+
+
 
 local function set_diagram_env()
 
@@ -16290,6 +16356,7 @@ local function set_diagram_env()
     end)
     engines("gnuplot", "svg png pdf", "%exe -e 'set terminal %ext' -e 'set output \"%o\"' -c %i")
     engines("lsvg", "svg png pdf", "%exe %i.lua -o %o")
+    engines("fig", "svg png pdf", "%exe %i.lua -o %o")
 end
 
 local function get_input_ext(s)
@@ -16306,7 +16373,7 @@ end
 
 local function render_diagram(cmd)
     if cmd:match "^asy " then
-        -- for asymptote, the -o option is the output name without its extension
+
         cmd = cmd:gsub("(-o )(%S+)", function(opt, name)
             return opt..name:splitext()
         end)
@@ -16319,8 +16386,8 @@ local function render_diagram(cmd)
     end
 end
 
-local output_path   -- actual directory where images are saved
-local link_path     -- directory added to image filenames
+local output_path
+local link_path
 
 local function parse_output_path(path)
     local prefix, link = path : match "^%[(.-)%](.*)"
@@ -16379,7 +16446,7 @@ local function diagram(block)
         end
 
         local caption = get_attr(block, "caption")
-        local title = get_attr(block, "title") -- deprecated, use caption
+        local title = get_attr(block, "title")
         caption = caption or title or ""
         local alt = get_attr(block, "alt") or caption
         local target = get_attr(block, "target")
@@ -16393,7 +16460,7 @@ local function diagram(block)
     end
 end
 
--- }}}
+
 
 get_env_var()
 set_diagram_env()
@@ -16401,7 +16468,7 @@ set_diagram_env()
 filters = {
     traverse = 'topdown',
 
-    -- Macro expansion
+
     { Meta = read_vars_in_meta },
     { CodeBlock = read_vars_in_block },
     { Str = expand_str,
@@ -16421,35 +16488,35 @@ filters = {
       TableHeader = expand{"attr"},
     },
 
-    -- Conditional blocks
+
     { Block = conditional(nullBlock),
       Inline = conditional(nullInline),
     },
 
-    -- Commented blocks
+
     { Block = comment },
 
-    -- File inclusion
+
     { CodeBlock = include_codeblock,
       Div = include_div,
     },
 
-    -- Documentation extraction
+
     { Div = extract_doc,
     },
 
-    -- Scripts
+
     { CodeBlock = script{inline=false},
       Code = script{inline=true},
     },
 
-    -- Diagrams
+
     { CodeBlock = diagram },
 
-    -- Write dependency file
+
     { Pandoc = write_dependency_file },
 }
 
 return filters
-]=])()
+]])()
 

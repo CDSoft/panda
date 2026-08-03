@@ -183,14 +183,14 @@ Alice -> Bob: hello
 @enduml
 ```
 
-```{.lua render="{{lsvg}}"}
+```{.lua render="{{fig}}"}
 local w, h = 320, 240
-img {
+svg {
     width = w,
     height = h,
     font_size = h/2,
     text_anchor = "middle",
-    Text "lsvg" { x=w/2, y=h/2, dy="0.25em", fill="red" },
+    text "fig" { x=w/2, y=h/2, dy="0.25em", fill="red" },
 }
 ```
 
